@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Auto-fix SQL style issues in the Liquibase changelog with SQLFluff.
 #
 # Usage: scripts/sqlfluff-fix.sh
@@ -7,12 +7,12 @@
 # `sqlfluff` on PATH. Only fixes what SQLFluff can fix automatically;
 # remaining violations are reported and must be fixed by hand.
 
-set -euo pipefail
+set -eu
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 sql_dir="$repo_root/ddl_utils/src/main/resources/db/changelog"
 
-if [[ -x "$repo_root/.venv/bin/sqlfluff" ]]; then
+if [ -x "$repo_root/.venv/bin/sqlfluff" ]; then
     sqlfluff="$repo_root/.venv/bin/sqlfluff"
 else
     sqlfluff="sqlfluff"
