@@ -15,6 +15,7 @@ jobs:
         postgres:
           - postgres:16-alpine
           - postgres:17-alpine
+          - postgres:18-alpine
 
     steps:
       - name: Checkout
