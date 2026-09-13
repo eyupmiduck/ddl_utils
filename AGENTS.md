@@ -16,7 +16,12 @@ Primary technologies:
 
 ## Repo state
 
-Early-stage skeleton: **no source code, no `pom.xml`, no tests, no CI yet** — only the toolchain is pinned. `./mvnw verify` will fail until a `pom.xml` exists. When adding the first code, establish the project structure as part of the change.
+Early stage: Maven multi-module stub exists, but no real source code or CI yet.
+
+- Root `pom.xml`: parent POM (`ddl-utils-parent`); all dependency and plugin
+  versions are pinned here in `dependencyManagement` / `pluginManagement`.
+- `ddl_utils/`: the only module so far; base package
+  `io.github.eyupmiduck.ddlutils`.
 
 ## Development principles
 
