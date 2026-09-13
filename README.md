@@ -50,3 +50,24 @@ scripts/refresh-local-db.sh  # down -v + up -d (wipes data)
 
 The port (5432) and credentials are set in `compose.yaml`; change them there
 if they conflict with an existing local PostgreSQL.
+
+## Running against a different PostgreSQL version
+
+The PostgreSQL image is a single source of truth controlled by the
+`postgres.image` Maven property. It is used for jOOQ code generation, the
+integration tests, and the local dev database. Override it in any of these
+ways (highest precedence first):
+
+```sh
+# Command line (tests + jOOQ codegen)
+./mvnw verify -Dpostgres.image=postgres:16-alpine
+
+# Environment variable (tests + jOOQ codegen)
+POSTGRES_IMAGE=postgres:16-alpine ./mvnw verify
+
+# Local dev database (Docker Compose)
+POSTGRES_IMAGE=postgres:16-alpine docker compose up -d
+```
+
+The default is `postgres:17-alpine`. CI runs the full build against both
+PostgreSQL 16 and 17 (see `.github/workflows/maven.yml`).

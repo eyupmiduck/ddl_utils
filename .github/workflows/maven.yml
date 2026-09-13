@@ -7,8 +7,14 @@ on:
 
 jobs:
   build:
-    name: Maven Build
+    name: Maven Build (PostgreSQL ${{ matrix.postgres }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres:
+          - postgres:16-alpine
+          - postgres:17-alpine
 
     steps:
       - name: Checkout
@@ -25,4 +31,4 @@ jobs:
         run: pip install sqlfluff
 
       - name: Build and test
-        run: ./mvnw --batch-mode clean verify
+        run: ./mvnw --batch-mode clean verify -Dpostgres.image=${{ matrix.postgres }}
