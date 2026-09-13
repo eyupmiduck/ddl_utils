@@ -21,5 +21,8 @@ jobs:
           java-version: "25"
           cache: maven
 
+      - name: Set up Python and SQLFluff
+        run: pip install sqlfluff
+
       - name: Build and test
         run: ./mvnw --batch-mode clean verify

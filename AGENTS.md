@@ -44,6 +44,8 @@ on pull requests to `main`.
 - One module: `./mvnw -pl ddl_utils -am verify` (`-am` is required — reactor
   deps are not installed)
 - One test: `./mvnw -pl ddl_utils -am test -Dtest=ExampleTableTest`
+- Lint SQL only: `.venv/bin/sqlfluff lint ddl_utils/src/main/resources/db/changelog`
+- Auto-fix SQL style: `scripts/sqlfluff-fix.sh` (uses the repo's `.venv`)
 
 ## Development principles
 
@@ -84,6 +86,9 @@ on pull requests to `main`.
 - Prefer changes that are safe to deploy against a live database.
 - Consider rollback and idempotency where appropriate.
 - Do not modify an already-deployed changeset unless explicitly instructed.
+- SQLFluff (`.sqlfluff`, dialect `postgres`) lints the changelog `.sql` files
+  during `verify` via `exec-maven-plugin`. Requires `sqlfluff` on PATH (use
+  the repo's `.venv`); skip with `-Dskip.sqlfluff`.
 
 ## jOOQ
 
