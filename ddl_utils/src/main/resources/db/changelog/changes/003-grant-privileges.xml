@@ -4,7 +4,10 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="changes/001-create-schema.xml" relativeToChangelogFile="true"/>
-    <include file="changes/002-create-example-table.xml" relativeToChangelogFile="true"/>
-    <include file="changes/003-grant-privileges.xml" relativeToChangelogFile="true"/>
+    <changeSet id="003-grant-privileges" author="ddl_utils">
+        <sqlFile path="sql_changes/003-grant-privileges.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/003-grant-privileges-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

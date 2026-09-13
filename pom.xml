@@ -52,7 +52,7 @@
                 </property>
             </activation>
             <properties>
-                <postgres.image>postgres:17-alpine</postgres.image>
+                <postgres.image>ddl-utils-postgres:17-alpine</postgres.image>
             </properties>
         </profile>
     </profiles>

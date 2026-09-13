@@ -22,11 +22,13 @@ import java.sql.Statement;
  * Base class for tests that need a migrated PostgreSQL database.
  *
  * <p>A single PostgreSQL container is shared by all tests. On first use, the
- * Liquibase changelog is applied once to a template database. Each test class
- * then gets its own private database, created cheaply with
- * {@code CREATE DATABASE ... TEMPLATE ...}, so test data is isolated between
- * classes without re-running migrations. The private database is dropped
- * after the class finishes.
+ * roles are created by the custom image's init script and the Liquibase
+ * changelog is applied once to a template database, connecting as the
+ * {@code ddl_utils_owner} role (like a real deployment). Each test class then
+ * gets its own private database, created cheaply with
+ * {@code CREATE DATABASE ... TEMPLATE ...}, and connects to it as the
+ * {@code ddl_utils_test} role, which is granted the {@code ddl_utils_caller}
+ * role. The private database is dropped after the class finishes.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class PostgresTestBase {
@@ -34,15 +36,23 @@ abstract class PostgresTestBase {
     private static final String CHANGELOG = "db/changelog/db.changelog-master.xml";
     private static final String TEMPLATE_DATABASE = "ddl_utils_template";
 
+    private static final String OWNER_USER = "ddl_utils_owner";
+    private static final String OWNER_PASSWORD = "ddl_utils_owner";
+    private static final String TEST_USER = "ddl_utils_test";
+    private static final String TEST_PASSWORD = "ddl_utils_test";
+
     /**
      * The PostgreSQL image to run, matching the one used for jOOQ codegen.
-     * Set by surefire from the {@code postgres.image} Maven property.
+     * Set by surefire from the {@code postgres.image} Maven property. The
+     * custom image has the application roles baked in.
      */
     private static final String POSTGRES_IMAGE =
-            System.getProperty("postgres.image", "postgres:17-alpine");
+            System.getProperty("postgres.image", "ddl-utils-postgres:17-alpine");
 
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE));
+            new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE)
+                    .asCompatibleSubstituteFor("postgres"))
+                    .withDatabaseName("ddl_utils");
 
     static {
         POSTGRES.start();
@@ -59,11 +69,22 @@ abstract class PostgresTestBase {
 
     private static void prepareTemplateDatabase() {
         try {
-            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
                 statement.execute("CREATE DATABASE " + TEMPLATE_DATABASE);
             }
-            try (Connection connection = openConnection(TEMPLATE_DATABASE)) {
+            // The template database is fresh, so grant the owner role the privileges it
+            // needs to run Liquibase (as the init script does for the main
+            // database): CREATE on the database and on its public schema.
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("GRANT CREATE ON DATABASE " + TEMPLATE_DATABASE + " TO " + OWNER_USER);
+            }
+            try (Connection admin = openConnection(TEMPLATE_DATABASE, POSTGRES.getUsername(), POSTGRES.getPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("GRANT CREATE ON SCHEMA public TO " + OWNER_USER);
+            }
+            try (Connection connection = openConnection(TEMPLATE_DATABASE, OWNER_USER, OWNER_PASSWORD)) {
                 Liquibase liquibase = new Liquibase(
                         CHANGELOG,
                         new ClassLoaderResourceAccessor(),
@@ -73,7 +94,7 @@ abstract class PostgresTestBase {
             }
             // Mark as a real template so nothing can connect to it, which
             // keeps CREATE DATABASE ... TEMPLATE always safe.
-            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
                 statement.execute("ALTER DATABASE " + TEMPLATE_DATABASE + " WITH IS_TEMPLATE TRUE");
             }
@@ -82,26 +103,25 @@ abstract class PostgresTestBase {
         }
     }
 
-    private static Connection openConnection(String database) throws SQLException {
+    private static Connection openConnection(String database, String user, String password) throws SQLException {
         return DriverManager.getConnection(
                 "jdbc:postgresql://" + POSTGRES.getHost() + ":"
                         + POSTGRES.getMappedPort(5432) + "/" + database,
-                POSTGRES.getUsername(),
-                POSTGRES.getPassword());
+                user, password);
     }
 
     /**
      * Creates this test class's private database from the migrated template
-     * and opens a jOOQ context to it.
+     * and opens a jOOQ context to it as the {@code ddl_utils_test} role.
      */
     @BeforeAll
     void createTestDatabase() throws Exception {
         databaseName = "test_" + getClass().getSimpleName().toLowerCase();
-        try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+        try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement statement = admin.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName + " TEMPLATE " + TEMPLATE_DATABASE);
         }
-        connection = openConnection(databaseName);
+        connection = openConnection(databaseName, TEST_USER, TEST_PASSWORD);
         dsl = DSL.using(connection, SQLDialect.POSTGRES);
     }
 
@@ -113,7 +133,7 @@ abstract class PostgresTestBase {
         if (connection != null) {
             connection.close();
         }
-        try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+        try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement statement = admin.createStatement()) {
             statement.execute("DROP DATABASE " + databaseName);
         }
