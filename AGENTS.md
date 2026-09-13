@@ -102,6 +102,12 @@ on pull requests to `main`.
   This also applies to tooling: no H2 anywhere, including jOOQ code
   generation (do not use jOOQ's offline `LiquibaseDatabase`/H2 simulation).
 - Tests should be deterministic and independent.
+- Database tests must extend `PostgresTestBase` (in `ddl_utils` test
+  sources). It shares one PostgreSQL container, applies the Liquibase
+  changelog once to a template database, and gives each test class a private
+  database cloned with `CREATE DATABASE ... TEMPLATE ...` (fast, isolated
+  data). Use the inherited `dsl` (jOOQ); do not run Liquibase or start
+  containers in individual tests.
 - Every test class and test method must have Javadoc describing the behavior
   it verifies.
 - Prefer testing observable behavior rather than implementation details.
