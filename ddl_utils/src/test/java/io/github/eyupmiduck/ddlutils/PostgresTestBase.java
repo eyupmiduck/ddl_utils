@@ -34,8 +34,15 @@ abstract class PostgresTestBase {
     private static final String CHANGELOG = "db/changelog/db.changelog-master.xml";
     private static final String TEMPLATE_DATABASE = "ddl_utils_template";
 
+    /**
+     * The PostgreSQL image to run, matching the one used for jOOQ codegen.
+     * Set by surefire from the {@code postgres.image} Maven property.
+     */
+    private static final String POSTGRES_IMAGE =
+            System.getProperty("postgres.image", "postgres:17-alpine");
+
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"));
+            new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE));
 
     static {
         POSTGRES.start();

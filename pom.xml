@@ -9,7 +9,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-<modules>
+    <modules>
         <module>docker_java_config</module>
         <module>changelog_validator</module>
         <module>ddl_utils</module>
@@ -26,6 +26,36 @@
         <jooq.version>3.20.3</jooq.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
     </properties>
+
+    <!-- The PostgreSQL image used for jOOQ codegen and integration tests is a
+         single source of truth: the `postgres.image` property. It is set by
+         exactly one of the two profiles below (the default, or from the
+         POSTGRES_IMAGE environment variable) and can always be overridden on
+         the command line with -Dpostgres.image=postgres:16-alpine. -->
+    <profiles>
+        <profile>
+            <id>postgres-image-from-env</id>
+            <activation>
+                <property>
+                    <name>env.POSTGRES_IMAGE</name>
+                </property>
+            </activation>
+            <properties>
+                <postgres.image>${env.POSTGRES_IMAGE}</postgres.image>
+            </properties>
+        </profile>
+        <profile>
+            <id>default-postgres-image</id>
+            <activation>
+                <property>
+                    <name>!env.POSTGRES_IMAGE</name>
+                </property>
+            </activation>
+            <properties>
+                <postgres.image>postgres:17-alpine</postgres.image>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
