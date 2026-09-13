@@ -128,6 +128,31 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- SQLFluff lints the Liquibase .sql files. Requires sqlfluff on PATH
+           (e.g. the repo's .venv). Skip with -Dskip.sqlfluff. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>sqlfluff-lint</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>sqlfluff</executable>
+              <arguments>
+                <argument>lint</argument>
+                <argument>src/main/resources/db/changelog</argument>
+              </arguments>
+              <skip>${skip.sqlfluff}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
