@@ -43,10 +43,16 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Puts docker-java.properties (Docker API pin) on the test classpath -->
+<!-- Puts docker-java.properties (Docker API pin) on the test classpath -->
         <dependency>
             <groupId>io.github.eyupmiduck</groupId>
             <artifactId>docker_java_config</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.eyupmiduck</groupId>
+            <artifactId>changelog_validator</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
