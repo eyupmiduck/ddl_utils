@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ddl_utils
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ddl_utils_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ddl_utils"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  liquibase:
+    image: liquibase/liquibase:4.30.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./ddl_utils/src/main/resources/db/changelog:/liquibase/changelog
+    command: >
+      --url=jdbc:postgresql://postgres:5432/ddl_utils
+      --username=postgres
+      --password=postgres
+      --changelog-file=changelog/db.changelog-master.xml
+      update
+
+volumes:
+  ddl_utils_pgdata:
