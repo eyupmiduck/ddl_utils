@@ -21,6 +21,10 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
+/**
+ * Verifies that the Liquibase changelog creates the {@code ddl_utils} schema
+ * and the {@code example} table on a real PostgreSQL database.
+ */
 @Testcontainers
 class ExampleTableTest {
 
@@ -28,6 +32,12 @@ class ExampleTableTest {
     private static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"));
 
+    /**
+     * Applies the Liquibase changelog to a fresh PostgreSQL container and
+     * checks that the {@code ddl_utils} schema exists and the
+     * {@code example} table can be queried through the generated jOOQ
+     * classes.
+     */
     @Test
     void exampleTableExistsAfterMigration() throws Exception {
         try (Connection connection = DriverManager.getConnection(

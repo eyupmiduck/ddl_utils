@@ -102,6 +102,8 @@ on pull requests to `main`.
   This also applies to tooling: no H2 anywhere, including jOOQ code
   generation (do not use jOOQ's offline `LiquibaseDatabase`/H2 simulation).
 - Tests should be deterministic and independent.
+- Every test class and test method must have Javadoc describing the behavior
+  it verifies.
 - Prefer testing observable behavior rather than implementation details.
 - Add regression tests when fixing bugs.
 
