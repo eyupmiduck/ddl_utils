@@ -1,10 +1,9 @@
 package io.github.eyupmiduck.ddlutils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import io.github.eyupmiduck.ddlutils.jooq.tables.Example;
 import org.junit.jupiter.api.Test;
 
-import io.github.eyupmiduck.ddlutils.jooq.tables.Example;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Verifies that data written by one test class is not visible to others:

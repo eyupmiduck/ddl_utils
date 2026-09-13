@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-  <changeSet id="002-create-example-table" author="ddl_utils">
-    <sqlFile path="002-create-example-table.sql" relativeToChangelogFile="true"/>
-    <rollback>
-      <sqlFile path="002-create-example-table-rollback.sql" relativeToChangelogFile="true"/>
-    </rollback>
-  </changeSet>
+    <changeSet id="002-create-example-table" author="ddl_utils">
+        <sqlFile path="002-create-example-table.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="002-create-example-table-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
