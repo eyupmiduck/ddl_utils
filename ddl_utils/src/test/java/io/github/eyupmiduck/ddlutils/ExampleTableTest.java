@@ -1,11 +1,10 @@
 package io.github.eyupmiduck.ddlutils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import io.github.eyupmiduck.ddlutils.jooq.tables.Example;
 import org.junit.jupiter.api.Test;
 
-import io.github.eyupmiduck.ddlutils.jooq.tables.Example;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that the Liquibase changelog creates the {@code ddl_utils} schema

@@ -24,14 +24,14 @@ on pull requests to `main`.
   versions are pinned here in `dependencyManagement` / `pluginManagement`.
 - `ddl_utils/`: the main module; base package
   `io.github.eyupmiduck.ddlutils`.
-  - Liquibase changelogs: `src/main/resources/db/changelog/`
-    (`db.changelog-master.xml` includes one file per changeset from `changes/`).
-  - jOOQ classes are generated at build time into
-    `target/generated-sources/jooq` by
-    `testcontainers-jooq-codegen-maven-plugin`, which starts a real
-    PostgreSQL container and applies the Liquibase changelog. **Docker must be
-    running for `./mvnw verify`.** Plugin 0.0.4 is old: the module POM
-    overrides its bundled Testcontainers and jOOQ — keep those overrides.
+    - Liquibase changelogs: `src/main/resources/db/changelog/`
+      (`db.changelog-master.xml` includes one file per changeset from `changes/`).
+    - jOOQ classes are generated at build time into
+      `target/generated-sources/jooq` by
+      `testcontainers-jooq-codegen-maven-plugin`, which starts a real
+      PostgreSQL container and applies the Liquibase changelog. **Docker must be
+      running for `./mvnw verify`.** Plugin 0.0.4 is old: the module POM
+      overrides its bundled Testcontainers and jOOQ — keep those overrides.
 - `docker_java_config/`: jar containing only `docker-java.properties`
   (`api.version=1.44`). Testcontainers <= 1.21.3 shades docker-java pinned to
   Docker API 1.32, but Docker 29 requires >= 1.40. This module puts the pin on

@@ -1,10 +1,9 @@
 package io.github.eyupmiduck.ddlutils;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-
+import liquibase.Liquibase;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -14,10 +13,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import liquibase.Liquibase;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Base class for tests that need a migrated PostgreSQL database.
@@ -43,11 +42,46 @@ abstract class PostgresTestBase {
         prepareTemplateDatabase();
     }
 
-    /** jOOQ context connected to this test class's private database. */
+    /**
+     * jOOQ context connected to this test class's private database.
+     */
     protected DSLContext dsl;
 
     private String databaseName;
     private Connection connection;
+
+    private static void prepareTemplateDatabase() {
+        try {
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("CREATE DATABASE " + TEMPLATE_DATABASE);
+            }
+            try (Connection connection = openConnection(TEMPLATE_DATABASE)) {
+                Liquibase liquibase = new Liquibase(
+                        CHANGELOG,
+                        new ClassLoaderResourceAccessor(),
+                        DatabaseFactory.getInstance()
+                                .findCorrectDatabaseImplementation(new JdbcConnection(connection)));
+                liquibase.update();
+            }
+            // Mark as a real template so nothing can connect to it, which
+            // keeps CREATE DATABASE ... TEMPLATE always safe.
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("ALTER DATABASE " + TEMPLATE_DATABASE + " WITH IS_TEMPLATE TRUE");
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to prepare template database", e);
+        }
+    }
+
+    private static Connection openConnection(String database) throws SQLException {
+        return DriverManager.getConnection(
+                "jdbc:postgresql://" + POSTGRES.getHost() + ":"
+                        + POSTGRES.getMappedPort(5432) + "/" + database,
+                POSTGRES.getUsername(),
+                POSTGRES.getPassword());
+    }
 
     /**
      * Creates this test class's private database from the migrated template
@@ -57,7 +91,7 @@ abstract class PostgresTestBase {
     void createTestDatabase() throws Exception {
         databaseName = "test_" + getClass().getSimpleName().toLowerCase();
         try (Connection admin = openConnection(POSTGRES.getDatabaseName());
-                Statement statement = admin.createStatement()) {
+             Statement statement = admin.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName + " TEMPLATE " + TEMPLATE_DATABASE);
         }
         connection = openConnection(databaseName);
@@ -73,41 +107,8 @@ abstract class PostgresTestBase {
             connection.close();
         }
         try (Connection admin = openConnection(POSTGRES.getDatabaseName());
-                Statement statement = admin.createStatement()) {
+             Statement statement = admin.createStatement()) {
             statement.execute("DROP DATABASE " + databaseName);
         }
-    }
-
-    private static void prepareTemplateDatabase() {
-        try {
-            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
-                    Statement statement = admin.createStatement()) {
-                statement.execute("CREATE DATABASE " + TEMPLATE_DATABASE);
-            }
-            try (Connection connection = openConnection(TEMPLATE_DATABASE)) {
-                Liquibase liquibase = new Liquibase(
-                        CHANGELOG,
-                        new ClassLoaderResourceAccessor(),
-                        DatabaseFactory.getInstance()
-                                .findCorrectDatabaseImplementation(new JdbcConnection(connection)));
-                liquibase.update();
-            }
-            // Mark as a real template so nothing can connect to it, which
-            // keeps CREATE DATABASE ... TEMPLATE always safe.
-            try (Connection admin = openConnection(POSTGRES.getDatabaseName());
-                    Statement statement = admin.createStatement()) {
-                statement.execute("ALTER DATABASE " + TEMPLATE_DATABASE + " WITH IS_TEMPLATE TRUE");
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to prepare template database", e);
-        }
-    }
-
-    private static Connection openConnection(String database) throws SQLException {
-        return DriverManager.getConnection(
-                "jdbc:postgresql://" + POSTGRES.getHost() + ":"
-                        + POSTGRES.getMappedPort(5432) + "/" + database,
-                POSTGRES.getUsername(),
-                POSTGRES.getPassword());
     }
 }
