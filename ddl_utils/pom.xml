@@ -60,8 +60,10 @@
 
     <build>
         <plugins>
-            <!-- jOOQ codegen against a real PostgreSQL container, migrated with
-                 Liquibase. Requires a running Docker daemon. -->
+            <!-- jOOQ codegen against a real PostgreSQL container built from the
+                 custom image (roles baked in), migrated with Liquibase as the
+                 ddl_utils_owner role (like a real deployment). Requires a
+                 running Docker daemon and the custom image built first. -->
             <plugin>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-jooq-codegen-maven-plugin</artifactId>
@@ -114,6 +116,9 @@
                             <database>
                                 <type>POSTGRES</type>
                                 <containerImage>${postgres.image}</containerImage>
+                                <username>ddl_utils_owner</username>
+                                <password>ddl_utils_owner</password>
+                                <databaseName>ddl_utils</databaseName>
                             </database>
                             <liquibase>
                                 <changeLogPath>src/main/resources/db/changelog/db.changelog-master.xml</changeLogPath>

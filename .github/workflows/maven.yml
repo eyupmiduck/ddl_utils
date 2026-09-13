@@ -31,5 +31,8 @@ jobs:
       - name: Set up Python and SQLFluff
         run: pip install sqlfluff
 
+      - name: Build custom PostgreSQL image
+        run: scripts/build-postgres-image.sh ${{ matrix.postgres }}
+
       - name: Build and test
-        run: ./mvnw --batch-mode clean verify -Dpostgres.image=${{ matrix.postgres }}
+        run: ./mvnw --batch-mode clean verify -Dpostgres.image=ddl-utils-${{ matrix.postgres }}

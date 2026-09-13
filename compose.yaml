@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    image: ${POSTGRES_IMAGE:-ddl-utils-postgres:17-alpine}
     environment:
       POSTGRES_DB: ddl_utils
       POSTGRES_USER: postgres
@@ -22,7 +22,7 @@ services:
         condition: service_healthy
     volumes:
       - ./ddl_utils/src/main/resources/db/changelog:/liquibase/changelog
-    command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=postgres --password=postgres --changelog-file=changelog/db.changelog-master.xml update"
+    command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=ddl_utils_owner --password=ddl_utils_owner --changelog-file=changelog/db.changelog-master.xml update"
 
 volumes:
   ddl_utils_pgdata:

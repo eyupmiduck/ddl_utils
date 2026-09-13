@@ -11,8 +11,10 @@ log in and experiment:
 docker compose up -d
 ```
 
-This starts a `postgres:17-alpine` container and runs Liquibase against it to
-apply the changelog. Connect with:
+This starts a `ddl-utils-postgres:17-alpine` container (build it first with
+`scripts/build-postgres-image.sh postgres:17-alpine`) and runs Liquibase
+against it as the `ddl_utils_owner` role to apply the changelog. Connect
+with:
 
 ```sh
 psql -h localhost -p 5432 -U postgres -d ddl_utils
@@ -51,23 +53,47 @@ scripts/refresh-local-db.sh  # down -v + up -d (wipes data)
 The port (5432) and credentials are set in `compose.yaml`; change them there
 if they conflict with an existing local PostgreSQL.
 
+## Custom PostgreSQL image
+
+The build and local dev database use a custom image (`ddl-utils-postgres:<ver>-alpine`)
+built from the official `postgres:<ver>-alpine` image. It bakes in a roles
+init script (`docker/postgres/roles.sql`) that creates the application roles
+before Liquibase runs:
+
+- `ddl_utils_owner` — owns the schema and objects; Liquibase connects as this
+  role to load the schema (never as `postgres`).
+- `ddl_utils_caller` — the role privileges are granted to (e.g.
+  `SELECT, INSERT, UPDATE, DELETE` on `ddl_utils.example`).
+- `ddl_utils_test` — granted `ddl_utils_caller`; used by the integration tests.
+
+This is also where non-standard PostgreSQL extensions would be installed.
+
+Build it for a given base version:
+
+```sh
+scripts/build-postgres-image.sh postgres:17-alpine   # -> ddl-utils-postgres:17-alpine
+```
+
 ## Running against a different PostgreSQL version
 
 The PostgreSQL image is a single source of truth controlled by the
 `postgres.image` Maven property. It is used for jOOQ code generation, the
-integration tests, and the local dev database. Override it in any of these
-ways (highest precedence first):
+integration tests, and the local dev database. It must be a custom image tag,
+so build it first. Override it in any of these ways (highest precedence
+first):
 
 ```sh
-# Command line (tests + jOOQ codegen)
-./mvnw verify -Dpostgres.image=postgres:16-alpine
+# Build the custom image, then run the build/tests
+scripts/build-postgres-image.sh postgres:16-alpine
+./mvnw verify -Dpostgres.image=ddl-utils-postgres:16-alpine
 
 # Environment variable (tests + jOOQ codegen)
-POSTGRES_IMAGE=postgres:16-alpine ./mvnw verify
+POSTGRES_IMAGE=ddl-utils-postgres:16-alpine ./mvnw verify
 
 # Local dev database (Docker Compose)
-POSTGRES_IMAGE=postgres:16-alpine docker compose up -d
+POSTGRES_IMAGE=ddl-utils-postgres:16-alpine docker compose up -d
 ```
 
-The default is `postgres:17-alpine`. CI runs the full build against both
-PostgreSQL 16 and 17 (see `.github/workflows/maven.yml`).
+The default is `ddl-utils-postgres:17-alpine`. CI builds the custom image and
+runs the full build against PostgreSQL 16, 17 and 18 (see
+`.github/workflows/maven.yml`).
