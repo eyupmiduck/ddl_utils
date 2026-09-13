@@ -9,8 +9,9 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <modules>
+<modules>
         <module>docker_java_config</module>
+        <module>changelog_validator</module>
         <module>ddl_utils</module>
     </modules>
 
