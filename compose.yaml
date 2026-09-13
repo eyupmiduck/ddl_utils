@@ -16,18 +16,13 @@ services:
       retries: 10
 
   liquibase:
-    image: liquibase/liquibase:4.30.0
+    image: liquibase/liquibase:5.0.4
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./ddl_utils/src/main/resources/db/changelog:/liquibase/changelog
-    command: >
-      --url=jdbc:postgresql://postgres:5432/ddl_utils
-      --username=postgres
-      --password=postgres
-      --changelog-file=changelog/db.changelog-master.xml
-      update
+    command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=postgres --password=postgres --changelog-file=changelog/db.changelog-master.xml update"
 
 volumes:
   ddl_utils_pgdata:
