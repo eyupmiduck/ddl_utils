@@ -5,9 +5,9 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet id="002-create-example-table" author="ddl_utils">
-        <sqlFile path="002-create-example-table.sql" relativeToChangelogFile="true"/>
+        <sqlFile path="sql_changes/002-create-example-table.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="002-create-example-table-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="rollback/002-create-example-table-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 </databaseChangeLog>
