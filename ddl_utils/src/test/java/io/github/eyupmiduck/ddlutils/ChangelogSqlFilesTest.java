@@ -1,14 +1,13 @@
 package io.github.eyupmiduck.ddlutils;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
+import org.junit.jupiter.api.Test;
 
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
-import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that every SQL file in the Liquibase changelog is referenced by a
