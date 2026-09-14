@@ -82,11 +82,13 @@ jobs:
             core.setOutput('head_sha', pullRequest.head.sha);
 
       - name: Run OpenCodeReview
+        # Advisory only: a failed review must never block merging the PR.
+        continue-on-error: true
         uses: alibaba/open-code-review@1f5caf4d5b7d5324c6e4c836c971136e4010192e # v1.12.1
         with:
           ocr_version: "1.12.1"
           llm_url: https://api.together.xyz
-          llm_auth_token: ${{ secrets.TOGETHER_API_TOKEN }}
+          llm_auth_token: ${{ secrets.TOGETHER_API_KEY }}
           llm_model: deepseek-ai/DeepSeek-V4.1-Flash
           llm_use_anthropic: "false"
           # For issue_comment triggers, pass the resolved refs; for
