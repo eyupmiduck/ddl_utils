@@ -21,7 +21,8 @@
 
         <junit.version>5.11.4</junit.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <postgresql.version>42.7.5</postgresql.version>
+        <postgresql.version>42.7.13</postgresql.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
         <liquibase.version>5.0.4</liquibase.version>
         <jooq.version>3.20.3</jooq.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
@@ -87,6 +88,12 @@
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq</artifactId>
                 <version>${jooq.version}</version>
+            </dependency>
+            <!-- Transitive via Testcontainers; override to a patched version. -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
