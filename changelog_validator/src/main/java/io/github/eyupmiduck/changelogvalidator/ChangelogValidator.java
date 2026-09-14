@@ -1,5 +1,10 @@
 package io.github.eyupmiduck.changelogvalidator;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,12 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 /**
  * Validates a Liquibase changelog directory for orphaned SQL files.
