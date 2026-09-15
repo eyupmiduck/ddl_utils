@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
@@ -22,6 +23,7 @@ class ChangelogSqlFilesTest {
     @Test
     void noOrphanedSqlFiles() throws Exception {
         URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
+        Assertions.assertNotNull(changelogUrl);
         Path changelogRoot = Path.of(changelogUrl.toURI());
 
         List<Path> orphaned = ChangelogValidator.findOrphanedSqlFiles(changelogRoot);

@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
@@ -24,6 +25,7 @@ class ChangelogFileNamingTest {
     @Test
     void allChangelogFilesHaveThreeDigitPrefix() throws Exception {
         URL changesUrl = getClass().getClassLoader().getResource("db/changelog/changes");
+        Assertions.assertNotNull(changesUrl);
         Path changesRoot = Path.of(changesUrl.toURI());
 
         List<Path> invalid = ChangelogValidator.findInvalidlyNamedFiles(changesRoot);
