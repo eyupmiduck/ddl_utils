@@ -12,7 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Verifies that every XML and SQL file in the Liquibase changelog changes
  * directory is named with a three-digit, zero-padded prefix (for example
- * {@code 001-create-schema.xml}).
+ * {@code 001-create-schema.xml}); the prefix may be followed by a hyphen or
+ * an underscore.
  */
 class ChangelogFileNamingTest {
 
