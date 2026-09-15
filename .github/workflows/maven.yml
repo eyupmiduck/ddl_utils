@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+# `packages: read` lets the reusable Maven workflow's GITHUB_TOKEN fetch the
+# liquibase-validation artifact from GitHub Packages.
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build:
     uses: eyupmiduck/workflow_library/.github/workflows/maven.yml@main
