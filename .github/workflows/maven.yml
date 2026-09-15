@@ -8,3 +8,9 @@ on:
 jobs:
   build:
     uses: eyupmiduck/workflow_library/.github/workflows/maven.yml@main
+    with:
+      java-version: "25"
+      postgres-versions: '["postgres:16-alpine","postgres:17-alpine","postgres:18-alpine"]'
+      postgres-image-script: scripts/build-postgres-image.sh
+      postgres-image-prefix: ddl-utils-
+      maven-command: ./mvnw --batch-mode clean verify
