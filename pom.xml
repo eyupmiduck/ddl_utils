@@ -11,7 +11,6 @@
 
     <modules>
         <module>docker_java_config</module>
-        <module>changelog_validator</module>
         <module>ddl_utils</module>
     </modules>
 
@@ -26,6 +25,7 @@
         <liquibase.version>5.0.4</liquibase.version>
         <jooq.version>3.20.3</jooq.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
+        <liquibase-validation.version>0.1.0-SNAPSHOT</liquibase-validation.version>
     </properties>
 
     <!-- The PostgreSQL image used for jOOQ codegen and integration tests is a
@@ -97,6 +97,22 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- liquibase-validation is published to GitHub Packages. Credentials for
+         the `github` server id must be supplied in ~/.m2/settings.xml (a
+         classic PAT with read:packages), or via actions/setup-java in CI. -->
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/eyupmiduck/liquibase_validation</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <pluginManagement>

@@ -2,6 +2,17 @@
 
 utilities for postgres ddl to reduce locking nightmares
 
+## Changelog validation dependency
+
+Changelog validation (file naming and orphaned SQL files) lives in the
+[`liquibase_validation`](https://github.com/eyupmiduck/liquibase_validation)
+project and is consumed as the test-scoped `io.github.eyupmiduck:liquibase-validation`
+artifact from GitHub Packages. GitHub Packages requires authentication even
+for public packages, so a classic personal access token with the
+`read:packages` scope must be configured under the `github` server id in
+`~/.m2/settings.xml` for local builds. See that project's README for the
+settings snippet and the CI access requirements.
+
 ## Local development database
 
 Spin up a local PostgreSQL with the `ddl_utils` schema applied, so you can
