@@ -46,4 +46,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    secrets: inherit
+    with:
+      ocr-version: "1.12.1"
+      llm-url: https://api.together.xyz/v1
+      llm-model: deepseek-ai/DeepSeek-V4.1-Flash
+      llm-use-anthropic: "false"
+    secrets:
+      llm_auth_token: ${{ secrets.TOGETHER_API_KEY }}
