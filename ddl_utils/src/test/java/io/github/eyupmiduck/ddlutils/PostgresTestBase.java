@@ -96,6 +96,7 @@ abstract class PostgresTestBase {
             // keeps CREATE DATABASE ... TEMPLATE always safe.
             try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
+                //noinspection Annotator
                 statement.execute("ALTER DATABASE " + TEMPLATE_DATABASE + " WITH IS_TEMPLATE TRUE");
             }
         } catch (Exception e) {
