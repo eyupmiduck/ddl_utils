@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -19,7 +20,41 @@ import java.util.stream.Stream;
  */
 public final class ChangelogValidator {
 
+    /**
+     * Matches changelog file names of the form {@code NNN-name.ext} or
+     * {@code NNN_name.ext}, where {@code NNN} is a three-digit, zero-padded
+     * integer and {@code ext} is {@code sql} or {@code xml}.
+     */
+    private static final Pattern CHANGELOG_FILE_NAME = Pattern.compile("\\d{3}[-_].+\\.(sql|xml)");
+
     private ChangelogValidator() {
+    }
+
+    /**
+     * Finds {@code .sql} and {@code .xml} files under {@code changelogRoot}
+     * whose file name does not start with a three-digit, zero-padded integer
+     * followed by {@code -} or {@code _} (for example {@code 001-create.sql}).
+     *
+     * @param changelogRoot the changelog directory to scan
+     * @return the invalidly named files, relative to {@code changelogRoot}
+     * @throws IOException if the directory cannot be read
+     */
+    public static List<Path> findInvalidlyNamedFiles(Path changelogRoot) throws IOException {
+        List<Path> invalid = new ArrayList<>();
+        try (Stream<Path> paths = Files.walk(changelogRoot)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(ChangelogValidator::isChangelogFile)
+                    .filter(p -> !CHANGELOG_FILE_NAME.matcher(p.getFileName().toString()).matches())
+                    .map(changelogRoot::relativize)
+                    .forEach(invalid::add);
+        }
+        invalid.sort(Path::compareTo);
+        return invalid;
+    }
+
+    private static boolean isChangelogFile(Path path) {
+        String name = path.getFileName().toString();
+        return name.endsWith(".sql") || name.endsWith(".xml");
     }
 
     /**
