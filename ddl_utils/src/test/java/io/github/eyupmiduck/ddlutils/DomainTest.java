@@ -1,9 +1,11 @@
 package io.github.eyupmiduck.ddlutils;
 
+import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -59,6 +61,8 @@ class DomainTest extends PostgresTestBase {
     }
 
     private Object evaluate(String expression) {
-        return dsl.fetch("SELECT " + expression).get(0).get(0);
+        Record record = dsl.fetchOne("SELECT " + expression);
+        assertNotNull(record, () -> "Query returned no row: " + expression);
+        return record.get(0);
     }
 }
