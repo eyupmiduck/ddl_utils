@@ -20,3 +20,8 @@ buildNumber.properties
 .idea/
 
 .venv/
+
+# Beads / Dolt files
+.beads/
+.dolt/
+.beads-credential-key
