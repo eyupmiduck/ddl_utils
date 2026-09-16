@@ -6,5 +6,6 @@
 
     <include file="changes/001-create-schema.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-create-example-table.xml" relativeToChangelogFile="true"/>
-    <include file="changes/003-grant-privileges.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-create-domains.xml" relativeToChangelogFile="true"/>
+    <include file="changes/999-grant-privileges.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

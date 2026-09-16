@@ -4,10 +4,10 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="003-grant-privileges" author="ddl_utils">
-        <sqlFile path="sql_changes/003-grant-privileges.sql" relativeToChangelogFile="true"/>
+    <changeSet id="004-create-domains" author="ddl_utils">
+        <sqlFile path="sql_changes/004-create-domains.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="rollback/003-grant-privileges-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="rollback/004-create-domains-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 </databaseChangeLog>
