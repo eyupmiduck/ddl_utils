@@ -7,9 +7,7 @@ import org.junit.jupiter.api.function.Executable;
 
 import java.sql.SQLException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies that the Liquibase changelog creates the
@@ -17,6 +15,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * domains with the expected constraints.
  */
 class DomainTest extends PostgresTestBase {
+
+    /**
+     * Asserts that the query fails with SQLSTATE {@code 23514}
+     * ({@code check_violation}), proving the domain constraint exists rather
+     * than the domain merely being absent.
+     */
+    private static void assertCheckViolation(Executable query) {
+        DataAccessException exception = assertThrows(DataAccessException.class, query);
+        assertEquals("23514", sqlState(exception),
+                () -> "expected a check-constraint violation but was: " + exception.getMessage());
+    }
+
+    private static String sqlState(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                return sqlException.getSQLState();
+            }
+        }
+        return null;
+    }
 
     /**
      * The integer domain accepts zero and positive values.
@@ -64,25 +82,5 @@ class DomainTest extends PostgresTestBase {
         Record record = dsl.fetchOne("SELECT " + expression);
         assertNotNull(record, () -> "Query returned no row: " + expression);
         return record.get(0, type);
-    }
-
-    /**
-     * Asserts that the query fails with SQLSTATE {@code 23514}
-     * ({@code check_violation}), proving the domain constraint exists rather
-     * than the domain merely being absent.
-     */
-    private static void assertCheckViolation(Executable query) {
-        DataAccessException exception = assertThrows(DataAccessException.class, query);
-        assertEquals("23514", sqlState(exception),
-                () -> "expected a check-constraint violation but was: " + exception.getMessage());
-    }
-
-    private static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
     }
 }
