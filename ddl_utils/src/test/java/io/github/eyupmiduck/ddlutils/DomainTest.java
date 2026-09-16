@@ -11,8 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Verifies that the Liquibase changelog creates the
  * {@code ddl_utils.non_negative_integer} and {@code ddl_utils.non_null_text}
- * domains with the expected constraints, and that the {@code ddl_utils_caller}
- * role may use them.
+ * domains with the expected constraints.
  */
 class DomainTest extends PostgresTestBase {
 
