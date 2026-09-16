@@ -2,18 +2,19 @@
 -- Runs as the container superuser on first init, before Liquibase.
 -- Roles are cluster-wide, so this runs once per container, not per database.
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_owner') THEN
-        CREATE ROLE ddl_utils_owner LOGIN PASSWORD 'ddl_utils_owner';
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_caller') THEN
-        CREATE ROLE ddl_utils_caller;
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_test') THEN
-        CREATE ROLE ddl_utils_test LOGIN PASSWORD 'ddl_utils_test';
-    END IF;
-END
+DO
+$$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_owner') THEN
+            CREATE ROLE ddl_utils_owner LOGIN PASSWORD 'ddl_utils_owner';
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_caller') THEN
+            CREATE ROLE ddl_utils_caller;
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ddl_utils_test') THEN
+            CREATE ROLE ddl_utils_test LOGIN PASSWORD 'ddl_utils_test';
+        END IF;
+    END
 $$;
 
 -- The owner role creates the ddl_utils schema and the Liquibase tracking
