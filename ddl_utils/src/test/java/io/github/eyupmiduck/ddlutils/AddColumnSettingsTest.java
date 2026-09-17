@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -96,6 +95,16 @@ class AddColumnSettingsTest extends PostgresTestBase {
         assertDomainViolation(() -> addColumn(null, "text", null, true));
         assertDomainViolation(() -> addColumn("note", null, null, true));
         assertDomainViolation(() -> addColumn("note", "text", null, null));
+    }
+
+    /**
+     * add_columns rejects empty arrays through its array domains before the
+     * body runs.
+     */
+    @Test
+    void addColumnsRejectsEmptyArraysThroughDomains() {
+        assertDomainViolation(() -> addColumns(
+                new String[0], new String[0], new String[0], new Boolean[0]));
     }
 
     private void addColumn(String column, String type, String defaultValue, Boolean nullable) {
