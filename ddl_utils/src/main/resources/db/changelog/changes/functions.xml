@@ -9,6 +9,12 @@
          (Liquibase has no createFunction change type). runOnChange re-applies
          the whole changeset when a function body changes, replacing the
          routines. -->
+    <!-- CREATE OR REPLACE only replaces a routine with an identical signature:
+         changing RETURNS or the parameter names aborts the deploy, and changing
+         a parameter type silently leaves the old overload behind. When a
+         signature changes, add an explicit
+         `DROP FUNCTION IF EXISTS <old signature>;` (for example as another
+         sqlFile in this changeset) so the deprecated signature is removed. -->
     <changeSet id="005-create-functions" author="ddl_utils" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils/set_database_lock_settings.sql" relativeToChangelogFile="true"/>

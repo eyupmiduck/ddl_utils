@@ -8,6 +8,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -30,6 +31,11 @@ class ChangelogSqlFilesTest {
         Assertions.assertNotNull(masterUrl);
         Path changelogRoot = Path.of(changelogUrl.toURI());
         Path master = Path.of(masterUrl.toURI());
+
+        // Sanity check so the assertion below cannot pass while the graph
+        // references nothing (a misresolved root or an empty changelog).
+        List<Path> referenced = ChangelogValidator.findReferencedSqlFiles(changelogRoot, master);
+        assertFalse(referenced.isEmpty(), "expected the changelog graph to reference SQL files");
 
         List<Path> orphaned = ChangelogValidator.findOrphanedSqlFiles(changelogRoot, master);
 

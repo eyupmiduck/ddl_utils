@@ -14,5 +14,10 @@ BEGIN
         SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
         FROM ddl_utils.database_lock_settings AS ls
         WHERE ls.id = 1;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'ddl_utils.get_database_lock_settings: lock settings row (id = 1) does not exist'
+            USING ERRCODE = 'P0002';
+    END IF;
 END;
 $$;

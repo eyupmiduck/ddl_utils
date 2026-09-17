@@ -56,18 +56,49 @@ class AddColumnsTest extends PostgresTestBase {
      */
     @Test
     void rejectsMismatchedArrayLengths() {
+        // types shorter than names
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first", "second"},
                 new String[]{"int"},
                 new String[]{null, null},
                 new Boolean[]{true, true},
                 1000, 10, 5000));
+        // defaults shorter than names
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first", "second"},
+                new String[]{"int", "text"},
+                new String[]{null},
+                new Boolean[]{true, true},
+                1000, 10, 5000));
+        // nullable shorter than names
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first", "second"},
+                new String[]{"int", "text"},
+                new String[]{null, null},
+                new Boolean[]{true},
+                1000, 10, 5000));
+        // defaults longer than names
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int"},
+                new String[]{null, null},
+                new Boolean[]{true},
+                1000, 10, 5000));
+        // nullable longer than names
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int"},
+                new String[]{null},
+                new Boolean[]{true, true},
+                1000, 10, 5000));
 
-        assertTrue(!hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
     }
 
     /**
-     * Rejects a blank default expression with an invalid-parameter error.
+     * Rejects a blank default expression with an invalid-parameter error and
+     * without altering the table.
      */
     @Test
     void rejectsBlankDefault() {
@@ -77,6 +108,8 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"   "},
                 new Boolean[]{true},
                 1000, 10, 5000));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
     }
 
     /**

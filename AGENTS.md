@@ -107,6 +107,11 @@ on pull requests to `main`.
   `<createProcedure path="functions/<schema>/<name>.sql" relativeToChangelogFile="true"/>`.
   Liquibase has no `createFunction` change type, so functions use
   `createProcedure` too; the `path` attribute keeps SQL out of the XML.
+- `CREATE OR REPLACE` only replaces a routine with an identical signature.
+  Changing `RETURNS` or a parameter name aborts the deploy, and changing a
+  parameter type leaves the old overload behind. When a signature changes, add
+  an explicit `DROP FUNCTION IF EXISTS <old signature>;` (for example another
+  `sqlFile` in the same changeset) so the deprecated signature is removed.
 - Type routine arguments with the `ddl_utils` domains (for example
   `non_null_text`, `non_negative_integer`) so null or invalid inputs fail
   fast with a check-constraint violation.

@@ -12,6 +12,9 @@ CREATE OR REPLACE FUNCTION ddl_utils.set_table_lock_settings(
 AS
 $$
 BEGIN
+    -- The schema/table key is stored as given and not resolved against
+    -- pg_class, so settings can be provisioned before the table exists. A typo
+    -- simply never matches.
     INSERT INTO ddl_utils.table_lock_settings (
         schema_name, table_name, ddl_lock_timeout, sleep_time, statement_duration
     )

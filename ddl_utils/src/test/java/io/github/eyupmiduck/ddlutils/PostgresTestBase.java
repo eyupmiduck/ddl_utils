@@ -86,6 +86,9 @@ abstract class PostgresTestBase {
         try {
             try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
+                // Tolerate a template left behind by an interrupted earlier run
+                // in the same container, so setup is repeatable.
+                statement.execute("DROP DATABASE IF EXISTS " + TEMPLATE_DATABASE + " WITH (FORCE)");
                 statement.execute("CREATE DATABASE " + TEMPLATE_DATABASE);
             }
             // The template database is fresh, so grant the owner role the privileges it

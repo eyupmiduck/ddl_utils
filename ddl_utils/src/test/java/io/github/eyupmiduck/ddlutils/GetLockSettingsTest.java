@@ -97,6 +97,21 @@ class GetLockSettingsTest extends PostgresTestBase {
         }
     }
 
+    /**
+     * get_database_lock_settings raises no_data_found when the singleton row is
+     * missing, rather than returning an empty result.
+     */
+    @Test
+    void getDatabaseLockSettingsRaisesWhenRowMissing() {
+        deleteDatabaseDefaults();
+        try {
+            assertSqlState("P0002",
+                    () -> dsl.fetch("SELECT * FROM ddl_utils.get_database_lock_settings()"));
+        } finally {
+            restoreDatabaseDefaults();
+        }
+    }
+
     private Record getLockSettings(String schema, String table) {
         return dsl.fetchOne("""
                 SELECT ddl_lock_timeout, sleep_time, statement_duration
