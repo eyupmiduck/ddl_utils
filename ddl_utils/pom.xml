@@ -141,7 +141,7 @@
                                              not compile. Exclude the array domains;
                                              they are exercised through plain SQL in
                                              tests. -->
-                                        <excludes>.*non_empty.*text_array.*</excludes>
+                                        <excludes>.*non_empty.*array.*</excludes>
                                         <inputSchema>ddl_utils</inputSchema>
                                     </database>
                                     <target>
