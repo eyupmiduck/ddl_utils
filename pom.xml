@@ -19,11 +19,11 @@
         <maven.compiler.release>25</maven.compiler.release>
 
         <junit.version>6.1.3</junit.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <postgresql.version>42.7.13</postgresql.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <liquibase.version>5.0.4</liquibase.version>
-        <jooq.version>3.20.3</jooq.version>
+        <jooq.version>3.21.8</jooq.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
         <liquibase-validation.version>0.2.0</liquibase-validation.version>
     </properties>
@@ -117,12 +117,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.16.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.2</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.testcontainers</groupId>
