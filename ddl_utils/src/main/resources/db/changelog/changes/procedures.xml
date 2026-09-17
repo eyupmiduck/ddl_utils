@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- One changeset loads every stored procedure. Each procedure lives in its
+         own file under procedures/ and is added with createProcedure.
+         runOnChange re-applies the whole changeset when a body changes. -->
+    <changeSet id="006-create-procedures" author="ddl_utils" runOnChange="true">
+    </changeSet>
+</databaseChangeLog>

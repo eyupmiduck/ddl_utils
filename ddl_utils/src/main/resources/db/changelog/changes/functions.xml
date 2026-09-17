@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- One changeset loads every stored function. Each function lives in its
+         own file under functions/ and is added with createProcedure (Liquibase
+         has no createFunction change type). runOnChange re-applies the whole
+         changeset when a function body changes, replacing the routines. -->
+    <changeSet id="005-create-functions" author="ddl_utils" runOnChange="true">
+    </changeSet>
+</databaseChangeLog>
