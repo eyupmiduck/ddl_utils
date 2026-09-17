@@ -8,7 +8,7 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
-) FROM ddl_utils_caller;
+    ) FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -19,7 +19,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
-) TO public;
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.alter_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
