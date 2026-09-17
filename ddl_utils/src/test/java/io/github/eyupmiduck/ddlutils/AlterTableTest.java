@@ -12,12 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies {@code ddl_utils.alter_table}: it applies ALTER TABLE fragments to a
@@ -32,6 +27,21 @@ class AlterTableTest extends PostgresTestBase {
 
     private static final String SCHEMA = "public";
     private static final String TARGET = "alter_table_target";
+
+    private static void assertDomainViolation(Executable call) {
+        DataAccessException exception = assertThrows(DataAccessException.class, call);
+        assertEquals("23514", sqlState(exception),
+                () -> "expected a domain check violation but was: " + exception.getMessage());
+    }
+
+    private static String sqlState(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                return sqlException.getSQLState();
+            }
+        }
+        return null;
+    }
 
     @BeforeEach
     void createTargetTable() {
@@ -149,10 +159,10 @@ class AlterTableTest extends PostgresTestBase {
     private boolean hasColumn(String column) {
         return !dsl.fetch(
                 """
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_schema = ? AND table_name = ? AND column_name = ?
-                """,
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_schema = ? AND table_name = ? AND column_name = ?
+                        """,
                 SCHEMA, TARGET, column).isEmpty();
     }
 
@@ -167,13 +177,13 @@ class AlterTableTest extends PostgresTestBase {
         for (int attempt = 0; attempt < 100; attempt++) {
             Object held = dsl.fetchValue(
                     """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM pg_locks l
-                        JOIN pg_class c ON c.oid = l.relation
-                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
-                    )
-                    """,
+                            SELECT EXISTS (
+                                SELECT 1
+                                FROM pg_locks l
+                                JOIN pg_class c ON c.oid = l.relation
+                                WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
+                            )
+                            """,
                     TARGET);
             if (Boolean.TRUE.equals(held)) {
                 return;
@@ -181,20 +191,5 @@ class AlterTableTest extends PostgresTestBase {
             Thread.sleep(50);
         }
         fail("the competing session did not acquire its lock");
-    }
-
-    private static void assertDomainViolation(Executable call) {
-        DataAccessException exception = assertThrows(DataAccessException.class, call);
-        assertEquals("23514", sqlState(exception),
-                () -> "expected a domain check violation but was: " + exception.getMessage());
-    }
-
-    private static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
     }
 }
