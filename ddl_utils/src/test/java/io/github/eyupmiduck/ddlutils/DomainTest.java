@@ -55,6 +55,24 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The text domain rejects an empty string with a check-constraint
+     * violation.
+     */
+    @Test
+    void nonNullTextRejectsEmptyString() {
+        assertDomainViolation(() -> evaluate("''::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
+     * The text domain rejects a whitespace-only string with a
+     * check-constraint violation.
+     */
+    @Test
+    void nonNullTextRejectsBlankString() {
+        assertDomainViolation(() -> evaluate("'   '::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
      * The boolean domain accepts true and false.
      */
     @Test
@@ -69,6 +87,100 @@ class DomainTest extends PostgresTestBase {
     @Test
     void nonNullBooleanRejectsNull() {
         assertDomainViolation(() -> evaluate("NULL::ddl_utils.non_null_boolean", Boolean.class));
+    }
+
+    /**
+     * The non-empty text-array domain accepts an array with elements, including
+     * null elements.
+     */
+    @Test
+    void nonEmptyTextArrayAcceptsElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', 'b']::ddl_utils.non_empty_text_array)", Integer.class));
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', NULL]::ddl_utils.non_empty_text_array)", Integer.class));
+    }
+
+    /**
+     * The non-empty text-array domain rejects an empty array and a null array.
+     */
+    @Test
+    void nonEmptyTextArrayRejectsEmptyOrNull() {
+        assertDomainViolation(() -> evaluate("'{}'::text[]::ddl_utils.non_empty_text_array", Object.class));
+        assertDomainViolation(() -> evaluate("NULL::ddl_utils.non_empty_text_array", Object.class));
+    }
+
+    /**
+     * The non-empty, non-null-element text-array domain accepts an array whose
+     * elements are all non-null.
+     */
+    @Test
+    void nonEmptyNonNullTextArrayAcceptsNonNullElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', 'b']::ddl_utils.non_empty_non_null_text_array)", Integer.class));
+    }
+
+    /**
+     * The non-empty, non-null-element text-array domain rejects an array with a
+     * null element, an empty array, and a null array.
+     */
+    @Test
+    void nonEmptyNonNullTextArrayRejectsNullElementEmptyOrNull() {
+        assertDomainViolation(() -> evaluate(
+                "ARRAY['a', NULL]::text[]::ddl_utils.non_empty_non_null_text_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "'{}'::text[]::ddl_utils.non_empty_non_null_text_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "NULL::ddl_utils.non_empty_non_null_text_array", Object.class));
+    }
+
+    /**
+     * The non-empty, non-null-element boolean-array domain accepts an array
+     * whose elements are all non-null.
+     */
+    @Test
+    void nonEmptyNonNullBooleanArrayAcceptsNonNullElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY[true, false]::ddl_utils.non_empty_non_null_boolean_array)",
+                Integer.class));
+    }
+
+    /**
+     * The non-empty, non-null-element boolean-array domain rejects an array with
+     * a null element, an empty array, and a null array.
+     */
+    @Test
+    void nonEmptyNonNullBooleanArrayRejectsNullElementEmptyOrNull() {
+        assertDomainViolation(() -> evaluate(
+                "ARRAY[true, NULL]::boolean[]::ddl_utils.non_empty_non_null_boolean_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "'{}'::boolean[]::ddl_utils.non_empty_non_null_boolean_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "NULL::ddl_utils.non_empty_non_null_boolean_array", Object.class));
+    }
+
+    /**
+     * The non-empty, non-null-element integer-array domain accepts an array
+     * whose elements are all non-null.
+     */
+    @Test
+    void nonEmptyNonNullIntegerArrayAcceptsNonNullElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY[1, 2]::ddl_utils.non_empty_non_null_integer_array)", Integer.class));
+    }
+
+    /**
+     * The non-empty, non-null-element integer-array domain rejects an array with
+     * a null element, an empty array, and a null array.
+     */
+    @Test
+    void nonEmptyNonNullIntegerArrayRejectsNullElementEmptyOrNull() {
+        assertDomainViolation(() -> evaluate(
+                "ARRAY[1, NULL]::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "'{}'::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "NULL::ddl_utils.non_empty_non_null_integer_array", Object.class));
     }
 
     private <T> T evaluate(String expression, Class<T> type) {
