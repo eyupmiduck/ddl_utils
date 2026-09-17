@@ -20,10 +20,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Base class for tests that need a migrated PostgreSQL database.
@@ -153,6 +155,70 @@ abstract class PostgresTestBase {
      */
     protected Connection openTestConnection() throws SQLException {
         return openConnection(databaseName, TEST_USER, TEST_PASSWORD);
+    }
+
+    /**
+     * Holds an ACCESS SHARE lock on a table on a second connection, which
+     * conflicts with the ACCESS EXCLUSIVE lock an {@code ALTER TABLE} needs.
+     * The caller owns the connection and must close it to release the lock.
+     *
+     * @param connection a connection to this test class's private database
+     * @param table      the table to lock
+     * @throws SQLException if the lock cannot be taken
+     */
+    protected void holdAccessShareLock(Connection connection, String table) throws SQLException {
+        connection.setAutoCommit(false);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("LOCK TABLE " + table + " IN ACCESS SHARE MODE");
+        }
+    }
+
+    /**
+     * Waits until a competing session holds an ACCESS SHARE lock on the table,
+     * so a test can be sure the lock is in place before calling a routine that
+     * must wait for it.
+     *
+     * @param table the table to check
+     * @throws InterruptedException if interrupted while waiting
+     */
+    protected void awaitAccessShareLockHeld(String table) throws InterruptedException {
+        for (int attempt = 0; attempt < 100; attempt++) {
+            Object held = dsl.fetchValue(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_locks l
+                        JOIN pg_class c ON c.oid = l.relation
+                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
+                    )
+                    """,
+                    table);
+            if (Boolean.TRUE.equals(held)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        fail("the competing session did not acquire its lock on " + table);
+    }
+
+    /**
+     * Rolls back a connection after a delay, in the background, so a test can
+     * release a held lock while the test thread is blocked in a call. The
+     * returned future completes once the rollback has run.
+     *
+     * @param connection  the connection to roll back
+     * @param delayMillis how long to hold before rolling back
+     * @return a future that completes when the rollback has run
+     */
+    protected CompletableFuture<Void> rollbackAfter(Connection connection, long delayMillis) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(delayMillis);
+                connection.rollback();
+            } catch (Exception e) {
+                throw new IllegalStateException("failed to roll back the lock holder", e);
+            }
+        });
     }
 
     /**

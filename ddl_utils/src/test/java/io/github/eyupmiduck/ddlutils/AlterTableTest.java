@@ -6,14 +6,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Verifies {@code ddl_utils.alter_table}: it applies ALTER TABLE fragments to a
@@ -72,17 +69,10 @@ class AlterTableTest extends PostgresTestBase {
     @Test
     void retriesUntilTheLockIsAvailable() throws Exception {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other);
-            awaitLockHeld();
+            holdAccessShareLock(other, TARGET);
+            awaitAccessShareLockHeld(TARGET);
 
-            CompletableFuture<Void> release = CompletableFuture.runAsync(() -> {
-                try {
-                    Thread.sleep(1000);
-                    other.rollback();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            CompletableFuture<Void> release = rollbackAfter(other, 1000);
 
             alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
             release.join();
@@ -98,8 +88,8 @@ class AlterTableTest extends PostgresTestBase {
     @Test
     void givesUpAfterStatementDuration() throws Exception {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other);
-            awaitLockHeld();
+            holdAccessShareLock(other, TARGET);
+            awaitAccessShareLockHeld(TARGET);
 
             assertSqlState("55P03", () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
 
@@ -138,30 +128,4 @@ class AlterTableTest extends PostgresTestBase {
                 lockTimeout, sleepTime, duration);
     }
 
-    private void holdAccessShareLock(Connection connection) throws SQLException {
-        connection.setAutoCommit(false);
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("LOCK TABLE " + TARGET + " IN ACCESS SHARE MODE");
-        }
-    }
-
-    private void awaitLockHeld() throws InterruptedException {
-        for (int attempt = 0; attempt < 100; attempt++) {
-            Object held = dsl.fetchValue(
-                    """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM pg_locks l
-                        JOIN pg_class c ON c.oid = l.relation
-                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
-                    )
-                    """,
-                    TARGET);
-            if (Boolean.TRUE.equals(held)) {
-                return;
-            }
-            Thread.sleep(50);
-        }
-        fail("the competing session did not acquire its lock");
-    }
 }
