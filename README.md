@@ -73,8 +73,8 @@ before Liquibase runs:
 
 - `ddl_utils_owner` — owns the schema and objects; Liquibase connects as this
   role to load the schema (never as `postgres`).
-- `ddl_utils_caller` — the role privileges are granted to (e.g.
-  `SELECT, INSERT, UPDATE, DELETE` on `ddl_utils.example`).
+- `ddl_utils_caller` — the role privileges are granted to (e.g. `SELECT` on
+  the lock-settings tables and `EXECUTE` on the routines).
 - `ddl_utils_test` — granted `ddl_utils_caller`; used by the integration tests.
 
 This is also where non-standard PostgreSQL extensions would be installed.

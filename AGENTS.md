@@ -48,7 +48,7 @@ on pull requests to `main`.
 - Everything: `./mvnw verify`
 - One module: `./mvnw -pl ddl_utils -am verify` (`-am` is required — reactor
   deps are not installed)
-- One test: `./mvnw -pl ddl_utils -am test -Dtest=ExampleTableTest`
+- One test: `./mvnw -pl ddl_utils -am test -Dtest=TableLockSettingsTest`
 - Lint SQL only: `.venv/bin/sqlfluff lint ddl_utils/src/main/resources/db/changelog`
 - Auto-fix SQL style: `scripts/sqlfluff-fix.sh` (uses the repo's `.venv`)
 
