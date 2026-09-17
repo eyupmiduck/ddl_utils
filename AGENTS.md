@@ -32,9 +32,11 @@ on pull requests to `main`.
       changeset that loads every routine, one file per routine under
       `changes/functions/<schema>/` and `changes/procedures/<schema>/` (rollback
       bodies under `changes/functions-rollback/<schema>/`). The `ddl_utils`
-      schema holds the lock-settings tables/accessors and the shared domains;
-      `ddl_utils_lib` holds the generic DDL helpers (`alter_table`,
-      `add_column`, `add_columns`).
+      schema holds the lock-settings tables/accessors, the shared domains, and
+      the lock-aware `add_column`/`add_columns` wrappers that resolve their
+      settings through `get_lock_settings`; `ddl_utils_lib` holds the generic
+      DDL helpers (`alter_table`, `add_column`, `add_columns`) that take the
+      settings explicitly.
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
       `testcontainers-jooq-codegen-maven-plugin`, which starts a real

@@ -1,3 +1,35 @@
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    text,
+    ddl_utils.non_null_boolean
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    text,
+    ddl_utils.non_null_boolean
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_text_array,
+    ddl_utils.non_empty_non_null_boolean_array
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_text_array,
+    ddl_utils.non_empty_non_null_boolean_array
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.clear_table_lock_settings(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
