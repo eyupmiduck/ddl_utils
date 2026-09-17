@@ -1,6 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.Routines;
+import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 

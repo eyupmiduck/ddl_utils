@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION ddl_utils.add_columns(
+CREATE OR REPLACE FUNCTION ddl_utils_lib.add_columns(
     i_schema_name ddl_utils.non_null_text,
     i_table_name ddl_utils.non_null_text,
     i_column_names ddl_utils.non_empty_non_null_text_array,
@@ -23,7 +23,7 @@ BEGIN
         OR pg_catalog.cardinality(i_default_values) <> l_count
         OR pg_catalog.cardinality(i_nullable) <> l_count THEN
         RAISE EXCEPTION
-            'ddl_utils.add_columns: column arrays must have the same length (columns=%, types=%, defaults=%, nullable=%)',
+            'ddl_utils_lib.add_columns: column arrays must have the same length (columns=%, types=%, defaults=%, nullable=%)',
             l_count,
             pg_catalog.cardinality(i_column_types),
             pg_catalog.cardinality(i_default_values),
@@ -47,7 +47,7 @@ BEGIN
         IF i_default_values[l_index] IS NOT NULL THEN
             IF pg_catalog.btrim(i_default_values[l_index]) = '' THEN
                 RAISE EXCEPTION
-                    'ddl_utils.add_columns: default value for column % is blank',
+                    'ddl_utils_lib.add_columns: default value for column % is blank',
                     i_column_names[l_index]
                     USING ERRCODE = '22023';
             END IF;
@@ -59,7 +59,7 @@ BEGIN
         END IF;
     END LOOP;
 
-    PERFORM ddl_utils.alter_table(
+    PERFORM ddl_utils_lib.alter_table(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,
         i_alter_table_fragment => l_fragment,

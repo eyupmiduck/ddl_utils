@@ -1,6 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.Routines;
+import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verifies {@code ddl_utils.add_column}: it builds an ADD COLUMN fragment and
- * applies it through {@code ddl_utils.alter_table}, honouring the nullable flag
+ * Verifies {@code ddl_utils_lib.add_column}: it builds an ADD COLUMN fragment and
+ * applies it through {@code ddl_utils_lib.alter_table}, honouring the nullable flag
  * and an optional default expression.
  */
 class AddColumnTest extends PostgresTestBase {
@@ -65,7 +65,7 @@ class AddColumnTest extends PostgresTestBase {
 
     /**
      * Rejects a blank default expression, delegated to
-     * {@code ddl_utils.add_columns}, with an invalid-parameter error.
+     * {@code ddl_utils_lib.add_columns}, with an invalid-parameter error.
      */
     @Test
     void rejectsBlankDefault() {

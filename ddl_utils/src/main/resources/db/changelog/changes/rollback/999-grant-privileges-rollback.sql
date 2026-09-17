@@ -72,7 +72,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.add_columns(
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_columns(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_empty_non_null_text_array,
@@ -83,7 +83,7 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.add_columns(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.add_columns(
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_columns(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_empty_non_null_text_array,
@@ -94,7 +94,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_columns(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -105,7 +105,7 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -116,7 +116,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.alter_table(
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.alter_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -124,7 +124,7 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.alter_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.alter_table(
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.alter_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -142,4 +142,5 @@ REVOKE USAGE ON DOMAIN ddl_utils.non_negative_integer FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.table_lock_settings FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.schema_lock_settings FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.database_lock_settings FROM ddl_utils_caller;
+REVOKE USAGE ON SCHEMA ddl_utils_lib FROM ddl_utils_caller;
 REVOKE USAGE ON SCHEMA ddl_utils FROM ddl_utils_caller;

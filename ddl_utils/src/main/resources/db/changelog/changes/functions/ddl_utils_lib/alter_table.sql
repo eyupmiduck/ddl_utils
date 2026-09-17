@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION ddl_utils.alter_table(
+CREATE OR REPLACE FUNCTION ddl_utils_lib.alter_table(
     i_schema_name ddl_utils.non_null_text,
     i_table_name ddl_utils.non_null_text,
     i_alter_table_fragment ddl_utils.non_null_text,
@@ -16,7 +16,7 @@ DECLARE
     l_started_at timestamptz;
 BEGIN
     IF pg_catalog.btrim(i_alter_table_fragment) = '' THEN
-        RAISE EXCEPTION 'ddl_utils.alter_table: the alter table fragment must not be blank'
+        RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment must not be blank'
             USING ERRCODE = '22023';
     END IF;
 
@@ -28,7 +28,7 @@ BEGIN
         OR i_alter_table_fragment LIKE '%--%'
         OR i_alter_table_fragment LIKE '%/*%'
         OR i_alter_table_fragment LIKE '%*/%' THEN
-        RAISE EXCEPTION 'ddl_utils.alter_table: the alter table fragment contains a statement separator or comment'
+        RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment contains a statement separator or comment'
             USING ERRCODE = '22023';
     END IF;
 
@@ -60,7 +60,7 @@ BEGIN
                 IF pg_catalog.clock_timestamp() - l_started_at
                     >= i_statement_duration * interval '1 millisecond' THEN
                     RAISE EXCEPTION
-                        'ddl_utils.alter_table: could not acquire a lock on %.% within % ms',
+                        'ddl_utils_lib.alter_table: could not acquire a lock on %.% within % ms',
                         i_schema_name, i_table_name, i_statement_duration
                         USING ERRCODE = '55P03';
                 END IF;
