@@ -26,8 +26,11 @@ on pull requests to `main`.
   `io.github.eyupmiduck.ddlutils`.
     - Liquibase changelogs: `src/main/resources/db/changelog/`
       (`db.changelog-master.xml` includes `changes/changes.xml`, which holds
-      all changesets; forward SQL lives in `changes/sql_changes/`, rollback
-      SQL in `changes/rollback/`).
+      the schema/table changesets; forward SQL lives in
+      `changes/sql_changes/`, rollback SQL in `changes/rollback/`).
+      `changes/functions.xml` and `changes/procedures.xml` each hold one
+      changeset that loads every routine, one file per routine in
+      `changes/functions/` and `changes/procedures/`.
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
       `testcontainers-jooq-codegen-maven-plugin`, which starts a real
@@ -75,6 +78,43 @@ on pull requests to `main`.
 - Avoid operations that unnecessarily require long ACCESS EXCLUSIVE locks.
 - Do not assume small tables.
 
+## PL/pgSQL
+
+- **Prefer stored functions over stored procedures.** Functions cannot
+  `COMMIT`/`ROLLBACK` or manage transactions, so transaction control can never
+  leak into code that must run inside the caller's transaction.
+- Prefix input arguments with `i_`, output arguments with `o_`, and local
+  variables with `l_`. Use `snake_case` for object names, arguments, and
+  variables.
+- One routine per `.sql` file: functions in
+  `ddl_utils/src/main/resources/db/changelog/changes/functions/<name>.sql`,
+  procedures in `.../changes/procedures/<name>.sql`, named `snake_case`
+  without an `NNN-` prefix. `changes/functions.xml` and
+  `changes/procedures.xml` each contain a single changeset with one
+  `createProcedure` per routine; both are included from
+  `changes/changes.xml`.
+- Load a routine with the `createProcedure` change type and an external body:
+  `<createProcedure path="functions/<name>.sql" relativeToChangelogFile="true"/>`.
+  Liquibase has no `createFunction` change type, so functions use
+  `createProcedure` too; the `path` attribute keeps SQL out of the XML.
+- Type routine arguments with the `ddl_utils` domains (for example
+  `non_null_text`, `non_negative_integer`) so null or invalid inputs fail
+  fast with a check-constraint violation.
+- Use `SECURITY INVOKER` (the default). A routine must never require callers to
+  hold privileges beyond what they would need to run its SQL directly: if a
+  caller could run the statement itself, calling the routine must just work.
+  Use `SECURITY DEFINER` only when a caller genuinely must perform an operation
+  it lacks privileges for, and then pin a safe `search_path` and grant
+  `EXECUTE` explicitly (revoking it from `PUBLIC`).
+- Never build dynamic SQL by concatenating values. Quote identifiers with
+  `format('... %I ...', ...)` and literals with `%L`, and reject input that
+  cannot be safely parameterized (for example an `ALTER TABLE` fragment with
+  multiple statements or comments).
+- Schema-qualify objects or set `search_path` explicitly so a routine behaves
+  the same regardless of the caller's `search_path`.
+- Routines run inside the caller's transaction: use `SET LOCAL` for
+  transaction-scoped settings and never assume state survives a rollback.
+
 ## Liquibase
 
 - Database schema changes must be implemented through Liquibase.
@@ -84,7 +124,9 @@ on pull requests to `main`.
   `<rollback>`). Add each changeset as a `<changeSet id="NNN-description">`
   entry in `ddl_utils/src/main/resources/db/changelog/changes/changes.xml`,
   with forward SQL in `changes/sql_changes/NNN-description.sql` and rollback
-  SQL in `changes/rollback/NNN-description-rollback.sql`.
+  SQL in `changes/rollback/NNN-description-rollback.sql`. Stored routines are
+  the exception: they use the `createProcedure` change type with a `path` to a
+  per-routine `.sql` file (see the PL/pgSQL section).
 - Prefer changes that are safe to deploy against a live database.
 - Consider rollback and idempotency where appropriate.
 - Do not modify an already-deployed changeset unless explicitly instructed.
