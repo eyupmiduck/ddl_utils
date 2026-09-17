@@ -158,6 +158,18 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Opens a connection to this test class's private database as the schema
+     * owner, for tests that must change data the caller role cannot. The
+     * caller is responsible for closing it.
+     *
+     * @return a new owner connection to the private test database
+     * @throws SQLException if the connection cannot be opened
+     */
+    protected Connection openOwnerConnection() throws SQLException {
+        return openConnection(databaseName, OWNER_USER, OWNER_PASSWORD);
+    }
+
+    /**
      * Holds an ACCESS SHARE lock on a table on a second connection, which
      * conflicts with the ACCESS EXCLUSIVE lock an {@code ALTER TABLE} needs.
      * The caller owns the connection and must close it to release the lock.
