@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-schema" author="ddl_utils">
+        <sqlFile path="sql_changes/001-create-schema.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/001-create-schema-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-example-table" author="ddl_utils">
+        <sqlFile path="sql_changes/002-create-example-table.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/002-create-example-table-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="004-create-domains" author="ddl_utils">
+        <sqlFile path="sql_changes/004-create-domains.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/004-create-domains-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <!-- A single, re-runnable changeset for all caller grants. runOnChange
+         makes Liquibase re-apply it whenever this SQL changes, so new grants
+         reach existing databases. Keep the statements idempotent. -->
+    <changeSet id="999-grant-privileges" author="ddl_utils" runOnChange="true">
+        <sqlFile path="sql_changes/999-grant-privileges.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/999-grant-privileges-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

@@ -18,7 +18,7 @@
 
 - [ ] `./mvnw verify` passes locally (Docker is running for Testcontainers and jOOQ codegen)
 - [ ] SQLFluff passes; I ran `scripts/sqlfluff-fix.sh` if it did not
-- [ ] Schema changes are Liquibase changesets named `NNN-description.xml`, with forward SQL in `sql_changes/` and
+- [ ] Schema changes are Liquibase changesets added to `changes/changes.xml`, with forward SQL in `sql_changes/` and
   rollback SQL in `rollback/`
 - [ ] Tests are added or updated, have Javadoc, and database tests extend `PostgresTestBase`
 - [ ] No secrets, credentials, or generated build output are included
