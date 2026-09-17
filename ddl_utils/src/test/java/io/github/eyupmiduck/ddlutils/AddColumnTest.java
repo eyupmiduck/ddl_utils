@@ -64,6 +64,15 @@ class AddColumnTest extends PostgresTestBase {
     }
 
     /**
+     * Rejects a blank default expression, delegated to
+     * {@code ddl_utils.add_columns}, with an invalid-parameter error.
+     */
+    @Test
+    void rejectsBlankDefault() {
+        assertSqlState("22023", () -> addColumn("note", "text", "   ", true, 100, 100, 1000));
+    }
+
+    /**
      * Rejects null for each mandatory text argument through its domain.
      */
     @Test

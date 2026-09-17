@@ -139,11 +139,18 @@
                                              arrays: it generates a Domain<String[]>
                                              backed by SQLDataType.OTHER, which does
                                              not compile. Exclude the array domains;
-                                             they are exercised through plain SQL in
-                                             tests. -->
+                                             routines that take them fall back to
+                                             Object parameters. -->
                                         <excludes>.*non_empty.*array.*</excludes>
                                         <inputSchema>ddl_utils</inputSchema>
                                     </database>
+                                    <!-- Routines taking the array domains use
+                                         Object parameters (unknown types); don't
+                                         mark them @Deprecated, which would fail
+                                         the -Werror build when tests call them. -->
+                                    <generate>
+                                        <deprecationOnUnknownTypes>false</deprecationOnUnknownTypes>
+                                    </generate>
                                     <target>
                                         <packageName>io.github.eyupmiduck.ddlutils.jooq</packageName>
                                         <directory>target/generated-sources/jooq</directory>
