@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Verifies {@code ddl_utils.lock_settings} and its accessors: the single row is
+ * Verifies {@code ddl_utils.database_lock_settings} and its accessors: the single row is
  * readable by the caller, {@code get_lock_settings} returns it, and
  * {@code set_lock_settings} updates it (SECURITY DEFINER, since the caller has
  * only SELECT on the table).
@@ -52,7 +52,7 @@ class LockSettingsTest extends PostgresTestBase {
         assertNotNull(tableRow());
 
         assertSqlState("42501",
-                () -> dsl.execute("UPDATE ddl_utils.lock_settings SET sleep_time = 1 WHERE id = 1"));
+                () -> dsl.execute("UPDATE ddl_utils.database_lock_settings SET sleep_time = 1 WHERE id = 1"));
     }
 
     /**
@@ -98,7 +98,7 @@ class LockSettingsTest extends PostgresTestBase {
     private Record tableRow() {
         return dsl.fetchOne("""
                 SELECT ddl_lock_timeout, sleep_time, statement_duration
-                FROM ddl_utils.lock_settings
+                FROM ddl_utils.database_lock_settings
                 WHERE id = 1
                 """);
     }

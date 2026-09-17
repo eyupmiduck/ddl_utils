@@ -12,7 +12,7 @@ $$
 BEGIN
     RETURN QUERY
         SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
-        FROM ddl_utils.lock_settings AS ls
+        FROM ddl_utils.database_lock_settings AS ls
         WHERE ls.id = 1;
 END;
 $$;

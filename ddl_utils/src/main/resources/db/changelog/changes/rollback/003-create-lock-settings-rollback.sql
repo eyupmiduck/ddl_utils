@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS ddl_utils.lock_settings;
+DROP TABLE IF EXISTS ddl_utils.database_lock_settings;

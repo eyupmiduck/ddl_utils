@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION ddl_utils.set_lock_settings(
 AS
 $$
 BEGIN
-    UPDATE ddl_utils.lock_settings
+    UPDATE ddl_utils.database_lock_settings
     SET ddl_lock_timeout = i_ddl_lock_timeout,
         sleep_time = i_sleep_time,
         statement_duration = i_statement_duration
