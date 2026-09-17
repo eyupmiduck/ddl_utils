@@ -6,9 +6,9 @@ CREATE OR REPLACE FUNCTION ddl_utils.alter_table(
     i_sleep_time ddl_utils.non_negative_integer,
     i_statement_duration ddl_utils.non_negative_integer
 )
-RETURNS void
-LANGUAGE plpgsql
-SECURITY INVOKER
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY INVOKER
 AS
 $$
 DECLARE
@@ -33,11 +33,11 @@ BEGIN
     END IF;
 
     l_statement := pg_catalog.format(
-        'ALTER TABLE %I.%I %s',
-        i_schema_name,
-        i_table_name,
-        pg_catalog.btrim(i_alter_table_fragment)
-    );
+            'ALTER TABLE %I.%I %s',
+            i_schema_name,
+            i_table_name,
+            pg_catalog.btrim(i_alter_table_fragment)
+                   );
     l_started_at := pg_catalog.clock_timestamp();
 
     LOOP
@@ -47,22 +47,23 @@ BEGIN
         -- subtransaction.) In PostgreSQL a lock_timeout of 0 disables the
         -- timeout, in which case the retry and duration logic cannot apply.
         PERFORM pg_catalog.set_config(
-            'lock_timeout',
-            pg_catalog.format('%sms', i_ddl_lock_timeout),
-            true
-        );
+                'lock_timeout',
+                pg_catalog.format('%sms', i_ddl_lock_timeout),
+                true
+                );
 
         BEGIN
             EXECUTE l_statement;
             RETURN;
-        EXCEPTION WHEN lock_not_available THEN
-            IF pg_catalog.clock_timestamp() - l_started_at
+        EXCEPTION
+            WHEN lock_not_available THEN
+                IF pg_catalog.clock_timestamp() - l_started_at
                     >= i_statement_duration * interval '1 millisecond' THEN
-                RAISE EXCEPTION
-                    'ddl_utils.alter_table: could not acquire a lock on %.% within % ms',
-                    i_schema_name, i_table_name, i_statement_duration
-                    USING ERRCODE = '55P03';
-            END IF;
+                    RAISE EXCEPTION
+                        'ddl_utils.alter_table: could not acquire a lock on %.% within % ms',
+                        i_schema_name, i_table_name, i_statement_duration
+                        USING ERRCODE = '55P03';
+                END IF;
         END;
 
         PERFORM pg_catalog.pg_sleep(i_sleep_time::double precision / 1000);
