@@ -5,11 +5,14 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.SQLDialect;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.function.Executable;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -17,6 +20,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Base class for tests that need a migrated PostgreSQL database.
@@ -63,6 +70,12 @@ abstract class PostgresTestBase {
      * jOOQ context connected to this test class's private database.
      */
     protected DSLContext dsl;
+
+    /**
+     * The schema tests create their own tables in; the test role has CREATE on
+     * it.
+     */
+    protected static final String PUBLIC_SCHEMA = "public";
 
     private String databaseName;
     private Connection connection;
@@ -156,6 +169,96 @@ abstract class PostgresTestBase {
             }
         }
         return null;
+    }
+
+    /**
+     * Creates a table owned by the test role, so SECURITY INVOKER routines that
+     * require ownership can operate on it.
+     *
+     * @param table   the table name
+     * @param columns the column definitions, without the surrounding
+     *                parentheses
+     */
+    protected void createTestTable(String table, String columns) {
+        dsl.execute("CREATE TABLE " + table + " (" + columns + ")");
+    }
+
+    /**
+     * Drops a table created by {@link #createTestTable}, if it exists.
+     *
+     * @param table the table name
+     */
+    protected void dropTestTable(String table) {
+        dsl.execute("DROP TABLE IF EXISTS " + table);
+    }
+
+    /**
+     * Returns the {@code information_schema.columns} row for a column, or
+     * {@code null} when the column does not exist.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the column's information_schema row, or {@code null}
+     */
+    protected Record column(String schema, String table, String column) {
+        return dsl.fetchOne(
+                """
+                SELECT *
+                FROM information_schema.columns
+                WHERE table_schema = ? AND table_name = ? AND column_name = ?
+                """,
+                schema, table, column);
+    }
+
+    /**
+     * Returns whether a column exists.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return {@code true} when the column exists
+     */
+    protected boolean hasColumn(String schema, String table, String column) {
+        return column(schema, table, column) != null;
+    }
+
+    /**
+     * Returns a single {@code information_schema.columns} attribute for a
+     * column, failing when the column does not exist.
+     *
+     * @param schema    the table schema
+     * @param table     the table name
+     * @param column    the column name
+     * @param attribute the information_schema column to read
+     * @return the attribute value
+     */
+    protected String columnAttribute(String schema, String table, String column, String attribute) {
+        Record record = column(schema, table, column);
+        assertNotNull(record, () -> "column not found: " + schema + "." + table + "." + column);
+        return record.get(attribute, String.class);
+    }
+
+    /**
+     * Asserts that a call fails with the given SQLSTATE.
+     *
+     * @param expectedSqlState the expected SQLSTATE
+     * @param call             the call under test
+     */
+    protected static void assertSqlState(String expectedSqlState, Executable call) {
+        DataAccessException exception = assertThrows(DataAccessException.class, call);
+        assertEquals(expectedSqlState, sqlState(exception),
+                () -> "expected SQLSTATE " + expectedSqlState + " but was: " + exception.getMessage());
+    }
+
+    /**
+     * Asserts that a call fails with SQLSTATE {@code 23514}
+     * ({@code check_violation}), as a domain constraint violation does.
+     *
+     * @param call the call under test
+     */
+    protected static void assertDomainViolation(Executable call) {
+        assertSqlState("23514", call);
     }
 
     /**
