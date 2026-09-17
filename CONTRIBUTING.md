@@ -76,8 +76,8 @@ Rules:
   `<sqlFile path="..." relativeToChangelogFile="true"/>`, and the rollback with
   a `<rollback>` block pointing at the rollback file.
 - Every change needs a working rollback.
-- Keep changesets small, focused, and safe to deploy against a live database
-  (see the locking and migration guidance in `AGENTS.md`).
+- Keep changesets small, focused, and safe to deploy against a live database (see the locking and migration guidance in
+  `AGENTS.md`).
 - Do not modify an already-deployed changeset. Add a new one instead.
 - Lint changelog SQL before submitting:
 
@@ -116,8 +116,8 @@ Rules:
 ## Branches and commits
 
 - Never commit directly to `main`; work on a feature branch.
-- Keep commits focused, and write imperative, descriptive messages
-  (e.g. `Add rollback for the example table changeset`).
+- Keep commits focused, and write imperative, descriptive messages (e.g.
+  `Add rollback for the example table changeset`).
 - Do not commit generated build output (`target/`), secrets, credentials, or
   local IDE files.
 
