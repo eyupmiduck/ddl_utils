@@ -59,6 +59,7 @@ class AddColumnSettingsTest extends PostgresTestBase {
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "is_nullable"));
         assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "column_default"));
         assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "second", "is_nullable"));
     }
