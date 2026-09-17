@@ -83,6 +83,10 @@ abstract class PostgresTestBase {
             try (Connection admin = openConnection(TEMPLATE_DATABASE, POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
                 statement.execute("GRANT CREATE ON SCHEMA public TO " + OWNER_USER);
+                // The test role acts as an application caller; let it create
+                // tables it owns so SECURITY INVOKER routines that require
+                // ownership (such as ALTER TABLE) can be exercised.
+                statement.execute("GRANT CREATE ON SCHEMA public TO " + TEST_USER);
             }
             try (Connection connection = openConnection(TEMPLATE_DATABASE, OWNER_USER, OWNER_PASSWORD)) {
                 Liquibase liquibase = new Liquibase(
@@ -124,6 +128,18 @@ abstract class PostgresTestBase {
         }
         connection = openConnection(databaseName, TEST_USER, TEST_PASSWORD);
         dsl = DSL.using(connection, SQLDialect.POSTGRES);
+    }
+
+    /**
+     * Opens an additional connection to this test class's private database as
+     * the test role, for tests that need a second session (for example to hold
+     * a lock). The caller is responsible for closing it.
+     *
+     * @return a new connection to the private test database
+     * @throws SQLException if the connection cannot be opened
+     */
+    protected Connection openTestConnection() throws SQLException {
+        return openConnection(databaseName, TEST_USER, TEST_PASSWORD);
     }
 
     /**
