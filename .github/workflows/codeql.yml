@@ -1,0 +1,48 @@
+name: CodeQL
+
+# Static analysis for Java. Runs on every change to main and on a weekly
+# schedule so newly added CodeQL queries are applied to unchanged code.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "27 3 * * 1"
+
+# Superseded runs on the same ref are useless once a newer run starts.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze Java
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      # build-mode: none extracts the database from source without compiling.
+      # A full build would need Docker (Testcontainers-driven jOOQ codegen) and
+      # a GitHub Packages token; the generated jOOQ classes are not
+      # security-relevant, so skipping the build is the pragmatic trade-off.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        with:
+          languages: java-kotlin
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
+        with:
+          category: "/language:java-kotlin"
