@@ -25,6 +25,10 @@
         </rollback>
     </changeSet>
 
+    <!-- Stored routines: one changeset each, one file per routine. -->
+    <include file="functions.xml" relativeToChangelogFile="true"/>
+    <include file="procedures.xml" relativeToChangelogFile="true"/>
+
     <!-- A single, re-runnable changeset for all caller grants. runOnChange
          makes Liquibase re-apply it whenever this SQL changes, so new grants
          reach existing databases. Keep the statements idempotent. -->
