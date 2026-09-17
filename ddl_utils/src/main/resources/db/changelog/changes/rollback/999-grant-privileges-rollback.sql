@@ -5,7 +5,7 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.alter_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
-) FROM ddl_utils_caller;
+    ) FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.alter_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -13,7 +13,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.alter_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
-) TO public;
+    ) TO public;
 REVOKE USAGE ON DOMAIN ddl_utils.non_null_boolean FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_null_text FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_negative_integer FROM ddl_utils_caller;
