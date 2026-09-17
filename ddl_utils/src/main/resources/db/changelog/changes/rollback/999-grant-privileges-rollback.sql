@@ -6,6 +6,14 @@ GRANT EXECUTE ON FUNCTION ddl_utils.clear_table_lock_settings(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.get_lock_settings(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.get_lock_settings(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.set_table_lock_settings(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -52,18 +60,18 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.get_schema_lock_settings(
 GRANT EXECUTE ON FUNCTION ddl_utils.get_schema_lock_settings(
     ddl_utils.non_null_text
     ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.set_lock_settings(
+REVOKE EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.set_lock_settings(
+GRANT EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.get_lock_settings() FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.get_lock_settings() TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.add_columns(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

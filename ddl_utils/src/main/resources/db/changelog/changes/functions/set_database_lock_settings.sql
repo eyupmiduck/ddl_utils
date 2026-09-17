@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION ddl_utils.set_lock_settings(
+CREATE OR REPLACE FUNCTION ddl_utils.set_database_lock_settings(
     i_ddl_lock_timeout ddl_utils.non_negative_integer,
     i_sleep_time ddl_utils.non_negative_integer,
     i_statement_duration ddl_utils.non_negative_integer
@@ -17,7 +17,7 @@ BEGIN
     WHERE id = 1;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'ddl_utils.set_lock_settings: lock settings row (id = 1) does not exist'
+        RAISE EXCEPTION 'ddl_utils.set_database_lock_settings: lock settings row (id = 1) does not exist'
             USING ERRCODE = 'P0002';
     END IF;
 END;
