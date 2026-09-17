@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies that the Liquibase changelog creates the
- * {@code ddl_utils.non_negative_integer} and {@code ddl_utils.non_null_text}
- * domains with the expected constraints.
+ * {@code ddl_utils.non_negative_integer}, {@code ddl_utils.non_null_text}, and
+ * {@code ddl_utils.non_null_boolean} domains with the expected constraints.
  */
 class DomainTest extends PostgresTestBase {
 
@@ -76,6 +76,23 @@ class DomainTest extends PostgresTestBase {
     @Test
     void nonNullTextRejectsNull() {
         assertCheckViolation(() -> evaluate("NULL::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
+     * The boolean domain accepts true and false.
+     */
+    @Test
+    void nonNullBooleanAcceptsTrueAndFalse() {
+        assertEquals(true, evaluate("true::ddl_utils.non_null_boolean", Boolean.class));
+        assertEquals(false, evaluate("false::ddl_utils.non_null_boolean", Boolean.class));
+    }
+
+    /**
+     * The boolean domain rejects null with a check-constraint violation.
+     */
+    @Test
+    void nonNullBooleanRejectsNull() {
+        assertCheckViolation(() -> evaluate("NULL::ddl_utils.non_null_boolean", Boolean.class));
     }
 
     private <T> T evaluate(String expression, Class<T> type) {
