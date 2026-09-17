@@ -64,6 +64,15 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The text domain rejects a whitespace-only string with a
+     * check-constraint violation.
+     */
+    @Test
+    void nonNullTextRejectsBlankString() {
+        assertDomainViolation(() -> evaluate("'   '::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
      * The boolean domain accepts true and false.
      */
     @Test
