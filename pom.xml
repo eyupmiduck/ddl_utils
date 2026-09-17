@@ -99,6 +99,7 @@
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${jakarta-xml-bind.version}</version>
+                <scope>provided</scope>
             </dependency>
             <!-- Transitive via Testcontainers; override to a patched version. -->
             <dependency>

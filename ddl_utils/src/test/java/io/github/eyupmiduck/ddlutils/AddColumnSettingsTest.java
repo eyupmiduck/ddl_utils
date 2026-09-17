@@ -29,8 +29,11 @@ class AddColumnSettingsTest extends PostgresTestBase {
 
     @AfterEach
     void cleanUp() {
-        clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        dropTestTable(TARGET);
+        try {
+            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
+        } finally {
+            dropTestTable(TARGET);
+        }
     }
 
     /**

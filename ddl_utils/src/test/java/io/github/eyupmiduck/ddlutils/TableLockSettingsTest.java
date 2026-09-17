@@ -20,6 +20,7 @@ class TableLockSettingsTest extends PostgresTestBase {
     private static final String SCHEMA = "table_lock_settings_test_schema";
     private static final String TABLE = "table_lock_settings_test_table";
     private static final String CLEAR_TABLE = "table_lock_settings_clear_table";
+    private static final String KEEP_TABLE = "table_lock_settings_keep_table";
 
     /**
      * get_table_lock_settings returns no row for a table that has no settings.
@@ -67,27 +68,38 @@ class TableLockSettingsTest extends PostgresTestBase {
     }
 
     /**
-     * The caller may read the table but not modify it: UPDATE is denied with an
-     * insufficient-privilege error.
+     * The caller may read the table but not modify it: UPDATE, INSERT and
+     * DELETE are all denied with an insufficient-privilege error.
      */
     @Test
-    void callerCannotUpdateTableLockSettings() {
+    void callerCannotWriteTableLockSettings() {
         assertSqlState("42501", () -> dsl.execute(
                 "UPDATE ddl_utils.table_lock_settings SET sleep_time = 1 WHERE schema_name = 'x'"));
+        assertSqlState("42501", () -> dsl.execute("""
+                INSERT INTO ddl_utils.table_lock_settings (
+                    schema_name, table_name, ddl_lock_timeout, sleep_time, statement_duration
+                )
+                VALUES ('x', 'y', 1, 1, 1)
+                """));
+        assertSqlState("42501", () -> dsl.execute(
+                "DELETE FROM ddl_utils.table_lock_settings WHERE schema_name = 'x'"));
     }
 
     /**
-     * clear_table_lock_settings deletes the table's row, and is a no-op when
-     * there is none.
+     * clear_table_lock_settings deletes only the target table's row, leaves
+     * other rows alone, and is a no-op when there is none.
      */
     @Test
     void clearTableLockSettingsDeletesRow() {
+        setTableLockSettings(SCHEMA, KEEP_TABLE, 200, 300, 40);
         setTableLockSettings(SCHEMA, CLEAR_TABLE, 111, 222, 33);
-        assertNotNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
 
         clearTableLockSettings(SCHEMA, CLEAR_TABLE);
-        assertNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
 
+        assertNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
+        assertNotNull(getTableLockSettings(SCHEMA, KEEP_TABLE));
+
+        clearTableLockSettings(SCHEMA, KEEP_TABLE);
         assertDoesNotThrow(() -> clearTableLockSettings(SCHEMA, CLEAR_TABLE));
     }
 

@@ -12,7 +12,22 @@ set -eu
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 base="${1:?base image required, e.g. postgres:17-alpine}"
-tag="ddl-utils-${base}"
+
+# Derive a valid tag from the base reference: drop any registry/namespace and
+# digest, then prefix the repository name with ddl-utils-.
+base_name="${base##*/}"
+base_name="${base_name%%@*}"
+case "$base_name" in
+    *:*)
+        name="${base_name%:*}"
+        version="${base_name##*:}"
+        ;;
+    *)
+        name="$base_name"
+        version="latest"
+        ;;
+esac
+tag="ddl-utils-${name}:${version}"
 
 docker build -t "$tag" --build-arg BASE_IMAGE="$base" "$repo_root/docker/postgres"
 echo "Built $tag"

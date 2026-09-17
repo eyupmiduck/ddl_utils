@@ -12,10 +12,18 @@ set -eu
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 sql_dir="$repo_root/ddl_utils/src/main/resources/db/changelog"
 
+if [ ! -d "$sql_dir" ]; then
+    echo "SQL changelog directory not found: $sql_dir" >&2
+    exit 1
+fi
+
 if [ -x "$repo_root/.venv/bin/sqlfluff" ]; then
     sqlfluff="$repo_root/.venv/bin/sqlfluff"
-else
+elif command -v sqlfluff >/dev/null 2>&1; then
     sqlfluff="sqlfluff"
+else
+    echo "sqlfluff not found: create the repo .venv or install sqlfluff on PATH" >&2
+    exit 1
 fi
 
 "$sqlfluff" fix "$sql_dir"

@@ -76,9 +76,11 @@ class AlterTableTest extends PostgresTestBase {
             awaitAccessShareLockHeld(TARGET);
 
             CompletableFuture<Void> release = rollbackAfter(other, 1000);
-
-            alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
-            release.join();
+            try {
+                alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
+            } finally {
+                release.join();
+            }
         }
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "retried"));

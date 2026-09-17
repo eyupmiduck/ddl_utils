@@ -50,6 +50,8 @@ BEGIN
         -- (Setting it inside the block would be rolled back with the
         -- subtransaction.) In PostgreSQL a lock_timeout of 0 disables the
         -- timeout, in which case the retry and duration logic cannot apply.
+        -- Zero is accepted as a deliberate caller choice (a sleep_time of 0
+        -- busy-waits) rather than rejected.
         PERFORM pg_catalog.set_config(
                 'lock_timeout',
                 pg_catalog.format('%sms', i_ddl_lock_timeout),

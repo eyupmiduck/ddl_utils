@@ -136,7 +136,8 @@ abstract class PostgresTestBase {
      */
     @BeforeAll
     void createTestDatabase() throws Exception {
-        databaseName = "test_" + getClass().getSimpleName().toLowerCase();
+        databaseName = "test_" + getClass().getSimpleName().toLowerCase()
+                + "_" + Integer.toHexString(getClass().getName().hashCode());
         try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement statement = admin.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName + " TEMPLATE " + TEMPLATE_DATABASE);
@@ -201,7 +202,11 @@ abstract class PostgresTestBase {
                         SELECT 1
                         FROM pg_locks l
                         JOIN pg_class c ON c.oid = l.relation
-                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        WHERE c.relname = ?
+                            AND n.nspname = current_schema()
+                            AND l.mode = 'AccessShareLock'
+                            AND l.granted
                     )
                     """,
                     table);
@@ -347,9 +352,11 @@ abstract class PostgresTestBase {
         if (connection != null) {
             connection.close();
         }
-        try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
-             Statement statement = admin.createStatement()) {
-            statement.execute("DROP DATABASE " + databaseName);
+        if (databaseName != null) {
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("DROP DATABASE " + databaseName + " WITH (FORCE)");
+            }
         }
     }
 }
