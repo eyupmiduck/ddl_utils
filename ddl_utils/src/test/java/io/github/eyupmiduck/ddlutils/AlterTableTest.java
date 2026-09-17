@@ -1,6 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.Routines;
+import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verifies {@code ddl_utils.alter_table}: it applies ALTER TABLE fragments to a
+ * Verifies {@code ddl_utils_lib.alter_table}: it applies ALTER TABLE fragments to a
  * caller-owned table, retries while another session holds a conflicting lock,
  * gives up once {@code i_statement_duration} is exceeded, and rejects null or
  * invalid inputs through the ddl_utils domains.

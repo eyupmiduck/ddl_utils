@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION ddl_utils.add_column(
+CREATE OR REPLACE FUNCTION ddl_utils_lib.add_column(
     i_schema_name ddl_utils.non_null_text,
     i_table_name ddl_utils.non_null_text,
     i_column_name ddl_utils.non_null_text,
@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION ddl_utils.add_column(
 AS
 $$
 BEGIN
-    PERFORM ddl_utils.add_columns(
+    PERFORM ddl_utils_lib.add_columns(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,
         i_column_names => ARRAY[i_column_name],

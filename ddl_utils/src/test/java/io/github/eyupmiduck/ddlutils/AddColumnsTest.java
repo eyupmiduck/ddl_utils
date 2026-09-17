@@ -1,6 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.Routines;
+import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verifies {@code ddl_utils.add_columns}: it builds a single ADD COLUMN
+ * Verifies {@code ddl_utils_lib.add_columns}: it builds a single ADD COLUMN
  * fragment from parallel arrays and applies it through
- * {@code ddl_utils.alter_table}, validating that the arrays have equal lengths.
+ * {@code ddl_utils_lib.alter_table}, validating that the arrays have equal lengths.
  */
 class AddColumnsTest extends PostgresTestBase {
 

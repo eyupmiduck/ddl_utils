@@ -11,6 +11,13 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="002-create-lib-schema" author="ddl_utils">
+        <sqlFile path="sql_changes/002-create-lib-schema.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/002-create-lib-schema-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="003-create-lock-settings" author="ddl_utils">
         <sqlFile path="sql_changes/003-create-lock-settings.sql" relativeToChangelogFile="true"/>
         <rollback>

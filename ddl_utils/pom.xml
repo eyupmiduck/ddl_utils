@@ -142,7 +142,19 @@
                                              routines that take them fall back to
                                              Object parameters. -->
                                         <excludes>.*non_empty.*array.*</excludes>
-                                        <inputSchema>ddl_utils</inputSchema>
+                                        <!-- jOOQ cannot combine several
+                                             schemata in one <inputSchema>;
+                                             each schema maps to its own
+                                             subpackage (ddl_utils,
+                                             ddl_utils_lib). -->
+                                        <schemata>
+                                            <schema>
+                                                <inputSchema>ddl_utils</inputSchema>
+                                            </schema>
+                                            <schema>
+                                                <inputSchema>ddl_utils_lib</inputSchema>
+                                            </schema>
+                                        </schemata>
                                     </database>
                                     <!-- Routines taking the array domains use
                                          Object parameters (unknown types); don't
