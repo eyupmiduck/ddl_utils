@@ -129,11 +129,12 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.16.0</version>
                     <configuration>
-                        <!-- -Werror is intentionally not set: a new JDK or a
-                             dependency upgrade can introduce a warning that
-                             would then break unrelated builds. -->
+                        <!-- Fail the build on any javac lint warning. The
+                             JAXB/JOOQ classfile warnings are resolved by the
+                             provided jakarta.xml.bind-api dependency. -->
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
+                            <arg>-Werror</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
