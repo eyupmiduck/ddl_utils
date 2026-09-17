@@ -119,9 +119,10 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.16.0</version>
                     <configuration>
-                        <!-- -Werror is intentionally not set: it was evaluated
-                             against the generated jOOQ sources and any warning
-                             there would break an otherwise valid build. -->
+                        <!-- -Werror is intentionally not set: -Xlint:classfile
+                             reports an unresolved optional JAXB annotation
+                             (jakarta.xml.bind, referenced through jOOQ) on the
+                             test classpath, which would fail the build. -->
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                         </compilerArgs>
