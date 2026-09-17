@@ -5,8 +5,6 @@ import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import java.sql.SQLException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -25,15 +23,6 @@ class DomainTest extends PostgresTestBase {
         DataAccessException exception = assertThrows(DataAccessException.class, query);
         assertEquals("23514", sqlState(exception),
                 () -> "expected a check-constraint violation but was: " + exception.getMessage());
-    }
-
-    private static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
     }
 
     /**

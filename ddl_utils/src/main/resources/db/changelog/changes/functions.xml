@@ -10,7 +10,9 @@
          changeset when a function body changes, replacing the routines. -->
     <changeSet id="005-create-functions" author="ddl_utils" runOnChange="true">
         <createProcedure path="functions/alter_table.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/add_column.sql" relativeToChangelogFile="true"/>
         <rollback>
+            <sqlFile path="functions/add_column-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions/alter_table-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>

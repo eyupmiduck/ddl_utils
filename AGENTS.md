@@ -86,6 +86,10 @@ on pull requests to `main`.
 - Prefix input arguments with `i_`, output arguments with `o_`, and local
   variables with `l_`. Use `snake_case` for object names, arguments, and
   variables.
+- When one routine calls another, pass arguments **by name**
+  (`ddl_utils.alter_table(i_schema_name => ..., ...)`) rather than
+  positionally, so reordering or inserting a parameter cannot silently rebind
+  values.
 - One routine per `.sql` file: functions in
   `ddl_utils/src/main/resources/db/changelog/changes/functions/<name>.sql`,
   procedures in `.../changes/procedures/<name>.sql`, named `snake_case`

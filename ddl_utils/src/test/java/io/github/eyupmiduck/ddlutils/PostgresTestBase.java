@@ -143,6 +143,22 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Returns the SQLSTATE of the first {@link SQLException} in a throwable's
+     * cause chain, or {@code null} when there is none.
+     *
+     * @param throwable the throwable to inspect
+     * @return the SQLSTATE, or {@code null}
+     */
+    protected static String sqlState(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                return sqlException.getSQLState();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Closes the connection and drops this test class's private database.
      */
     @AfterAll

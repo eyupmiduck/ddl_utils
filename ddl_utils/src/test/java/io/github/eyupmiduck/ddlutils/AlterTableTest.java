@@ -34,15 +34,6 @@ class AlterTableTest extends PostgresTestBase {
                 () -> "expected a domain check violation but was: " + exception.getMessage());
     }
 
-    private static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
-    }
-
     @BeforeEach
     void createTargetTable() {
         dsl.execute("CREATE TABLE " + TARGET + " (id int)");
