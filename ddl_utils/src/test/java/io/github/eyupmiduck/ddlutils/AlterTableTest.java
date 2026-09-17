@@ -1,18 +1,16 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.Routines;
-import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies {@code ddl_utils.alter_table}: it applies ALTER TABLE fragments to a
@@ -25,32 +23,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AlterTableTest extends PostgresTestBase {
 
-    private static final String SCHEMA = "public";
     private static final String TARGET = "alter_table_target";
-
-    private static void assertDomainViolation(Executable call) {
-        DataAccessException exception = assertThrows(DataAccessException.class, call);
-        assertEquals("23514", sqlState(exception),
-                () -> "expected a domain check violation but was: " + exception.getMessage());
-    }
-
-    private static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
-    }
 
     @BeforeEach
     void createTargetTable() {
-        dsl.execute("CREATE TABLE " + TARGET + " (id int)");
+        createTestTable(TARGET, "id int");
     }
 
     @AfterEach
     void dropTargetTable() {
-        dsl.execute("DROP TABLE IF EXISTS " + TARGET);
+        dropTestTable(TARGET);
     }
 
     /**
@@ -59,11 +41,11 @@ class AlterTableTest extends PostgresTestBase {
      */
     @Test
     void appliesAlterTableFragments() {
-        alterTable(SCHEMA, TARGET, "ADD COLUMN added int", 1000, 10, 5000);
-        assertTrue(hasColumn("added"));
+        alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN added int", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "added"));
 
-        alterTable(SCHEMA, TARGET, "DROP COLUMN added", 1000, 10, 5000);
-        assertFalse(hasColumn("added"));
+        alterTable(PUBLIC_SCHEMA, TARGET, "DROP COLUMN added", 1000, 10, 5000);
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "added"));
     }
 
     /**
@@ -72,11 +54,10 @@ class AlterTableTest extends PostgresTestBase {
      */
     @Test
     void rejectsFragmentsWithMultipleStatements() {
-        DataAccessException exception = assertThrows(DataAccessException.class,
-                () -> alterTable(SCHEMA, TARGET, "ADD COLUMN injected int; DROP TABLE " + TARGET, 1000, 10, 5000));
+        assertSqlState("22023", () -> alterTable(
+                PUBLIC_SCHEMA, TARGET, "ADD COLUMN injected int; DROP TABLE " + TARGET, 1000, 10, 5000));
 
-        assertEquals("22023", sqlState(exception));
-        assertFalse(hasColumn("injected"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "injected"));
         assertDoesNotThrow(() -> dsl.fetch("SELECT 1 FROM " + TARGET));
     }
 
@@ -88,23 +69,16 @@ class AlterTableTest extends PostgresTestBase {
     @Test
     void retriesUntilTheLockIsAvailable() throws Exception {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other);
-            awaitLockHeld();
+            holdAccessShareLock(other, TARGET);
+            awaitAccessShareLockHeld(TARGET);
 
-            CompletableFuture<Void> release = CompletableFuture.runAsync(() -> {
-                try {
-                    Thread.sleep(1000);
-                    other.rollback();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            CompletableFuture<Void> release = rollbackAfter(other, 1000);
 
-            alterTable(SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
+            alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
             release.join();
         }
 
-        assertTrue(hasColumn("retried"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "retried"));
     }
 
     /**
@@ -114,14 +88,12 @@ class AlterTableTest extends PostgresTestBase {
     @Test
     void givesUpAfterStatementDuration() throws Exception {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other);
-            awaitLockHeld();
+            holdAccessShareLock(other, TARGET);
+            awaitAccessShareLockHeld(TARGET);
 
-            DataAccessException exception = assertThrows(DataAccessException.class,
-                    () -> alterTable(SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
+            assertSqlState("55P03", () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
 
-            assertEquals("55P03", sqlState(exception));
-            assertFalse(hasColumn("never"));
+            assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "never"));
         }
     }
 
@@ -132,8 +104,8 @@ class AlterTableTest extends PostgresTestBase {
     @Test
     void rejectsNullTextArguments() {
         assertDomainViolation(() -> alterTable(null, TARGET, "ADD COLUMN x int", 100, 100, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, null, "ADD COLUMN x int", 100, 100, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, null, 100, 100, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, null, "ADD COLUMN x int", 100, 100, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, null, 100, 100, 1000));
     }
 
     /**
@@ -142,12 +114,12 @@ class AlterTableTest extends PostgresTestBase {
      */
     @Test
     void rejectsNullAndNegativeIntegerArguments() {
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", null, 100, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", 100, null, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", 100, 100, null));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", -1, 100, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", 100, -1, 1000));
-        assertDomainViolation(() -> alterTable(SCHEMA, TARGET, "ADD COLUMN x int", 100, 100, -1));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", null, 100, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", 100, null, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", 100, 100, null));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", -1, 100, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", 100, -1, 1000));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN x int", 100, 100, -1));
     }
 
     private void alterTable(String schema, String table, String fragment,
@@ -156,40 +128,4 @@ class AlterTableTest extends PostgresTestBase {
                 lockTimeout, sleepTime, duration);
     }
 
-    private boolean hasColumn(String column) {
-        return !dsl.fetch(
-                """
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_schema = ? AND table_name = ? AND column_name = ?
-                        """,
-                SCHEMA, TARGET, column).isEmpty();
-    }
-
-    private void holdAccessShareLock(Connection connection) throws SQLException {
-        connection.setAutoCommit(false);
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("LOCK TABLE " + TARGET + " IN ACCESS SHARE MODE");
-        }
-    }
-
-    private void awaitLockHeld() throws InterruptedException {
-        for (int attempt = 0; attempt < 100; attempt++) {
-            Object held = dsl.fetchValue(
-                    """
-                            SELECT EXISTS (
-                                SELECT 1
-                                FROM pg_locks l
-                                JOIN pg_class c ON c.oid = l.relation
-                                WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
-                            )
-                            """,
-                    TARGET);
-            if (Boolean.TRUE.equals(held)) {
-                return;
-            }
-            Thread.sleep(50);
-        }
-        fail("the competing session did not acquire its lock");
-    }
 }

@@ -5,11 +5,14 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.SQLDialect;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.function.Executable;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -17,6 +20,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.CompletableFuture;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Base class for tests that need a migrated PostgreSQL database.
@@ -63,6 +72,12 @@ abstract class PostgresTestBase {
      * jOOQ context connected to this test class's private database.
      */
     protected DSLContext dsl;
+
+    /**
+     * The schema tests create their own tables in; the test role has CREATE on
+     * it.
+     */
+    protected static final String PUBLIC_SCHEMA = "public";
 
     private String databaseName;
     private Connection connection;
@@ -140,6 +155,176 @@ abstract class PostgresTestBase {
      */
     protected Connection openTestConnection() throws SQLException {
         return openConnection(databaseName, TEST_USER, TEST_PASSWORD);
+    }
+
+    /**
+     * Holds an ACCESS SHARE lock on a table on a second connection, which
+     * conflicts with the ACCESS EXCLUSIVE lock an {@code ALTER TABLE} needs.
+     * The caller owns the connection and must close it to release the lock.
+     *
+     * @param connection a connection to this test class's private database
+     * @param table      the table to lock
+     * @throws SQLException if the lock cannot be taken
+     */
+    protected void holdAccessShareLock(Connection connection, String table) throws SQLException {
+        connection.setAutoCommit(false);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("LOCK TABLE " + table + " IN ACCESS SHARE MODE");
+        }
+    }
+
+    /**
+     * Waits until a competing session holds an ACCESS SHARE lock on the table,
+     * so a test can be sure the lock is in place before calling a routine that
+     * must wait for it.
+     *
+     * @param table the table to check
+     * @throws InterruptedException if interrupted while waiting
+     */
+    protected void awaitAccessShareLockHeld(String table) throws InterruptedException {
+        for (int attempt = 0; attempt < 100; attempt++) {
+            Object held = dsl.fetchValue(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_locks l
+                        JOIN pg_class c ON c.oid = l.relation
+                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
+                    )
+                    """,
+                    table);
+            if (Boolean.TRUE.equals(held)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        fail("the competing session did not acquire its lock on " + table);
+    }
+
+    /**
+     * Rolls back a connection after a delay, in the background, so a test can
+     * release a held lock while the test thread is blocked in a call. The
+     * returned future completes once the rollback has run.
+     *
+     * @param connection  the connection to roll back
+     * @param delayMillis how long to hold before rolling back
+     * @return a future that completes when the rollback has run
+     */
+    protected CompletableFuture<Void> rollbackAfter(Connection connection, long delayMillis) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(delayMillis);
+                connection.rollback();
+            } catch (Exception e) {
+                throw new IllegalStateException("failed to roll back the lock holder", e);
+            }
+        });
+    }
+
+    /**
+     * Returns the SQLSTATE of the first {@link SQLException} in a throwable's
+     * cause chain, or {@code null} when there is none.
+     *
+     * @param throwable the throwable to inspect
+     * @return the SQLSTATE, or {@code null}
+     */
+    protected static String sqlState(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                return sqlException.getSQLState();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Creates a table owned by the test role, so SECURITY INVOKER routines that
+     * require ownership can operate on it.
+     *
+     * @param table   the table name
+     * @param columns the column definitions, without the surrounding
+     *                parentheses
+     */
+    protected void createTestTable(String table, String columns) {
+        dsl.execute("CREATE TABLE " + table + " (" + columns + ")");
+    }
+
+    /**
+     * Drops a table created by {@link #createTestTable}, if it exists.
+     *
+     * @param table the table name
+     */
+    protected void dropTestTable(String table) {
+        dsl.execute("DROP TABLE IF EXISTS " + table);
+    }
+
+    /**
+     * Returns the {@code information_schema.columns} row for a column, or
+     * {@code null} when the column does not exist.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the column's information_schema row, or {@code null}
+     */
+    protected Record column(String schema, String table, String column) {
+        return dsl.fetchOne(
+                """
+                SELECT *
+                FROM information_schema.columns
+                WHERE table_schema = ? AND table_name = ? AND column_name = ?
+                """,
+                schema, table, column);
+    }
+
+    /**
+     * Returns whether a column exists.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return {@code true} when the column exists
+     */
+    protected boolean hasColumn(String schema, String table, String column) {
+        return column(schema, table, column) != null;
+    }
+
+    /**
+     * Returns a single {@code information_schema.columns} attribute for a
+     * column, failing when the column does not exist.
+     *
+     * @param schema    the table schema
+     * @param table     the table name
+     * @param column    the column name
+     * @param attribute the information_schema column to read
+     * @return the attribute value
+     */
+    protected String columnAttribute(String schema, String table, String column, String attribute) {
+        Record record = column(schema, table, column);
+        assertNotNull(record, () -> "column not found: " + schema + "." + table + "." + column);
+        return record.get(attribute, String.class);
+    }
+
+    /**
+     * Asserts that a call fails with the given SQLSTATE.
+     *
+     * @param expectedSqlState the expected SQLSTATE
+     * @param call             the call under test
+     */
+    protected static void assertSqlState(String expectedSqlState, Executable call) {
+        DataAccessException exception = assertThrows(DataAccessException.class, call);
+        assertEquals(expectedSqlState, sqlState(exception),
+                () -> "expected SQLSTATE " + expectedSqlState + " but was: " + exception.getMessage());
+    }
+
+    /**
+     * Asserts that a call fails with SQLSTATE {@code 23514}
+     * ({@code check_violation}), as a domain constraint violation does.
+     *
+     * @param call the call under test
+     */
+    protected static void assertDomainViolation(Executable call) {
+        assertSqlState("23514", call);
     }
 
     /**
