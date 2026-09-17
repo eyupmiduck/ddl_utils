@@ -17,7 +17,13 @@
         <createProcedure path="functions/get_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/set_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/clear_schema_lock_settings.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/get_table_lock_settings.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/set_table_lock_settings.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/clear_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
+            <sqlFile path="functions-rollback/clear_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/set_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/get_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/clear_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/set_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/get_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
