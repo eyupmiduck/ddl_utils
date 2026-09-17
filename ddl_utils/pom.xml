@@ -17,6 +17,14 @@
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
         </dependency>
+        <!-- jOOQ references JAXB annotations but declares the API as optional.
+             Provided scope puts it on the compile classpath (so javac can
+             resolve the annotations) without adding a runtime requirement. -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>

@@ -24,6 +24,7 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <liquibase.version>5.0.4</liquibase.version>
         <jooq.version>3.21.8</jooq.version>
+        <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
         <liquibase-validation.version>0.2.0</liquibase-validation.version>
     </properties>
@@ -89,6 +90,15 @@
                 <artifactId>jooq</artifactId>
                 <version>${jooq.version}</version>
             </dependency>
+            <!-- jOOQ declares this as optional (opt-in), so it is not pulled
+                 transitively. Compiling against jOOQ without it makes javac
+                 emit -Xlint:classfile warnings for the unresolved JAXB
+                 annotations. -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-xml-bind.version}</version>
+            </dependency>
             <!-- Transitive via Testcontainers; override to a patched version. -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -119,10 +129,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.16.0</version>
                     <configuration>
-                        <!-- -Werror is intentionally not set: -Xlint:classfile
-                             reports an unresolved optional JAXB annotation
-                             (jakarta.xml.bind, referenced through jOOQ) on the
-                             test classpath, which would fail the build. -->
+                        <!-- -Werror is intentionally not set: a new JDK or a
+                             dependency upgrade can introduce a warning that
+                             would then break unrelated builds. -->
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                         </compilerArgs>
