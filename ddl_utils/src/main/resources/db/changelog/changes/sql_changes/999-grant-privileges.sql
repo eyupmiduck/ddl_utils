@@ -1,5 +1,4 @@
 GRANT USAGE ON SCHEMA ddl_utils TO ddl_utils_caller;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ddl_utils.example TO ddl_utils_caller;
 GRANT SELECT ON ddl_utils.database_lock_settings TO ddl_utils_caller;
 GRANT SELECT ON ddl_utils.schema_lock_settings TO ddl_utils_caller;
 GRANT SELECT ON ddl_utils.table_lock_settings TO ddl_utils_caller;

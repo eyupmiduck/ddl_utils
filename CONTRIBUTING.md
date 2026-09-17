@@ -27,7 +27,7 @@ Everything runs through the Maven wrapper:
 ```sh
 ./mvnw clean verify                     # full build, tests, SQLFluff, and checks
 ./mvnw -pl ddl_utils -am verify         # one module (plus its reactor deps)
-./mvnw -pl ddl_utils -am test -Dtest=ExampleTableTest   # one test class
+./mvnw -pl ddl_utils -am test -Dtest=TableLockSettingsTest   # one test class
 ```
 
 `-am` (also make) is required for single-module builds because reactor
@@ -118,7 +118,7 @@ Rules:
 
 - Never commit directly to `main`; work on a feature branch.
 - Keep commits focused, and write imperative, descriptive messages (e.g.
-  `Add rollback for the example table changeset`).
+  `Add rollback for the lock settings changeset`).
 - Do not commit generated build output (`target/`), secrets, credentials, or
   local IDE files.
 
