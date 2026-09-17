@@ -22,11 +22,13 @@
         <createProcedure path="functions/ddl_utils/add_columns.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils/add_column.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils_lib/alter_table.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/ddl_utils_lib/has_top_level_comma.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils_lib/add_columns.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils_lib/add_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_column-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_columns-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils_lib/has_top_level_comma-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/ddl_utils_lib/alter_table-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/ddl_utils/add_column-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/ddl_utils/add_columns-rollback.sql" relativeToChangelogFile="true"/>

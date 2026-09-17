@@ -32,6 +32,17 @@ BEGIN
     END IF;
 
     FOR l_index IN 1..l_count LOOP
+        -- The type and default are spliced into the statement as raw SQL, so a
+        -- top-level comma could terminate the clause and append more DDL (for
+        -- example a type of 'int, DROP COLUMN x').
+        IF ddl_utils_lib.has_top_level_comma(i_column_types[l_index])
+            OR ddl_utils_lib.has_top_level_comma(i_default_values[l_index]) THEN
+            RAISE EXCEPTION
+                'ddl_utils_lib.add_columns: the column type or default for column % contains a top-level comma',
+                i_column_names[l_index]
+                USING ERRCODE = '22023';
+        END IF;
+
         IF l_index > 1 THEN
             l_fragment := l_fragment || ', ';
         END IF;

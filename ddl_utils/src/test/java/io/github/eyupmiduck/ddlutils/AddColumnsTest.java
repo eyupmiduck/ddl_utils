@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,6 +77,59 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"   "},
                 new Boolean[]{true},
                 1000, 10, 5000));
+    }
+
+    /**
+     * Rejects a column type with a top-level comma, which could otherwise
+     * append extra clauses to the generated ALTER TABLE, leaving the table
+     * unchanged.
+     */
+    @Test
+    void rejectsTopLevelCommaInType() {
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int, DROP COLUMN id"},
+                new String[]{null},
+                new Boolean[]{true},
+                1000, 10, 5000));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
+    }
+
+    /**
+     * Rejects a default value with a top-level comma, which could otherwise
+     * append extra clauses to the generated ALTER TABLE, leaving the table
+     * unchanged.
+     */
+    @Test
+    void rejectsTopLevelCommaInDefault() {
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int"},
+                new String[]{"0, ADD COLUMN backdoor int"},
+                new Boolean[]{true},
+                1000, 10, 5000));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "backdoor"));
+    }
+
+    /**
+     * Allows commas that are inside parentheses or string literals, as in a
+     * numeric(10,2) type or a coalesce / quoted default.
+     */
+    @Test
+    void allowsCommasInsideParenthesesAndLiterals() {
+        addColumns(
+                new String[]{"amount", "label"},
+                new String[]{"numeric(10,2)", "text"},
+                new String[]{"coalesce(1, 2)", "'a,b'"},
+                new Boolean[]{true, true},
+                1000, 10, 5000);
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "amount"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "label"));
     }
 
     /**
