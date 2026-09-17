@@ -9,5 +9,9 @@
          has no createFunction change type). runOnChange re-applies the whole
          changeset when a function body changes, replacing the routines. -->
     <changeSet id="005-create-functions" author="ddl_utils" runOnChange="true">
+        <createProcedure path="functions/alter_table.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions/alter_table-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
     </changeSet>
 </databaseChangeLog>
