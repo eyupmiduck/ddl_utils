@@ -25,8 +25,8 @@ on pull requests to `main`.
 - `ddl_utils/`: the main module; base package
   `io.github.eyupmiduck.ddlutils`.
     - Liquibase changelogs: `src/main/resources/db/changelog/`
-      (`db.changelog-master.xml` includes one XML changeset file per change
-      from `changes/`; forward SQL lives in `changes/sql_changes/`, rollback
+      (`db.changelog-master.xml` includes `changes/changes.xml`, which holds
+      all changesets; forward SQL lives in `changes/sql_changes/`, rollback
       SQL in `changes/rollback/`).
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
@@ -81,11 +81,10 @@ on pull requests to `main`.
 - Changesets should be small and focused.
 - **Do not embed SQL in XML.** Put SQL in a `.sql` file and reference it with
   `<sqlFile path="..." relativeToChangelogFile="true"/>` (also for
-  `<rollback>`). One changeset per XML file in
-  `ddl_utils/src/main/resources/db/changelog/changes/`, named
-  `NNN-description.xml`, with forward SQL in
-  `changes/sql_changes/NNN-description.sql` and rollback SQL in
-  `changes/rollback/NNN-description-rollback.sql`.
+  `<rollback>`). Add each changeset as a `<changeSet id="NNN-description">`
+  entry in `ddl_utils/src/main/resources/db/changelog/changes/changes.xml`,
+  with forward SQL in `changes/sql_changes/NNN-description.sql` and rollback
+  SQL in `changes/rollback/NNN-description-rollback.sql`.
 - Prefer changes that are safe to deploy against a live database.
 - Consider rollback and idempotency where appropriate.
 - Do not modify an already-deployed changeset unless explicitly instructed.

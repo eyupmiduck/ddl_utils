@@ -4,7 +4,7 @@ utilities for postgres ddl to reduce locking nightmares
 
 ## Changelog validation dependency
 
-Changelog validation (file naming and orphaned SQL files) lives in the
+Changelog validation (changeset and SQL naming, and orphaned SQL files) lives in the
 [`liquibase_validation`](https://github.com/eyupmiduck/liquibase_validation)
 project and is consumed as the test-scoped `io.github.eyupmiduck:liquibase-validation`
 artifact from GitHub Packages. GitHub Packages requires authentication even

@@ -58,17 +58,18 @@ scripts/build-postgres-image.sh postgres:16-alpine
 
 ## Database changes
 
-All schema changes go through **Liquibase**. Create one XML changeset per
-change:
+All schema changes go through **Liquibase**. Add the changeset as a
+`<changeSet id="NNN-description">` entry in
+`ddl_utils/src/main/resources/db/changelog/changes/changes.xml`, with the SQL
+in separate files:
 
 ```
-ddl_utils/src/main/resources/db/changelog/changes/NNN-description.xml
 ddl_utils/src/main/resources/db/changelog/changes/sql_changes/NNN-description.sql
 ddl_utils/src/main/resources/db/changelog/changes/rollback/NNN-description-rollback.sql
 ```
 
-Then include the changeset in
-`ddl_utils/src/main/resources/db/changelog/db.changelog-master.xml`.
+`db.changelog-master.xml` includes `changes.xml`; no per-changeset include is
+needed.
 
 Rules:
 
