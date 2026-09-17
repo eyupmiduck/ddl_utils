@@ -23,7 +23,7 @@ class GetLockSettingsTest extends PostgresTestBase {
     private static final String TABLE = "get_lock_settings_test_table";
     private static final int DEFAULT_DDL_LOCK_TIMEOUT = 100;
     private static final int DEFAULT_SLEEP_TIME = 1000;
-    private static final int DEFAULT_STATEMENT_DURATION = 30;
+    private static final int DEFAULT_STATEMENT_DURATION = 30000;
 
     /**
      * Clears the schema and table overrides and resets the database defaults,
@@ -121,6 +121,10 @@ class GetLockSettingsTest extends PostgresTestBase {
                         id, ddl_lock_timeout, sleep_time, statement_duration
                     )
                     VALUES (1, %d, %d, %d)
+                    ON CONFLICT (id) DO UPDATE
+                        SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,
+                            sleep_time         = EXCLUDED.sleep_time,
+                            statement_duration = EXCLUDED.statement_duration
                     """.formatted(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION));
         } catch (SQLException e) {
             throw new IllegalStateException("failed to restore the database defaults", e);

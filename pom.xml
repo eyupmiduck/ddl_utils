@@ -27,6 +27,7 @@
         <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
         <liquibase-validation.version>0.6.0</liquibase-validation.version>
+        <skip.sqlfluff>false</skip.sqlfluff>
     </properties>
 
     <!-- The PostgreSQL image used for jOOQ codegen and integration tests is a

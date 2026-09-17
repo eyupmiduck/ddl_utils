@@ -42,7 +42,25 @@ permissions:
 
 jobs:
   code-review:
-    uses: eyupmiduck/workflow_library/.github/workflows/ocr-review.yml@main
+    # Only run for opened PRs and authorized /open-code-review comments; a
+    # matching concurrency group alone does not stop non-matching events.
+    if: >-
+      github.event_name == 'pull_request_target'
+      || (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && github.event.comment.user.type != 'Bot'
+        && (
+          github.event.comment.author_association == 'MEMBER'
+          || github.event.comment.author_association == 'OWNER'
+          || github.event.comment.author_association == 'COLLABORATOR'
+        )
+        && startsWith(github.event.comment.body, '/open-code-review')
+      )
+    # Pinned to the workflow_library commit so a change to its default branch
+    # cannot alter what runs here with pull-requests: write and the LLM secret.
+    # Bump the SHA deliberately when upgrading the library.
+    uses: eyupmiduck/workflow_library/.github/workflows/ocr-review.yml@7fa94c847818d1d45df7132d6cc3857bf6162f61
     permissions:
       contents: read
       pull-requests: write

@@ -18,7 +18,7 @@ class LockSettingsTest extends PostgresTestBase {
 
     private static final int DEFAULT_DDL_LOCK_TIMEOUT = 100;
     private static final int DEFAULT_SLEEP_TIME = 1000;
-    private static final int DEFAULT_STATEMENT_DURATION = 30;
+    private static final int DEFAULT_STATEMENT_DURATION = 30000;
 
     /**
      * Resets the row to the seeded defaults, so tests are independent of each

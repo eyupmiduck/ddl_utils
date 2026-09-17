@@ -12,8 +12,9 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.alter_table(
 AS
 $$
 DECLARE
-    l_statement  text;
-    l_started_at timestamptz;
+    l_statement             text;
+    l_started_at            timestamptz;
+    l_previous_lock_timeout text;
 BEGIN
     IF pg_catalog.btrim(i_alter_table_fragment) = '' THEN
         RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment must not be blank'
@@ -39,6 +40,9 @@ BEGIN
             pg_catalog.btrim(i_alter_table_fragment)
                    );
     l_started_at := pg_catalog.clock_timestamp();
+    -- Remember the caller's lock_timeout so a successful call does not change
+    -- the setting for the rest of the caller's transaction.
+    l_previous_lock_timeout := pg_catalog.current_setting('lock_timeout');
 
     LOOP
         -- lock_timeout is transaction scoped; set it outside the exception
@@ -54,6 +58,7 @@ BEGIN
 
         BEGIN
             EXECUTE l_statement;
+            PERFORM pg_catalog.set_config('lock_timeout', l_previous_lock_timeout, true);
             RETURN;
         EXCEPTION
             WHEN lock_not_available THEN
