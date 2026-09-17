@@ -12,7 +12,11 @@
         <createProcedure path="functions/alter_table.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/add_column.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/add_columns.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/get_lock_settings.sql" relativeToChangelogFile="true"/>
+        <createProcedure path="functions/set_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
+            <sqlFile path="functions-rollback/set_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/get_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/add_columns-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/add_column-rollback.sql" relativeToChangelogFile="true"/>
             <sqlFile path="functions-rollback/alter_table-rollback.sql" relativeToChangelogFile="true"/>
