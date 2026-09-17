@@ -135,6 +135,13 @@
                                 <generator>
                                     <database>
                                         <includes>.*</includes>
+                                        <!-- jOOQ 3.21.8 cannot model domains over
+                                             arrays: it generates a Domain<String[]>
+                                             backed by SQLDataType.OTHER, which does
+                                             not compile. Exclude the array domains;
+                                             they are exercised through plain SQL in
+                                             tests. -->
+                                        <excludes>.*non_empty.*text_array.*</excludes>
                                         <inputSchema>ddl_utils</inputSchema>
                                     </database>
                                     <target>

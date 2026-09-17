@@ -89,6 +89,51 @@ class DomainTest extends PostgresTestBase {
         assertDomainViolation(() -> evaluate("NULL::ddl_utils.non_null_boolean", Boolean.class));
     }
 
+    /**
+     * The non-empty text-array domain accepts an array with elements, including
+     * null elements.
+     */
+    @Test
+    void nonEmptyTextArrayAcceptsElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', 'b']::ddl_utils.non_empty_text_array)", Integer.class));
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', NULL]::ddl_utils.non_empty_text_array)", Integer.class));
+    }
+
+    /**
+     * The non-empty text-array domain rejects an empty array and a null array.
+     */
+    @Test
+    void nonEmptyTextArrayRejectsEmptyOrNull() {
+        assertDomainViolation(() -> evaluate("'{}'::text[]::ddl_utils.non_empty_text_array", Object.class));
+        assertDomainViolation(() -> evaluate("NULL::ddl_utils.non_empty_text_array", Object.class));
+    }
+
+    /**
+     * The non-empty, non-null-element text-array domain accepts an array whose
+     * elements are all non-null.
+     */
+    @Test
+    void nonEmptyNonNullTextArrayAcceptsNonNullElements() {
+        assertEquals(2, evaluate(
+                "pg_catalog.cardinality(ARRAY['a', 'b']::ddl_utils.non_empty_non_null_text_array)", Integer.class));
+    }
+
+    /**
+     * The non-empty, non-null-element text-array domain rejects an array with a
+     * null element, an empty array, and a null array.
+     */
+    @Test
+    void nonEmptyNonNullTextArrayRejectsNullElementEmptyOrNull() {
+        assertDomainViolation(() -> evaluate(
+                "ARRAY['a', NULL]::text[]::ddl_utils.non_empty_non_null_text_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "'{}'::text[]::ddl_utils.non_empty_non_null_text_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "NULL::ddl_utils.non_empty_non_null_text_array", Object.class));
+    }
+
     private <T> T evaluate(String expression, Class<T> type) {
         Record record = dsl.fetchOne("SELECT " + expression);
         assertNotNull(record, () -> "Query returned no row: " + expression);
