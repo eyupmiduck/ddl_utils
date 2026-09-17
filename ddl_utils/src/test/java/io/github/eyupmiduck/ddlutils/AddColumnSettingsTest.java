@@ -47,6 +47,20 @@ class AddColumnSettingsTest extends PostgresTestBase {
     }
 
     /**
+     * add_column can omit the default value, falling back to the argument's
+     * NULL default. jOOQ does not expose overloads for defaulted routine
+     * parameters, so this calls the function directly.
+     */
+    @Test
+    void addColumnOmitsDefaultWhenNotGiven() {
+        dsl.execute("SELECT ddl_utils.add_column(?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "blank", "int", true);
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "blank"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "blank", "column_default"));
+    }
+
+    /**
      * add_columns adds several columns in one call using the database defaults.
      */
     @Test
@@ -109,7 +123,7 @@ class AddColumnSettingsTest extends PostgresTestBase {
     }
 
     private void addColumn(String column, String type, String defaultValue, Boolean nullable) {
-        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, defaultValue, nullable);
+        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, nullable, defaultValue);
     }
 
     private void addColumns(String[] names, String[] types, String[] defaults, Boolean[] nullable) {

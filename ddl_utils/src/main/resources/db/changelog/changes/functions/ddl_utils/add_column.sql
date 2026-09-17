@@ -3,8 +3,8 @@ CREATE OR REPLACE FUNCTION ddl_utils.add_column(
     i_table_name ddl_utils.non_null_text,
     i_column_name ddl_utils.non_null_text,
     i_column_type ddl_utils.non_null_text,
-    i_default_value text,
-    i_nullable ddl_utils.non_null_boolean
+    i_nullable ddl_utils.non_null_boolean,
+    i_default_value text DEFAULT NULL
 )
     RETURNS void
     LANGUAGE plpgsql
