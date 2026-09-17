@@ -4,6 +4,7 @@ import io.github.eyupmiduck.ddlutils.jooq.Routines;
 import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class SchemaLockSettingsTest extends PostgresTestBase {
 
     private static final String SCHEMA = "lock_settings_test_schema";
+    private static final String CLEAR_SCHEMA = "lock_settings_clear_schema";
 
     /**
      * get_schema_lock_settings returns no row for a schema that has no settings.
@@ -70,6 +72,33 @@ class SchemaLockSettingsTest extends PostgresTestBase {
     void callerCannotUpdateSchemaLockSettings() {
         assertSqlState("42501", () -> dsl.execute(
                 "UPDATE ddl_utils.schema_lock_settings SET sleep_time = 1 WHERE schema_name = 'x'"));
+    }
+
+    /**
+     * clear_schema_lock_settings deletes the schema's row, and is a no-op when
+     * there is none.
+     */
+    @Test
+    void clearSchemaLockSettingsDeletesRow() {
+        setSchemaLockSettings(CLEAR_SCHEMA, 111, 222, 33);
+        assertNotNull(getSchemaLockSettings(CLEAR_SCHEMA));
+
+        clearSchemaLockSettings(CLEAR_SCHEMA);
+        assertNull(getSchemaLockSettings(CLEAR_SCHEMA));
+
+        assertDoesNotThrow(() -> clearSchemaLockSettings(CLEAR_SCHEMA));
+    }
+
+    /**
+     * clear_schema_lock_settings rejects a null schema name through the domain.
+     */
+    @Test
+    void clearSchemaLockSettingsRejectsNullSchema() {
+        assertDomainViolation(() -> clearSchemaLockSettings(null));
+    }
+
+    private void clearSchemaLockSettings(String schema) {
+        Routines.clearSchemaLockSettings(dsl.configuration(), schema);
     }
 
     private void setSchemaLockSettings(String schema, Integer lockTimeout, Integer sleepTime, Integer duration) {

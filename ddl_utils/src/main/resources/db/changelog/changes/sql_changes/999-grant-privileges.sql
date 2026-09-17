@@ -102,3 +102,9 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_schema_lock_settings(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.clear_schema_lock_settings(
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.clear_schema_lock_settings(
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;

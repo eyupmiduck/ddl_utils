@@ -1,3 +1,9 @@
+REVOKE EXECUTE ON FUNCTION ddl_utils.clear_schema_lock_settings(
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.clear_schema_lock_settings(
+    ddl_utils.non_null_text
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.set_schema_lock_settings(
     ddl_utils.non_null_text,
     ddl_utils.non_negative_integer,
