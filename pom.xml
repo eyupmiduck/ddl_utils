@@ -24,6 +24,7 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <liquibase.version>5.0.4</liquibase.version>
         <jooq.version>3.21.8</jooq.version>
+        <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
         <testcontainers-jooq-codegen.version>0.0.4</testcontainers-jooq-codegen.version>
         <liquibase-validation.version>0.2.0</liquibase-validation.version>
     </properties>
@@ -89,6 +90,15 @@
                 <artifactId>jooq</artifactId>
                 <version>${jooq.version}</version>
             </dependency>
+            <!-- jOOQ declares this as optional (opt-in), so it is not pulled
+                 transitively. Compiling against jOOQ without it makes javac
+                 emit -Xlint:classfile warnings for the unresolved JAXB
+                 annotations. -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-xml-bind.version}</version>
+            </dependency>
             <!-- Transitive via Testcontainers; override to a patched version. -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -118,6 +128,20 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.16.0</version>
+                    <configuration>
+                        <!-- Fail the build on any javac lint warning. The
+                             JAXB/JOOQ classfile warnings are resolved by the
+                             provided jakarta.xml.bind-api dependency. -->
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Werror</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.6.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -131,5 +155,31 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-build-requirements</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[3.9.0,)</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[25,)</version>
+                                </requireJavaVersion>
+                                <dependencyConvergence/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
