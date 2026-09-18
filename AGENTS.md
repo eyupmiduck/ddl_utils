@@ -29,9 +29,11 @@ on pull requests to `main`.
       the schema/table changesets; forward SQL lives in
       `changes/sql_changes/`, rollback SQL in `changes/rollback/`).
       `changes/functions.xml` and `changes/procedures.xml` each hold one
-      changeset that loads every routine, one file per routine under
-      `changes/functions/<schema>/` and `changes/procedures/<schema>/` (rollback
-      bodies under `changes/functions-rollback/<schema>/`). The `ddl_utils`
+      `NNN-`prefixed changeset per routine (one `createProcedure` plus its
+      rollback), with one file per routine under `changes/functions/<schema>/`
+      and `changes/procedures/<schema>/` (rollback bodies under
+      `changes/functions-rollback/<schema>/`). `changes/functions/README.md`
+      lists each routine's signature and purpose. The `ddl_utils`
       schema holds the lock-settings tables/accessors, the shared domains, and
       the lock-aware `add_column`/`add_columns` wrappers that resolve their
       settings through `get_lock_settings`; `ddl_utils_lib` holds the generic
