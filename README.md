@@ -54,8 +54,8 @@ total budget. A retry that has given up leaves the queue empty, so queued DML
 gets through between attempts.
 
 ```sql
--- would fail fast after 250 ms and retry, rather than hanging:
-SELECT ddl_utils_lib.alter_table('public', 'orders', 'ADD COLUMN note text', 250, 500, 30000);
+-- bounded wait: fails fast after 250 ms and retries, rather than hanging
+SELECT ddl_utils_lib.add_column('public', 'orders', 'note', 'text', true, NULL, 250, 500, 30000);
 ```
 
 The three settings are:
@@ -74,12 +74,16 @@ Liquibase loads two schemas:
       accessors;
     - `get_lock_settings(schema, table)`, which resolves the effective settings
       with the table → schema → database fallback;
-    - lock-aware `add_column` / `add_columns` wrappers that read the settings for
-      you;
+    - lock-aware column wrappers (`add_column`, `add_columns`, `drop_column`,
+      `drop_columns`, `rename_column`) that read the settings for you;
     - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
       array domains used to validate inputs.
 - **`ddl_utils_lib`** — generic helpers that take the settings explicitly:
-  `alter_table`, `add_column`, `add_columns`, and `has_top_level_comma`.
+  `add_column`, `add_columns`, `drop_column`, `drop_columns`, `rename_column`,
+  and `has_top_level_comma`. `alter_table` is the internal runner they build on:
+  it
+  is the only routine that executes dynamic SQL, and callers should prefer the
+  structured operations so the fragment is built from validated identifiers.
 
 The accessors and getters are `SECURITY INVOKER`. The setters and clearers are
 `SECURITY DEFINER`, because `ddl_utils_caller` (the application role) only has
@@ -100,7 +104,7 @@ SELECT ddl_utils.set_database_lock_settings(
 -- override for one table
 SELECT ddl_utils.set_table_lock_settings('public', 'orders', 250, 500, 30000);
 
--- add a column; the wrapper resolves the settings itself
+-- add, rename, or drop a column; each wrapper resolves the settings itself
 SELECT ddl_utils.add_column(
                i_schema_name => 'public',
                i_table_name => 'orders',
@@ -108,10 +112,15 @@ SELECT ddl_utils.add_column(
                i_column_type => 'text',
                i_nullable => true
        );
+SELECT ddl_utils.rename_column('public', 'orders', 'note', 'comment');
+SELECT ddl_utils.drop_column('public', 'orders', 'comment');
 
--- or drive the low-level helper with explicit settings
-SELECT ddl_utils_lib.alter_table('public', 'orders', 'ADD COLUMN note text', 250, 500, 30000);
+-- or call the explicit-settings helpers in ddl_utils_lib
+SELECT ddl_utils_lib.add_column('public', 'orders', 'note', 'text', true, NULL, 250, 500, 30000);
 ```
+
+`ddl_utils_lib.alter_table` is the internal runner the structured helpers build
+on; prefer those so the SQL fragment is assembled from validated identifiers.
 
 All routines run inside the caller's transaction and never commit; `lock_timeout`
 is set with `SET LOCAL` semantics and restored afterwards. Callers are expected

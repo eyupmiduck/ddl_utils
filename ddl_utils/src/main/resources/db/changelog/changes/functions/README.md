@@ -4,6 +4,9 @@ One function per `.sql` file, grouped by the schema that owns it:
 
 - `ddl_utils/` — lock-settings tables/accessors and the lock-aware DDL wrappers.
 - `ddl_utils_lib/` — generic DDL helpers that take the lock settings explicitly.
+  `alter_table` is the internal runner they build on (the only dynamic-SQL
+  boundary); prefer the structured helpers, which assemble the fragment from
+  validated identifiers.
 
 `changes/functions.xml` loads them one `createProcedure` per `runOnChange`
 changeset; the matching drop lives in `changes/functions-rollback/`. Every
@@ -152,6 +155,42 @@ RETURNS void
 `SECURITY INVOKER`. Single-column lock-aware wrapper; delegates to
 `ddl_utils.add_columns`. Omit `i_default_value` to add a column with no default.
 
+### `ddl_utils.drop_column(i_schema_name, i_table_name, i_column_name)`
+
+```sql
+i_schema_name ddl_utils.non_null_text
+i_table_name  ddl_utils.non_null_text
+i_column_name ddl_utils.non_null_text
+RETURNS void
+```
+
+`SECURITY INVOKER`. Single-column convenience over `ddl_utils.drop_columns`.
+
+### `ddl_utils.drop_columns(i_schema_name, i_table_name, i_column_names)`
+
+```sql
+i_schema_name  ddl_utils.non_null_text
+i_table_name   ddl_utils.non_null_text
+i_column_names ddl_utils.non_empty_non_null_text_array
+RETURNS void
+```
+
+`SECURITY INVOKER`. Lock-aware wrapper; resolves the table's settings via
+`get_lock_settings` and delegates to `ddl_utils_lib.drop_columns`.
+
+### `ddl_utils.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name)`
+
+```sql
+i_schema_name     ddl_utils.non_null_text
+i_table_name      ddl_utils.non_null_text
+i_column_name     ddl_utils.non_null_text
+i_new_column_name ddl_utils.non_null_text
+RETURNS void
+```
+
+`SECURITY INVOKER`. Lock-aware wrapper; resolves the table's settings via
+`get_lock_settings` and delegates to `ddl_utils_lib.rename_column`.
+
 ## `ddl_utils_lib`
 
 ###
@@ -167,10 +206,13 @@ i_statement_duration    ddl_utils.non_negative_integer
 RETURNS void
 ```
 
-`SECURITY INVOKER`. Runs `ALTER TABLE <schema>.<table> <fragment>` with the
-given lock/retry settings, restoring the caller's `lock_timeout` on success.
-Rejects a blank fragment and one containing `;`, `$` or a comment marker (a
-best-effort guard; the caller already holds the privileges the fragment uses).
+**Internal runner.** `SECURITY INVOKER`. Runs
+`ALTER TABLE <schema>.<table> <fragment>` with the given lock/retry settings,
+restoring the caller's `lock_timeout` on success. Rejects a blank fragment and
+one containing `;`, `$` or a comment marker (a best-effort guard; the caller
+already holds the privileges the fragment uses). This is the only routine that
+executes dynamic SQL; prefer the structured helpers, which build the fragment
+from validated identifiers/values.
 
 ### `ddl_utils_lib.has_top_level_comma(i_value)`
 
@@ -222,3 +264,49 @@ RETURNS void
 
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.add_columns`
 with explicit lock settings. A NULL `i_default_value` means no `DEFAULT` clause.
+
+### `ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_ddl_lock_timeout   ddl_utils.non_negative_integer
+i_sleep_time         ddl_utils.non_negative_integer
+i_statement_duration ddl_utils.non_negative_integer
+RETURNS void
+```
+
+`SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.drop_columns`.
+
+### `ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_names       ddl_utils.non_empty_non_null_text_array
+i_ddl_lock_timeout   ddl_utils.non_negative_integer
+i_sleep_time         ddl_utils.non_negative_integer
+i_statement_duration ddl_utils.non_negative_integer
+RETURNS void
+```
+
+`SECURITY INVOKER`. Builds one `DROP COLUMN` clause per element and applies them
+in a single `ALTER TABLE` (all-or-nothing) via `ddl_utils_lib.alter_table`. Each
+name is quoted with `%I`; a blank element is rejected with `22023`.
+
+### `ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_new_column_name    ddl_utils.non_null_text
+i_ddl_lock_timeout   ddl_utils.non_negative_integer
+i_sleep_time         ddl_utils.non_negative_integer
+i_statement_duration ddl_utils.non_negative_integer
+RETURNS void
+```
+
+`SECURITY INVOKER`. Renames one column; both names are quoted with `%I` and
+applied through `ddl_utils_lib.alter_table` with explicit lock settings.
