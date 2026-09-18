@@ -4,11 +4,11 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <!-- One changeset loads every stored procedure. Each procedure lives in its
-         own file under procedures/<schema>/ and is added with createProcedure.
-         runOnChange re-applies the whole changeset when a body changes.
-         Intentionally empty for now: add createProcedure entries (and their
-         rollback) here once the first procedure exists. -->
-    <changeSet id="006-create-procedures" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <!-- One changeset per stored procedure, mirroring functions.xml. Each
+         procedure lives in its own file under procedures/<schema>/ and is added
+         with createProcedure. Intentionally empty for now: add a changeset with
+         the createProcedure and its rollback here once the first procedure
+         exists. -->
+    <changeSet id="020-create-procedures" author="ddl_utils" dbms="postgresql" runOnChange="true">
     </changeSet>
 </databaseChangeLog>
