@@ -19,7 +19,7 @@ BEGIN
         LOOP
             -- The array domain allows blank elements; reject them here so a
             -- blank name cannot produce an empty identifier.
-            IF pg_catalog.btrim(i_column_names[l_index]) = '' THEN
+            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.drop_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';
             END IF;

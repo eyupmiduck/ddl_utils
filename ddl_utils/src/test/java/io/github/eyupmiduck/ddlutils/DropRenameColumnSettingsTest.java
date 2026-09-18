@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -69,27 +68,26 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
     }
 
     /**
-     * The wrapper passes the table-level lock settings to the helper: with a
-     * competing session holding a lock and a long table-level statement
-     * duration, the call retries and succeeds once the lock is released,
-     * whereas the short database default would have given up first.
+     * The wrapper passes the table-level lock settings to the helper: the
+     * table's statement budget is far below the database default (30000 ms), so
+     * a held lock makes the call give up quickly, whereas the default would have
+     * retried for ~30 s.
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        Routines.setTableLockSettings(dsl.configuration(), PUBLIC_SCHEMA, TARGET, 100, 100, 30000);
+        Routines.setTableLockSettings(dsl.configuration(), PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
         try (Connection other = openTestConnection()) {
             holdAccessShareLock(other, TARGET);
             awaitAccessShareLockHeld(TARGET);
 
-            CompletableFuture<Void> release = rollbackAfter(other, 1000);
-            try {
-                Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name");
-            } finally {
-                release.join();
-            }
-        }
+            long startedAt = System.nanoTime();
+            assertSqlState("55P03",
+                    () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
+            long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+            assertTrue(elapsedMillis < 5000,
+                    () -> "expected the table's 300 ms statement duration, took " + elapsedMillis + " ms");
+        }
     }
 }

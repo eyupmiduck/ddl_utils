@@ -56,14 +56,27 @@ class DropRenameColumnTest extends PostgresTestBase {
     }
 
     /**
-     * drop_columns rejects a blank element and leaves the table unchanged.
+     * drop_columns rejects an element that is blank, including whitespace other
+     * than spaces, and leaves the table unchanged.
      */
     @Test
     void dropColumnsRejectsBlankName() {
         assertSqlState("22023",
                 () -> dropColumns(new String[]{"  "}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("22023",
+                () -> dropColumns(new String[]{"\t\n"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+    }
+
+    /**
+     * drop_columns rejects a null array and a null element through the array
+     * domain.
+     */
+    @Test
+    void dropColumnsRejectsNullArrayAndElements() {
+        assertDomainViolation(() -> dropColumns(null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropColumns(new String[]{null}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
     }
 
     /**

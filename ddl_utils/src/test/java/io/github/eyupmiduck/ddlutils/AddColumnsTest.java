@@ -108,6 +108,12 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"   "},
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int"},
+                new String[]{"\t\n"},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
     }
@@ -127,6 +133,18 @@ class AddColumnsTest extends PostgresTestBase {
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first"},
                 new String[]{"  "},
+                new String[]{null},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"\t\n"},
+                new String[]{"int"},
+                new String[]{null},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"\t\n"},
                 new String[]{null},
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
