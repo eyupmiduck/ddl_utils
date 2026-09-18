@@ -32,6 +32,18 @@ BEGIN
     END IF;
 
     FOR l_index IN 1..l_count LOOP
+        -- The array domains allow blank elements; reject them here so a blank
+        -- name or type cannot produce an empty identifier or malformed SQL.
+        IF pg_catalog.btrim(i_column_names[l_index]) = '' THEN
+            RAISE EXCEPTION 'ddl_utils_lib.add_columns: column name at position % is blank', l_index
+                USING ERRCODE = '22023';
+        END IF;
+        IF pg_catalog.btrim(i_column_types[l_index]) = '' THEN
+            RAISE EXCEPTION 'ddl_utils_lib.add_columns: the type for column % is blank',
+                i_column_names[l_index]
+                USING ERRCODE = '22023';
+        END IF;
+
         -- The type and default are spliced into the statement as raw SQL, so a
         -- top-level comma could terminate the clause and append more DDL (for
         -- example a type of 'int, DROP COLUMN x').

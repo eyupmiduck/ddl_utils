@@ -98,7 +98,7 @@ class AddColumnTest extends PostgresTestBase {
 
     private void addColumn(String column, String type, String defaultValue, Boolean nullable,
                            Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, defaultValue,
-                nullable, lockTimeout, sleepTime, duration);
+        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, nullable,
+                defaultValue, lockTimeout, sleepTime, duration);
     }
 }

@@ -3,8 +3,8 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_column(
     i_table_name ddl_utils.non_null_text,
     i_column_name ddl_utils.non_null_text,
     i_column_type ddl_utils.non_null_text,
-    i_default_value text,
     i_nullable ddl_utils.non_null_boolean,
+    i_default_value text,
     i_ddl_lock_timeout ddl_utils.non_negative_integer,
     i_sleep_time ddl_utils.non_negative_integer,
     i_statement_duration ddl_utils.non_negative_integer

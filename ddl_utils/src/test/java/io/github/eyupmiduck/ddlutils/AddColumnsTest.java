@@ -113,6 +113,28 @@ class AddColumnsTest extends PostgresTestBase {
     }
 
     /**
+     * Rejects blank column names and types with an invalid-parameter error,
+     * leaving the table unchanged.
+     */
+    @Test
+    void rejectsBlankColumnNameAndType() {
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"  "},
+                new String[]{"int"},
+                new String[]{null},
+                new Boolean[]{true},
+                1000, 10, 5000));
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"  "},
+                new String[]{null},
+                new Boolean[]{true},
+                1000, 10, 5000));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+    }
+
+    /**
      * Rejects a column type with a top-level comma, which could otherwise
      * append extra clauses to the generated ALTER TABLE, leaving the table
      * unchanged.

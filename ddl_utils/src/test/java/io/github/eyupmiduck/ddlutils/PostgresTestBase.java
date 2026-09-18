@@ -222,23 +222,29 @@ abstract class PostgresTestBase {
     }
 
     /**
-     * Rolls back a connection after a delay, in the background, so a test can
-     * release a held lock while the test thread is blocked in a call. The
-     * returned future completes once the rollback has run.
+     * Rolls back a connection after a delay on a dedicated daemon thread, so a
+     * test can release a held lock while the test thread is blocked in a call.
+     * The returned future completes once the rollback has run, or fails with
+     * the rollback error.
      *
      * @param connection  the connection to roll back
      * @param delayMillis how long to hold before rolling back
      * @return a future that completes when the rollback has run
      */
     protected CompletableFuture<Void> rollbackAfter(Connection connection, long delayMillis) {
-        return CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> completed = new CompletableFuture<>();
+        Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(delayMillis);
                 connection.rollback();
-            } catch (Exception e) {
-                throw new IllegalStateException("failed to roll back the lock holder", e);
+                completed.complete(null);
+            } catch (Throwable e) {
+                completed.completeExceptionally(e);
             }
-        });
+        }, "lock-holder-rollback");
+        thread.setDaemon(true);
+        thread.start();
+        return completed;
     }
 
     /**
