@@ -88,6 +88,7 @@ RETURNS TABLE
 none.
 
 ###
+
 `ddl_utils.set_table_lock_settings(i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -194,6 +195,7 @@ RETURNS void
 ## `ddl_utils_lib`
 
 ###
+
 `ddl_utils_lib.alter_table(i_schema_name, i_table_name, i_alter_table_fragment, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -226,6 +228,7 @@ parentheses, brackets or a string literal. Used to reject defaults that could
 append DDL clauses.
 
 ###
+
 `ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -247,6 +250,7 @@ lengths, blank names/types, that each type resolves to a single SQL type (`to_re
 top-level comma.
 
 ###
+
 `ddl_utils_lib.add_column(i_schema_name, i_table_name, i_column_name, i_column_type, i_nullable, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -265,7 +269,8 @@ RETURNS void
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.add_columns`
 with explicit lock settings. A NULL `i_default_value` means no `DEFAULT` clause.
 
-### `ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -279,7 +284,8 @@ RETURNS void
 
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.drop_columns`.
 
-### `ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -295,7 +301,8 @@ RETURNS void
 in a single `ALTER TABLE` (all-or-nothing) via `ddl_utils_lib.alter_table`. Each
 name is quoted with `%I`; a blank element is rejected with `22023`.
 
-### `ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text

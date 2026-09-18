@@ -12,13 +12,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_columns(
 AS
 $$
 DECLARE
-    l_fragment text := '';
+    l_fragment text    := '';
     l_count    integer := pg_catalog.cardinality(i_column_names);
 BEGIN
     FOR l_index IN 1..l_count
         LOOP
-            -- The array domain allows blank elements; reject them here so a
-            -- blank name cannot produce an empty identifier.
+        -- The array domain allows blank elements; reject them here so a
+        -- blank name cannot produce an empty identifier.
             IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.drop_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';

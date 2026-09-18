@@ -19,9 +19,9 @@ BEGIN
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
     INTO l_ddl_lock_timeout, l_sleep_time, l_statement_duration
     FROM ddl_utils.get_lock_settings(
-            i_schema_name => i_schema_name,
-            i_table_name => i_table_name
-            ) AS ls;
+                 i_schema_name => i_schema_name,
+                 i_table_name => i_table_name
+         ) AS ls;
 
     PERFORM ddl_utils_lib.rename_column(
             i_schema_name => i_schema_name,

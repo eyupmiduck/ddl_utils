@@ -22,7 +22,7 @@ BEGIN
                     'RENAME COLUMN %I TO %I',
                     i_column_name,
                     i_new_column_name
-                    ),
+                                      ),
             i_ddl_lock_timeout => i_ddl_lock_timeout,
             i_sleep_time => i_sleep_time,
             i_statement_duration => i_statement_duration
