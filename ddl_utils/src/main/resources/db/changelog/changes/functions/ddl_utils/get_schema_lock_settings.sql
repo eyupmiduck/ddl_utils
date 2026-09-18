@@ -1,11 +1,12 @@
 CREATE OR REPLACE FUNCTION ddl_utils.get_schema_lock_settings(
     i_schema_name ddl_utils.non_null_text
 )
-    RETURNS TABLE (
-        ddl_lock_timeout   integer,
-        sleep_time         integer,
-        statement_duration integer
-    )
+    RETURNS TABLE
+            (
+                ddl_lock_timeout   integer,
+                sleep_time         integer,
+                statement_duration integer
+            )
     LANGUAGE plpgsql
     STABLE
     SECURITY INVOKER

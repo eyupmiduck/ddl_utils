@@ -19,11 +19,12 @@ acquiring the lock).
 ### `ddl_utils.get_database_lock_settings()`
 
 ```sql
-RETURNS TABLE (ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
+RETURNS TABLE
+(ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
 ```
 
-`STABLE`, `SECURITY INVOKER`. Returns the singleton database defaults
-(`database_lock_settings.id = 1`); raises `P0002` when the row is missing.
+`STABLE`, `SECURITY INVOKER`. Returns the singleton database defaults (`database_lock_settings.id = 1`); raises `P0002`
+when the row is missing.
 
 ### `ddl_utils.set_database_lock_settings(i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
@@ -41,7 +42,8 @@ missing. Last writer wins.
 
 ```sql
 i_schema_name ddl_utils.non_null_text
-RETURNS TABLE (ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
+RETURNS TABLE
+(ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Returns the schema's row, or no row when there is
@@ -75,13 +77,15 @@ RETURNS void
 ```sql
 i_schema_name ddl_utils.non_null_text
 i_table_name  ddl_utils.non_null_text
-RETURNS TABLE (ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
+RETURNS TABLE
+(ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Returns the table's row, or no row when there is
 none.
 
-### `ddl_utils.set_table_lock_settings(i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils.set_table_lock_settings(i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -92,8 +96,8 @@ i_statement_duration ddl_utils.non_negative_integer
 RETURNS void
 ```
 
-`SECURITY DEFINER`. Upserts the table's settings. The key is stored as given
-(not resolved against `pg_class`); concurrent upserts on the same key can still
+`SECURITY DEFINER`. Upserts the table's settings. The key is stored as given (not resolved against `pg_class`);
+concurrent upserts on the same key can still
 deadlock, so callers that need to survive that must retry.
 
 ### `ddl_utils.clear_table_lock_settings(i_schema_name, i_table_name)`
@@ -111,7 +115,8 @@ RETURNS void
 ```sql
 i_schema_name ddl_utils.non_null_text
 i_table_name  ddl_utils.non_null_text
-RETURNS TABLE (ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
+RETURNS TABLE
+(ddl_lock_timeout integer, sleep_time integer, statement_duration integer)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Resolves the effective settings for a table,
@@ -149,7 +154,8 @@ RETURNS void
 
 ## `ddl_utils_lib`
 
-### `ddl_utils_lib.alter_table(i_schema_name, i_table_name, i_alter_table_fragment, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.alter_table(i_schema_name, i_table_name, i_alter_table_fragment, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name           ddl_utils.non_null_text
@@ -177,7 +183,8 @@ RETURNS boolean
 parentheses, brackets or a string literal. Used to reject defaults that could
 append DDL clauses.
 
-### `ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -194,10 +201,11 @@ RETURNS void
 
 `SECURITY INVOKER`. Builds one `ADD COLUMN` clause per element and applies them
 in a single `ALTER TABLE` (all-or-nothing) via `alter_table`. Validates array
-lengths, blank names/types, that each type resolves to a single SQL type
-(`to_regtype`), and that no default has a top-level comma.
+lengths, blank names/types, that each type resolves to a single SQL type (`to_regtype`), and that no default has a
+top-level comma.
 
-### `ddl_utils_lib.add_column(i_schema_name, i_table_name, i_column_name, i_column_type, i_nullable, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+###
+`ddl_utils_lib.add_column(i_schema_name, i_table_name, i_column_name, i_column_type, i_nullable, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text

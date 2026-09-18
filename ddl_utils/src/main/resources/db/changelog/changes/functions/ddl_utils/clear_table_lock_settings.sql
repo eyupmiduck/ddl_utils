@@ -9,8 +9,9 @@ CREATE OR REPLACE FUNCTION ddl_utils.clear_table_lock_settings(
 AS
 $$
 BEGIN
-    DELETE FROM ddl_utils.table_lock_settings
+    DELETE
+    FROM ddl_utils.table_lock_settings
     WHERE schema_name = i_schema_name
-        AND table_name = i_table_name;
+      AND table_name = i_table_name;
 END;
 $$;

@@ -15,12 +15,12 @@ BEGIN
     -- Delegates to add_columns, which validates the raw type/default SQL; see
     -- ddl_utils_lib.add_columns for the rules.
     PERFORM ddl_utils.add_columns(
-        i_schema_name => i_schema_name,
-        i_table_name => i_table_name,
-        i_column_names => ARRAY[i_column_name],
-        i_column_types => ARRAY[i_column_type],
-        i_default_values => ARRAY[i_default_value],
-        i_nullable => ARRAY[i_nullable]
-    );
+            i_schema_name => i_schema_name,
+            i_table_name => i_table_name,
+            i_column_names => ARRAY [i_column_name],
+            i_column_types => ARRAY [i_column_type],
+            i_default_values => ARRAY [i_default_value],
+            i_nullable => ARRAY [i_nullable]
+            );
 END;
 $$;

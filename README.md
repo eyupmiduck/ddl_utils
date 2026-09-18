@@ -24,18 +24,21 @@ idle transaction is then enough to stall the whole table.
 
 ```sql
 -- setup
-CREATE TABLE public.orders (id integer PRIMARY KEY);
+CREATE TABLE public.orders
+(
+    id integer PRIMARY KEY
+);
 ```
 
-| Session 1 | Session 2 | Session 3 |
-| --- | --- | --- |
-| `BEGIN;` | | |
-| `INSERT INTO public.orders (id) VALUES (1);` | | |
-| *(not committed)* | | |
-| | `ALTER TABLE public.orders ADD COLUMN note text;` | |
-| | *(hangs: waits for session 1's row lock)* | |
-| | | `INSERT INTO public.orders (id) VALUES (2);` |
-| | | *(also hangs — behind session 2)* |
+| Session 1                                    | Session 2                                         | Session 3                                    |
+|----------------------------------------------|---------------------------------------------------|----------------------------------------------|
+| `BEGIN;`                                     |                                                   |                                              |
+| `INSERT INTO public.orders (id) VALUES (1);` |                                                   |                                              |
+| *(not committed)*                            |                                                   |                                              |
+|                                              | `ALTER TABLE public.orders ADD COLUMN note text;` |                                              |
+|                                              | *(hangs: waits for session 1's row lock)*         |                                              |
+|                                              |                                                   | `INSERT INTO public.orders (id) VALUES (2);` |
+|                                              |                                                   | *(also hangs — behind session 2)*            |
 
 Session 1 holds a `ROW EXCLUSIVE` lock on `public.orders` until it commits or
 rolls back. Session 2's `ALTER TABLE` needs `ACCESS EXCLUSIVE`, which conflicts,
@@ -66,15 +69,15 @@ The three settings are:
 Liquibase loads two schemas:
 
 - **`ddl_utils`** — the application surface:
-  - the `database_lock_settings` (single row), `schema_lock_settings`, and
-    `table_lock_settings` tables, with `get_*`, `set_*`, and `clear_*`
-    accessors;
-  - `get_lock_settings(schema, table)`, which resolves the effective settings
-    with the table → schema → database fallback;
-  - lock-aware `add_column` / `add_columns` wrappers that read the settings for
-    you;
-  - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
-    array domains used to validate inputs.
+    - the `database_lock_settings` (single row), `schema_lock_settings`, and
+      `table_lock_settings` tables, with `get_*`, `set_*`, and `clear_*`
+      accessors;
+    - `get_lock_settings(schema, table)`, which resolves the effective settings
+      with the table → schema → database fallback;
+    - lock-aware `add_column` / `add_columns` wrappers that read the settings for
+      you;
+    - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
+      array domains used to validate inputs.
 - **`ddl_utils_lib`** — generic helpers that take the settings explicitly:
   `alter_table`, `add_column`, `add_columns`, and `has_top_level_comma`.
 
@@ -89,22 +92,22 @@ for every signature and purpose.
 ```sql
 -- database-wide defaults (optional; there is a seeded row)
 SELECT ddl_utils.set_database_lock_settings(
-    i_ddl_lock_timeout   => 250,
-    i_sleep_time         => 500,
-    i_statement_duration => 30000
-);
+               i_ddl_lock_timeout => 250,
+               i_sleep_time => 500,
+               i_statement_duration => 30000
+       );
 
 -- override for one table
 SELECT ddl_utils.set_table_lock_settings('public', 'orders', 250, 500, 30000);
 
 -- add a column; the wrapper resolves the settings itself
 SELECT ddl_utils.add_column(
-    i_schema_name  => 'public',
-    i_table_name   => 'orders',
-    i_column_name  => 'note',
-    i_column_type  => 'text',
-    i_nullable     => true
-);
+               i_schema_name => 'public',
+               i_table_name => 'orders',
+               i_column_name => 'note',
+               i_column_type => 'text',
+               i_nullable => true
+       );
 
 -- or drive the low-level helper with explicit settings
 SELECT ddl_utils_lib.alter_table('public', 'orders', 'ADD COLUMN note text', 250, 500, 30000);
@@ -167,10 +170,9 @@ migrations.
 
 ## Custom PostgreSQL image
 
-The build and local dev database use a custom image
-(`ddl-utils-postgres:<ver>-alpine`) built from the official
-`postgres:<ver>-alpine` image. It bakes in a roles init script
-(`docker/postgres/roles.sql`) that creates the application roles before
+The build and local dev database use a custom image (`ddl-utils-postgres:<ver>-alpine`) built from the official
+`postgres:<ver>-alpine` image. It bakes in a roles init script (`docker/postgres/roles.sql`) that creates the
+application roles before
 Liquibase runs:
 
 - `ddl_utils_owner` — owns the schemas and objects; Liquibase connects as this

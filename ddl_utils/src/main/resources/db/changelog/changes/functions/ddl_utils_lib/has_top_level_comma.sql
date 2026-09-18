@@ -22,7 +22,7 @@ BEGIN
     -- is gone, leaving only the top-level structure.
     LOOP
         l_next := pg_catalog.regexp_replace(
-            l_scrubbed, $re$\([^()]*\)|\[[^\[\]]*\]|\{[^{}]*\}$re$, '', 'g');
+                l_scrubbed, $re$\([^()]*\)|\[[^\[\]]*\]|\{[^{}]*\}$re$, '', 'g');
         EXIT WHEN l_next = l_scrubbed;
         l_scrubbed := l_next;
     END LOOP;
