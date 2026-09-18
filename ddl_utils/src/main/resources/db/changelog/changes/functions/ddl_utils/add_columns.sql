@@ -23,6 +23,14 @@ BEGIN
         i_table_name => i_table_name
     ) AS ls;
 
+    -- get_lock_settings raises when nothing matches, so this cannot normally
+    -- happen; guard anyway so a NULL settings row cannot reach the helper.
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'ddl_utils.add_columns: no lock settings found for schema % and table %',
+            i_schema_name, i_table_name
+            USING ERRCODE = 'P0002';
+    END IF;
+
     PERFORM ddl_utils_lib.add_columns(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,

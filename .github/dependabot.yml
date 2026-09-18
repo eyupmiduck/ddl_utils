@@ -22,6 +22,12 @@ updates:
       maven-minor-patch:
         patterns:
           - "*"
+        # Keep the deliberately pinned artifacts out of the bulk group so their
+        # updates are reviewed on their own.
+        exclude-patterns:
+          - "org.testcontainers:*"
+          - "org.jooq:*"
+          - "com.github.docker-java:*"
         update-types:
           - minor
           - patch

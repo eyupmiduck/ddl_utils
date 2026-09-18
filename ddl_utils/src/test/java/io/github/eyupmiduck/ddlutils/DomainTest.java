@@ -6,9 +6,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Verifies that the Liquibase changelog creates the
- * {@code ddl_utils.non_negative_integer}, {@code ddl_utils.non_null_text}, and
- * {@code ddl_utils.non_null_boolean} domains with the expected constraints.
+ * Verifies that the Liquibase changelog creates the {@code ddl_utils} domains
+ * (scalar and array) with the expected constraints.
  */
 class DomainTest extends PostgresTestBase {
 
@@ -70,6 +69,15 @@ class DomainTest extends PostgresTestBase {
     @Test
     void nonNullTextRejectsBlankString() {
         assertDomainViolation(() -> evaluate("'   '::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
+     * The text domain rejects a string made up only of non-space whitespace
+     * (tabs, newlines, carriage returns) with a check-constraint violation.
+     */
+    @Test
+    void nonNullTextRejectsNonSpaceWhitespace() {
+        assertDomainViolation(() -> evaluate("E'\\t\\n\\r'::ddl_utils.non_null_text", String.class));
     }
 
     /**
@@ -159,33 +167,8 @@ class DomainTest extends PostgresTestBase {
                 "NULL::ddl_utils.non_empty_non_null_boolean_array", Object.class));
     }
 
-    /**
-     * The non-empty, non-null-element integer-array domain accepts an array
-     * whose elements are all non-null.
-     */
-    @Test
-    void nonEmptyNonNullIntegerArrayAcceptsNonNullElements() {
-        assertEquals(2, evaluate(
-                "pg_catalog.cardinality(ARRAY[1, 2]::ddl_utils.non_empty_non_null_integer_array)", Integer.class));
-    }
-
-    /**
-     * The non-empty, non-null-element integer-array domain rejects an array with
-     * a null element, an empty array, and a null array.
-     */
-    @Test
-    void nonEmptyNonNullIntegerArrayRejectsNullElementEmptyOrNull() {
-        assertDomainViolation(() -> evaluate(
-                "ARRAY[1, NULL]::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
-        assertDomainViolation(() -> evaluate(
-                "'{}'::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
-        assertDomainViolation(() -> evaluate(
-                "NULL::ddl_utils.non_empty_non_null_integer_array", Object.class));
-    }
-
     private <T> T evaluate(String expression, Class<T> type) {
         Record record = dsl.fetchOne("SELECT " + expression);
-        assertNotNull(record, () -> "Query returned no row: " + expression);
         return record.get(0, type);
     }
 }

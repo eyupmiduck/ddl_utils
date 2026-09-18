@@ -12,6 +12,8 @@ CREATE OR REPLACE FUNCTION ddl_utils.add_column(
 AS
 $$
 BEGIN
+    -- Delegates to add_columns, which validates the raw type/default SQL; see
+    -- ddl_utils_lib.add_columns for the rules.
     PERFORM ddl_utils.add_columns(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,

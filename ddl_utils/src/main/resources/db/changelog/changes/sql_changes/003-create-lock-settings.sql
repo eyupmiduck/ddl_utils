@@ -11,7 +11,7 @@ CREATE TABLE ddl_utils.database_lock_settings
 );
 
 INSERT INTO ddl_utils.database_lock_settings (id, ddl_lock_timeout, sleep_time, statement_duration)
-VALUES (1, 100, 1000, 30);
+VALUES (1, 100, 1000, 30000);
 
 CREATE TABLE ddl_utils.schema_lock_settings
 (

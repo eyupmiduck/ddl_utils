@@ -3,6 +3,8 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -23,9 +25,9 @@ class ChangelogNamingTest {
      * violates the {@code NNN-name.sql} pattern.
      */
     @Test
-    void sqlFilesHaveThreeDigitPrefix() throws Exception {
+    void sqlFilesHaveThreeDigitPrefix() throws IOException, URISyntaxException {
         URL changesUrl = getClass().getClassLoader().getResource("db/changelog/changes");
-        assertNotNull(changesUrl);
+        assertNotNull(changesUrl, "changelog directory must be on the test classpath");
         Path changesRoot = Path.of(changesUrl.toURI());
 
         List<Path> invalid = ChangelogValidator.findInvalidlyNamedSqlFiles(changesRoot);
@@ -38,13 +40,11 @@ class ChangelogNamingTest {
      * changeSet id violates the {@code NNN-name} pattern.
      */
     @Test
-    void changeSetsHaveThreeDigitPrefix() throws Exception {
+    void changeSetsHaveThreeDigitPrefix() throws IOException, URISyntaxException {
         URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
-        URL masterUrl = getClass().getClassLoader().getResource("db/changelog/db.changelog-master.xml");
-        assertNotNull(changelogUrl);
-        assertNotNull(masterUrl);
+        assertNotNull(changelogUrl, "changelog directory must be on the test classpath");
         Path changelogRoot = Path.of(changelogUrl.toURI());
-        Path master = Path.of(masterUrl.toURI());
+        Path master = changelogRoot.resolve("db.changelog-master.xml");
 
         List<ChangelogValidator.InvalidChangeSet> invalid =
                 ChangelogValidator.findInvalidlyNamedChangeSets(changelogRoot, master);

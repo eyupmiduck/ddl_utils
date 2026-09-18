@@ -174,8 +174,10 @@
                 </executions>
             </plugin>
 
-            <!-- SQLFluff lints the Liquibase .sql files. Requires sqlfluff on PATH
-                 (e.g. the repo's .venv). Skip with -Dskip.sqlfluff. -->
+            <!-- SQLFluff lints the Liquibase .sql files. Defaults to sqlfluff on
+                 PATH; point it at the repo's .venv with
+                 -Dsqlfluff.executable=$PWD/.venv/bin/sqlfluff. Skip with
+                 -Dskip.sqlfluff. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -188,7 +190,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>sqlfluff</executable>
+                            <executable>${sqlfluff.executable}</executable>
                             <arguments>
                                 <argument>lint</argument>
                                 <argument>src/main/resources/db/changelog</argument>

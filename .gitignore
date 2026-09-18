@@ -18,8 +18,19 @@ buildNumber.properties
 
 # IntelliJ
 .idea/
+*.iml
+out/
 
 .venv/
+
+# OS / editor noise
+.DS_Store
+*.log
+
+# Local secrets
+.env
+*.pem
+*.key
 
 # Beads / Dolt files
 .beads/

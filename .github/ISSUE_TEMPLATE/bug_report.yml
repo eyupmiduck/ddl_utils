@@ -61,6 +61,8 @@ body:
     attributes:
       label: ddl_utils version or commit
       placeholder: e.g. main @ 1c1c0b9, or 0.1.0
+    validations:
+      required: true
   - type: textarea
     id: environment
     attributes:

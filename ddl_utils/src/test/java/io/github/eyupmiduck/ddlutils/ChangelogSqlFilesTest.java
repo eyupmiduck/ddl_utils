@@ -1,13 +1,16 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -23,13 +26,16 @@ class ChangelogSqlFilesTest {
      * XML).
      */
     @Test
-    void noOrphanedSqlFiles() throws Exception {
+    void noOrphanedSqlFiles() throws IOException, URISyntaxException {
         URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
-        URL masterUrl = getClass().getClassLoader().getResource("db/changelog/db.changelog-master.xml");
-        Assertions.assertNotNull(changelogUrl);
-        Assertions.assertNotNull(masterUrl);
+        assertNotNull(changelogUrl, "changelog directory must be on the test classpath");
         Path changelogRoot = Path.of(changelogUrl.toURI());
-        Path master = Path.of(masterUrl.toURI());
+        Path master = changelogRoot.resolve("db.changelog-master.xml");
+
+        // Sanity check so the assertion below cannot pass while the graph
+        // references nothing (a misresolved root or an empty changelog).
+        List<Path> referenced = ChangelogValidator.findReferencedSqlFiles(changelogRoot, master);
+        assertFalse(referenced.isEmpty(), "expected the changelog graph to reference SQL files");
 
         List<Path> orphaned = ChangelogValidator.findOrphanedSqlFiles(changelogRoot, master);
 

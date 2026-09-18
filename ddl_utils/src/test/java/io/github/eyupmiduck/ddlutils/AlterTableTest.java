@@ -1,6 +1,8 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,7 @@ import java.sql.Connection;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,7 +61,7 @@ class AlterTableTest extends PostgresTestBase {
                 PUBLIC_SCHEMA, TARGET, "ADD COLUMN injected int; DROP TABLE " + TARGET, 1000, 10, 5000));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "injected"));
-        assertDoesNotThrow(() -> dsl.fetch("SELECT 1 FROM " + TARGET));
+        assertDoesNotThrow(() -> dsl.fetchOne("SELECT 1 FROM " + TARGET));
     }
 
     /**
@@ -73,9 +76,11 @@ class AlterTableTest extends PostgresTestBase {
             awaitAccessShareLockHeld(TARGET);
 
             CompletableFuture<Void> release = rollbackAfter(other, 1000);
-
-            alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
-            release.join();
+            try {
+                alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
+            } finally {
+                release.join();
+            }
         }
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "retried"));
@@ -95,6 +100,27 @@ class AlterTableTest extends PostgresTestBase {
 
             assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "never"));
         }
+    }
+
+    /**
+     * A successful call restores the caller's lock_timeout, so it does not leak
+     * into the rest of the caller's transaction.
+     */
+    @Test
+    void restoresCallerLockTimeout() {
+        dsl.transaction(configuration -> {
+            DSLContext tx = DSL.using(configuration);
+            tx.execute("SET LOCAL lock_timeout = '7s'");
+            String before = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
+                    .get("value", String.class);
+
+            tx.fetch("SELECT ddl_utils_lib.alter_table(?, ?, ?, ?, ?, ?)",
+                    PUBLIC_SCHEMA, TARGET, "ADD COLUMN tuned int", 1000, 10, 5000);
+
+            String after = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
+                    .get("value", String.class);
+            assertEquals(before, after);
+        });
     }
 
     /**

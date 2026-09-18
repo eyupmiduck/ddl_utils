@@ -18,6 +18,7 @@ DECLARE
     l_fragment text := '';
     l_index    integer;
     l_count    integer := pg_catalog.cardinality(i_column_names);
+    l_regtype  regtype;
 BEGIN
     IF pg_catalog.cardinality(i_column_types) <> l_count
         OR pg_catalog.cardinality(i_default_values) <> l_count
@@ -32,6 +33,44 @@ BEGIN
     END IF;
 
     FOR l_index IN 1..l_count LOOP
+        -- The array domains allow blank elements; reject them here so a blank
+        -- name or type cannot produce an empty identifier or malformed SQL.
+        IF pg_catalog.btrim(i_column_names[l_index]) = '' THEN
+            RAISE EXCEPTION 'ddl_utils_lib.add_columns: column name at position % is blank', l_index
+                USING ERRCODE = '22023';
+        END IF;
+        IF pg_catalog.btrim(i_column_types[l_index]) = '' THEN
+            RAISE EXCEPTION 'ddl_utils_lib.add_columns: the type for column % is blank',
+                i_column_names[l_index]
+                USING ERRCODE = '22023';
+        END IF;
+
+        -- The type is spliced in as raw SQL, so require it to resolve to a
+        -- single SQL type. This rejects extra clauses such as 'int, DROP COLUMN
+        -- x' or 'int DEFAULT 0'.
+        l_regtype := NULL;
+        BEGIN
+            l_regtype := pg_catalog.to_regtype(i_column_types[l_index]);
+        EXCEPTION
+            WHEN OTHERS THEN
+                l_regtype := NULL;
+        END;
+        IF l_regtype IS NULL THEN
+            RAISE EXCEPTION
+                'ddl_utils_lib.add_columns: the type for column % is not a valid SQL type',
+                i_column_names[l_index]
+                USING ERRCODE = '22023';
+        END IF;
+
+        -- A default is an arbitrary expression (now(), coalesce(a, b), ...), so
+        -- reject only a top-level comma that could append more DDL.
+        IF ddl_utils_lib.has_top_level_comma(i_default_values[l_index]) THEN
+            RAISE EXCEPTION
+                'ddl_utils_lib.add_columns: the default for column % contains a top-level comma',
+                i_column_names[l_index]
+                USING ERRCODE = '22023';
+        END IF;
+
         IF l_index > 1 THEN
             l_fragment := l_fragment || ', ';
         END IF;
@@ -59,6 +98,8 @@ BEGIN
         END IF;
     END LOOP;
 
+    -- All clauses are applied in one ALTER TABLE, so the call is all-or-nothing:
+    -- a single invalid or already-existing column fails the whole statement.
     PERFORM ddl_utils_lib.alter_table(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,

@@ -1,3 +1,5 @@
+-- Rollback of the caller grants: revoke what the forward changeset granted and
+-- restore PostgreSQL's default PUBLIC execute on each routine.
 REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -104,6 +106,12 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
+    text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
+    text
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_columns(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -131,8 +139,8 @@ REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
-    text,
     ddl_utils.non_null_boolean,
+    text,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
@@ -142,8 +150,8 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
-    text,
     ddl_utils.non_null_boolean,
+    text,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
@@ -164,7 +172,6 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.alter_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_integer_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_boolean_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_text_array FROM ddl_utils_caller;

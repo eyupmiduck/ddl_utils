@@ -18,7 +18,7 @@ class LockSettingsTest extends PostgresTestBase {
 
     private static final int DEFAULT_DDL_LOCK_TIMEOUT = 100;
     private static final int DEFAULT_SLEEP_TIME = 1000;
-    private static final int DEFAULT_STATEMENT_DURATION = 30;
+    private static final int DEFAULT_STATEMENT_DURATION = 30000;
 
     /**
      * Resets the row to the seeded defaults, so tests are independent of each
@@ -77,6 +77,9 @@ class LockSettingsTest extends PostgresTestBase {
         Routines.setDatabaseLockSettings(dsl.configuration(), 250, 500, 60);
 
         assertEquals(250, tableRow().get("ddl_lock_timeout", Integer.class));
+        assertEquals(500, tableRow().get("sleep_time", Integer.class));
+        assertEquals(60, tableRow().get("statement_duration", Integer.class));
+        assertEquals(250, getLockSettings().get("ddl_lock_timeout", Integer.class));
         assertEquals(500, getLockSettings().get("sleep_time", Integer.class));
         assertEquals(60, getLockSettings().get("statement_duration", Integer.class));
     }

@@ -10,4 +10,7 @@
 ARG BASE_IMAGE=postgres:17-alpine
 FROM ${BASE_IMAGE}
 
-COPY roles.sql /docker-entrypoint-initdb.d/roles.sql
+# The entrypoint runs /docker-entrypoint-initdb.d scripts only when the data
+# directory is initialized for the first time; a pre-existing volume is left
+# untouched (and may lack the roles).
+COPY --chown=postgres:postgres --chmod=0644 roles.sql /docker-entrypoint-initdb.d/roles.sql

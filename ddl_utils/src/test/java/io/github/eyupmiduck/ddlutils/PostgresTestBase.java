@@ -86,6 +86,9 @@ abstract class PostgresTestBase {
         try {
             try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
                  Statement statement = admin.createStatement()) {
+                // Tolerate a template left behind by an interrupted earlier run
+                // in the same container, so setup is repeatable.
+                statement.execute("DROP DATABASE IF EXISTS " + TEMPLATE_DATABASE + " WITH (FORCE)");
                 statement.execute("CREATE DATABASE " + TEMPLATE_DATABASE);
             }
             // The template database is fresh, so grant the owner role the privileges it
@@ -136,7 +139,8 @@ abstract class PostgresTestBase {
      */
     @BeforeAll
     void createTestDatabase() throws Exception {
-        databaseName = "test_" + getClass().getSimpleName().toLowerCase();
+        databaseName = "test_" + getClass().getSimpleName().toLowerCase()
+                + "_" + Integer.toHexString(getClass().getName().hashCode());
         try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement statement = admin.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName + " TEMPLATE " + TEMPLATE_DATABASE);
@@ -201,7 +205,11 @@ abstract class PostgresTestBase {
                         SELECT 1
                         FROM pg_locks l
                         JOIN pg_class c ON c.oid = l.relation
-                        WHERE c.relname = ? AND l.mode = 'AccessShareLock' AND l.granted
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        WHERE c.relname = ?
+                            AND n.nspname = current_schema()
+                            AND l.mode = 'AccessShareLock'
+                            AND l.granted
                     )
                     """,
                     table);
@@ -214,23 +222,29 @@ abstract class PostgresTestBase {
     }
 
     /**
-     * Rolls back a connection after a delay, in the background, so a test can
-     * release a held lock while the test thread is blocked in a call. The
-     * returned future completes once the rollback has run.
+     * Rolls back a connection after a delay on a dedicated daemon thread, so a
+     * test can release a held lock while the test thread is blocked in a call.
+     * The returned future completes once the rollback has run, or fails with
+     * the rollback error.
      *
      * @param connection  the connection to roll back
      * @param delayMillis how long to hold before rolling back
      * @return a future that completes when the rollback has run
      */
     protected CompletableFuture<Void> rollbackAfter(Connection connection, long delayMillis) {
-        return CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> completed = new CompletableFuture<>();
+        Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(delayMillis);
                 connection.rollback();
-            } catch (Exception e) {
-                throw new IllegalStateException("failed to roll back the lock holder", e);
+                completed.complete(null);
+            } catch (Throwable e) {
+                completed.completeExceptionally(e);
             }
-        });
+        }, "lock-holder-rollback");
+        thread.setDaemon(true);
+        thread.start();
+        return completed;
     }
 
     /**
@@ -347,9 +361,11 @@ abstract class PostgresTestBase {
         if (connection != null) {
             connection.close();
         }
-        try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
-             Statement statement = admin.createStatement()) {
-            statement.execute("DROP DATABASE " + databaseName);
+        if (databaseName != null) {
+            try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("DROP DATABASE " + databaseName + " WITH (FORCE)");
+            }
         }
     }
 }
