@@ -16,7 +16,6 @@ AS
 $$
 DECLARE
     l_fragment text    := '';
-    l_index    integer;
     l_count    integer := pg_catalog.cardinality(i_column_names);
     l_regtype  regtype;
 BEGIN

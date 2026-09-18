@@ -106,6 +106,12 @@ abstract class PostgresTestBase {
                                 .findCorrectDatabaseImplementation(new JdbcConnection(connection)));
                 liquibase.update();
             }
+            // Install the static-analysis extension (compiled into the custom
+            // image) so every cloned test database has it.
+            try (Connection admin = openConnection(TEMPLATE_DATABASE, POSTGRES.getUsername(), POSTGRES.getPassword());
+                 Statement statement = admin.createStatement()) {
+                statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
+            }
             // Mark as a real template so nothing can connect to it, which
             // keeps CREATE DATABASE ... TEMPLATE always safe.
             try (Connection admin = openConnection(POSTGRES.getDatabaseName(), POSTGRES.getUsername(), POSTGRES.getPassword());
