@@ -157,7 +157,9 @@ SQLFluff lints the changelog `.sql` files during `verify` (create the repo
 `.venv`, or point it at one with
 `-Dsqlfluff.executable=$PWD/.venv/bin/sqlfluff`); skip it with `-Dskip.sqlfluff`.
 `PlpgsqlCheckTest` also runs `plpgsql_check` over every routine and fails on any
-warning. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
+finding not accepted in `plpgsql-check-whitelist.yml`, using the shared
+`PlpgsqlCheck` helper from `liquibase-validation`. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
 ## Local development database
 
