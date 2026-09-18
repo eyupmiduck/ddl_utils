@@ -12,17 +12,19 @@ FROM ${BASE_IMAGE}
 
 # plpgsql_check is not packaged for the PostgreSQL build the official image
 # installs (Alpine's package targets a different major), so build it from
-# source against the image's own server headers. The tag is pinned and its
-# SHA-256 verified; bitcode generation is skipped (no LLVM in the image).
+# source against the image's own server headers. The PGXN distribution is
+# immutable (unlike GitHub's regenerated tag archives), pinned via
+# PLPGSQL_CHECK_VERSION, and its SHA-256 verified: when bumping the version,
+# update the checksum to the new artifact's (see the PGXN API). Bitcode
+# generation is skipped (no LLVM in the image).
 ARG PLPGSQL_CHECK_VERSION=2.10.10
-RUN apk add --no-cache --virtual .plpgsql-check-build build-base wget \
-    && wget -qO /tmp/plpgsql_check.tar.gz \
-        "https://github.com/okbob/plpgsql_check/archive/refs/tags/v${PLPGSQL_CHECK_VERSION}.tar.gz" \
-    && echo "19d5e460c83ba330469fc14074085fc1849a169b8b980b761a7bb7149d4d44ed  /tmp/plpgsql_check.tar.gz" | sha256sum -c - \
-    && mkdir -p /tmp/plpgsql_check \
-    && tar -xzf /tmp/plpgsql_check.tar.gz -C /tmp/plpgsql_check --strip-components=1 \
-    && make -C /tmp/plpgsql_check USE_PGXS=1 with_llvm=no -j"$(nproc)" \
-    && make -C /tmp/plpgsql_check USE_PGXS=1 with_llvm=no install \
+RUN apk add --no-cache --virtual .plpgsql-check-build build-base curl unzip \
+    && curl -fsSL -o /tmp/plpgsql_check.zip \
+        "https://api.pgxn.org/dist/plpgsql_check/${PLPGSQL_CHECK_VERSION}/plpgsql_check-${PLPGSQL_CHECK_VERSION}.zip" \
+    && echo "747e301cbe01b69940cd5df6503d562550d76b2b5b0301f71afffead50c75f6b  /tmp/plpgsql_check.zip" | sha256sum -c - \
+    && unzip -q /tmp/plpgsql_check.zip -d /tmp \
+    && make -C "/tmp/plpgsql_check-${PLPGSQL_CHECK_VERSION}" USE_PGXS=1 with_llvm=no -j"$(nproc)" \
+    && make -C "/tmp/plpgsql_check-${PLPGSQL_CHECK_VERSION}" USE_PGXS=1 with_llvm=no install \
     && apk del .plpgsql-check-build \
     && rm -rf /tmp/plpgsql_check*
 

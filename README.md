@@ -200,8 +200,9 @@ SELECT plpgsql_check_function('ddl_utils.get_lock_settings(text, text)'::regproc
 ```
 
 The init script only runs on first initialization, so an existing data volume
-keeps its roles as-is; recreate the volume (`scripts/refresh-local-db.sh`) to
-pick up a new image.
+keeps its roles and installed extensions as-is (it will not get
+`plpgsql_check`); recreate the volume (`scripts/refresh-local-db.sh`) to pick up
+a new image.
 
 ## Running against a different PostgreSQL version
 
