@@ -172,7 +172,6 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.alter_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_integer_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_boolean_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_text_array FROM ddl_utils_caller;

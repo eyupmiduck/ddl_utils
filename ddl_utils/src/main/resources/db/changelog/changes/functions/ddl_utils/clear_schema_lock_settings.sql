@@ -8,6 +8,8 @@ CREATE OR REPLACE FUNCTION ddl_utils.clear_schema_lock_settings(
 AS
 $$
 BEGIN
+    -- SECURITY DEFINER: the caller may clear any schema's settings. That trust
+    -- is intentional; ddl_utils_caller is the application role.
     DELETE FROM ddl_utils.schema_lock_settings
     WHERE schema_name = i_schema_name;
 END;

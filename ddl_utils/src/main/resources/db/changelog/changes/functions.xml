@@ -15,7 +15,7 @@
          signature changes, add an explicit
          `DROP FUNCTION IF EXISTS <old signature>;` (for example as another
          sqlFile in this changeset) so the deprecated signature is removed. -->
-    <changeSet id="005-create-functions" author="ddl_utils" runOnChange="true">
+    <changeSet id="005-create-functions" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils/set_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <createProcedure path="functions/ddl_utils/get_schema_lock_settings.sql" relativeToChangelogFile="true"/>

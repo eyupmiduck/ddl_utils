@@ -15,6 +15,8 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_column(
 AS
 $$
 BEGIN
+    -- A NULL i_default_value means "no DEFAULT clause"; a non-null value is raw
+    -- SQL (so quoted literals must include their quotes). See add_columns.
     PERFORM ddl_utils_lib.add_columns(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,

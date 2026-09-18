@@ -26,7 +26,8 @@ BEGIN
     -- The fragment is arbitrary DDL, so it cannot be parameterised. Reject
     -- anything that could terminate the statement or inject a comment; real
     -- fragments (for example ADD COLUMN x int DEFAULT 'a') contain none of
-    -- these.
+    -- these. This is a best-effort guard: the function is SECURITY INVOKER, so
+    -- the caller already holds the privileges the fragment would use.
     IF i_alter_table_fragment ~ '[;$]'
         OR i_alter_table_fragment LIKE '%--%'
         OR i_alter_table_fragment LIKE '%/*%'

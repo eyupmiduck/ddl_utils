@@ -167,30 +167,6 @@ class DomainTest extends PostgresTestBase {
                 "NULL::ddl_utils.non_empty_non_null_boolean_array", Object.class));
     }
 
-    /**
-     * The non-empty, non-null-element integer-array domain accepts an array
-     * whose elements are all non-null.
-     */
-    @Test
-    void nonEmptyNonNullIntegerArrayAcceptsNonNullElements() {
-        assertEquals(2, evaluate(
-                "pg_catalog.cardinality(ARRAY[1, 2]::ddl_utils.non_empty_non_null_integer_array)", Integer.class));
-    }
-
-    /**
-     * The non-empty, non-null-element integer-array domain rejects an array with
-     * a null element, an empty array, and a null array.
-     */
-    @Test
-    void nonEmptyNonNullIntegerArrayRejectsNullElementEmptyOrNull() {
-        assertDomainViolation(() -> evaluate(
-                "ARRAY[1, NULL]::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
-        assertDomainViolation(() -> evaluate(
-                "'{}'::integer[]::ddl_utils.non_empty_non_null_integer_array", Object.class));
-        assertDomainViolation(() -> evaluate(
-                "NULL::ddl_utils.non_empty_non_null_integer_array", Object.class));
-    }
-
     private <T> T evaluate(String expression, Class<T> type) {
         Record record = dsl.fetchOne("SELECT " + expression);
         return record.get(0, type);

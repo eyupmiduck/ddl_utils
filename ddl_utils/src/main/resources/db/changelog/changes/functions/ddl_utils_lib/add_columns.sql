@@ -82,6 +82,8 @@ BEGIN
         END IF;
     END LOOP;
 
+    -- All clauses are applied in one ALTER TABLE, so the call is all-or-nothing:
+    -- a single invalid or already-existing column fails the whole statement.
     PERFORM ddl_utils_lib.alter_table(
         i_schema_name => i_schema_name,
         i_table_name => i_table_name,

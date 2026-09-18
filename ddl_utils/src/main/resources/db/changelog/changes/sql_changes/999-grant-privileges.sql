@@ -9,7 +9,6 @@ GRANT USAGE ON DOMAIN ddl_utils.non_null_boolean TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_text_array TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_boolean_array TO ddl_utils_caller;
-GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_integer_array TO ddl_utils_caller;
 
 -- Functions grant EXECUTE to PUBLIC by default; revoke it and grant only to
 -- the caller role, so execution is explicit.

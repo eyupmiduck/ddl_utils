@@ -14,7 +14,9 @@ AS
 $$
 BEGIN
     -- Each RETURN QUERY sets FOUND based on whether it returned rows, so the
-    -- chain falls through table -> schema -> database.
+    -- chain falls through table -> schema -> database. The projections
+    -- deliberately repeat the accessor lookups: keeping the cascade in one
+    -- routine is clearer than composing three set-returning functions.
     RETURN QUERY
         SELECT tls.ddl_lock_timeout, tls.sleep_time, tls.statement_duration
         FROM ddl_utils.table_lock_settings AS tls
