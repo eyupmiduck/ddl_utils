@@ -17,10 +17,10 @@ DECLARE
 BEGIN
     FOR l_index IN 1..l_count
         LOOP
-            -- The array domain allows blank elements; reject them here so a
-            -- blank name cannot produce an empty identifier. The trim set must
-            -- stay in step with the ddl_utils.non_null_text domain
-            -- (004-create-domains.sql), which scalar names are checked against.
+        -- The array domain allows blank elements; reject them here so a
+        -- blank name cannot produce an empty identifier. The trim set must
+        -- stay in step with the ddl_utils.non_null_text domain
+        -- (004-create-domains.sql), which scalar names are checked against.
             IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.drop_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';

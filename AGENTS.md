@@ -178,8 +178,8 @@ on pull requests to `main`.
   it verifies.
 - Prefer testing observable behavior rather than implementation details.
 - Add regression tests when fixing bugs.
-- The routines are statically analysed with the `plpgsql_check` extension
-  (`PlpgsqlCheckTest`). It is compiled into the custom image, created in the
+- The routines are statically analysed with the `plpgsql_check` extension (`PlpgsqlCheckTest`). It is compiled into the
+  custom image, created in the
   template database, and available in dev databases via
   `docker/postgres/roles.sql`; keep the routines free of its warnings.
 
