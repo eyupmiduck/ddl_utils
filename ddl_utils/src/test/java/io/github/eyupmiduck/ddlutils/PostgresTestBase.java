@@ -346,6 +346,176 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Sets the table-level lock settings.
+     *
+     * @param schema      the table schema
+     * @param table       the table name
+     * @param lockTimeout the per-attempt lock timeout in ms
+     * @param sleepTime   the retry sleep in ms
+     * @param duration    the statement budget in ms
+     */
+    protected void setTableLockSettings(String schema, String table, Integer lockTimeout,
+                                        Integer sleepTime, Integer duration) {
+        dsl.fetchOne("SELECT ddl_utils.set_table_lock_settings(?, ?, ?, ?, ?)",
+                schema, table, lockTimeout, sleepTime, duration);
+    }
+
+    /**
+     * Clears the table-level lock settings.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     */
+    protected void clearTableLockSettings(String schema, String table) {
+        dsl.fetchOne("SELECT ddl_utils.clear_table_lock_settings(?, ?)", schema, table);
+    }
+
+    /**
+     * Returns the table-level settings row, or {@code null} when there is none.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @return the settings row, or {@code null}
+     */
+    protected Record getTableLockSettings(String schema, String table) {
+        return dsl.fetchOne(
+                """
+                        SELECT ddl_lock_timeout, sleep_time, statement_duration
+                        FROM ddl_utils.get_table_lock_settings(?, ?)
+                        """,
+                schema, table);
+    }
+
+    /**
+     * Sets the schema-level lock settings.
+     *
+     * @param schema      the schema name
+     * @param lockTimeout the per-attempt lock timeout in ms
+     * @param sleepTime   the retry sleep in ms
+     * @param duration    the statement budget in ms
+     */
+    protected void setSchemaLockSettings(String schema, Integer lockTimeout,
+                                         Integer sleepTime, Integer duration) {
+        dsl.fetchOne("SELECT ddl_utils.set_schema_lock_settings(?, ?, ?, ?)",
+                schema, lockTimeout, sleepTime, duration);
+    }
+
+    /**
+     * Clears the schema-level lock settings.
+     *
+     * @param schema the schema name
+     */
+    protected void clearSchemaLockSettings(String schema) {
+        dsl.fetchOne("SELECT ddl_utils.clear_schema_lock_settings(?)", schema);
+    }
+
+    /**
+     * Returns the schema-level settings row, or {@code null} when there is none.
+     *
+     * @param schema the schema name
+     * @return the settings row, or {@code null}
+     */
+    protected Record getSchemaLockSettings(String schema) {
+        return dsl.fetchOne(
+                """
+                        SELECT ddl_lock_timeout, sleep_time, statement_duration
+                        FROM ddl_utils.get_schema_lock_settings(?)
+                        """,
+                schema);
+    }
+
+    /**
+     * Sets the database-level lock settings.
+     *
+     * @param lockTimeout the per-attempt lock timeout in ms
+     * @param sleepTime   the retry sleep in ms
+     * @param duration    the statement budget in ms
+     */
+    protected void setDatabaseLockSettings(Integer lockTimeout, Integer sleepTime, Integer duration) {
+        dsl.fetchOne("SELECT ddl_utils.set_database_lock_settings(?, ?, ?)",
+                lockTimeout, sleepTime, duration);
+    }
+
+    /**
+     * Returns the database-level settings row.
+     *
+     * @return the settings row
+     */
+    protected Record getDatabaseLockSettings() {
+        return dsl.fetchOne(
+                """
+                        SELECT ddl_lock_timeout, sleep_time, statement_duration
+                        FROM ddl_utils.get_database_lock_settings()
+                        """);
+    }
+
+    /**
+     * Returns the effective settings for a table (table, then schema, then
+     * database).
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @return the settings row
+     */
+    protected Record getLockSettings(String schema, String table) {
+        return dsl.fetchOne(
+                """
+                        SELECT ddl_lock_timeout, sleep_time, statement_duration
+                        FROM ddl_utils.get_lock_settings(?, ?)
+                        """,
+                schema, table);
+    }
+
+    /**
+     * Runs {@code call} while another session holds an ACCESS SHARE lock on
+     * {@code table}, and asserts it gives up with SQLSTATE {@code 55P03}
+     * promptly (the settings passed to the call must make the budget short).
+     *
+     * @param table the locked table
+     * @param call  the call expected to fail
+     * @throws SQLException         if the competing connection cannot be opened
+     * @throws InterruptedException if waiting for the lock is interrupted
+     */
+    protected void assertGivesUpWhileTableLocked(String table, Executable call)
+            throws SQLException, InterruptedException {
+        try (Connection other = openTestConnection()) {
+            holdAccessShareLock(other, table);
+            awaitAccessShareLockHeld(table);
+
+            long startedAt = System.nanoTime();
+            assertSqlState("55P03", call);
+            long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
+
+            assertTrue(elapsedMillis < 5000,
+                    () -> "the call did not give up promptly; took " + elapsedMillis + " ms");
+        }
+    }
+
+    /**
+     * Runs {@code call} while another session holds an ACCESS SHARE lock on
+     * {@code table}, releasing the lock after {@code releaseDelayMillis}.
+     *
+     * @param table              the locked table
+     * @param releaseDelayMillis how long to hold the lock before releasing it
+     * @param call               the call to run
+     */
+    protected void runWhileTableLocked(String table, long releaseDelayMillis, Runnable call) {
+        try (Connection other = openTestConnection()) {
+            holdAccessShareLock(other, table);
+            awaitAccessShareLockHeld(table);
+
+            CompletableFuture<Void> release = rollbackAfter(other, releaseDelayMillis);
+            try {
+                call.run();
+            } finally {
+                release.join();
+            }
+        } catch (SQLException | InterruptedException e) {
+            throw new IllegalStateException("failed while running under a table lock", e);
+        }
+    }
+
+    /**
      * Closes the connection and drops this test class's private database.
      */
     @AfterAll

@@ -5,8 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -91,17 +89,7 @@ class AddColumnSettingsTest extends PostgresTestBase {
     void usesTableLockSettings() throws Exception {
         setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
-        try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, TARGET);
-            awaitAccessShareLockHeld(TARGET);
-
-            long startedAt = System.nanoTime();
-            assertSqlState("55P03", () -> addColumn("blocked", "int", null, true));
-            long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
-
-            assertTrue(elapsedMillis < 5000,
-                    () -> "expected the table's 300 ms statement duration, took " + elapsedMillis + " ms");
-        }
+        assertGivesUpWhileTableLocked(TARGET, () -> addColumn("blocked", "int", null, true));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "blocked"));
     }
@@ -135,12 +123,4 @@ class AddColumnSettingsTest extends PostgresTestBase {
         Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET, names, types, defaults, nullable);
     }
 
-    private void setTableLockSettings(String schema, String table, Integer lockTimeout,
-                                      Integer sleepTime, Integer duration) {
-        Routines.setTableLockSettings(dsl.configuration(), schema, table, lockTimeout, sleepTime, duration);
-    }
-
-    private void clearTableLockSettings(String schema, String table) {
-        Routines.clearTableLockSettings(dsl.configuration(), schema, table);
-    }
 }

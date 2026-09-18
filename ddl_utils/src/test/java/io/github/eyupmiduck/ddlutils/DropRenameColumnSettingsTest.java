@@ -5,8 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,7 +25,7 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
     @AfterEach
     void cleanUp() {
         try {
-            Routines.clearTableLockSettings(dsl.configuration(), PUBLIC_SCHEMA, TARGET);
+            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
         } finally {
             dropTestTable(TARGET);
         }
@@ -75,19 +73,9 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        Routines.setTableLockSettings(dsl.configuration(), PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
-        try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, TARGET);
-            awaitAccessShareLockHeld(TARGET);
-
-            long startedAt = System.nanoTime();
-            assertSqlState("55P03",
-                    () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
-            long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
-
-            assertTrue(elapsedMillis < 5000,
-                    () -> "expected the table's 300 ms statement duration, took " + elapsedMillis + " ms");
-        }
+        assertGivesUpWhileTableLocked(TARGET,
+                () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
     }
 }

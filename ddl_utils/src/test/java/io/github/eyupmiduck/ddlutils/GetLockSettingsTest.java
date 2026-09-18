@@ -1,6 +1,5 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.jooq.Record;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,10 +30,9 @@ class GetLockSettingsTest extends PostgresTestBase {
      */
     @BeforeEach
     void resetLockSettings() {
-        Routines.setDatabaseLockSettings(dsl.configuration(),
-                DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
-        Routines.clearSchemaLockSettings(dsl.configuration(), SCHEMA);
-        Routines.clearTableLockSettings(dsl.configuration(), SCHEMA, TABLE);
+        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+        clearSchemaLockSettings(SCHEMA);
+        clearTableLockSettings(SCHEMA, TABLE);
     }
 
     /**
@@ -56,7 +54,7 @@ class GetLockSettingsTest extends PostgresTestBase {
      */
     @Test
     void schemaOverrideWinsOverDatabaseDefaults() {
-        Routines.setSchemaLockSettings(dsl.configuration(), SCHEMA, 200, 300, 40);
+        setSchemaLockSettings(SCHEMA, 200, 300, 40);
 
         Record settings = getLockSettings(SCHEMA, TABLE);
 
@@ -72,8 +70,8 @@ class GetLockSettingsTest extends PostgresTestBase {
      */
     @Test
     void tableOverrideWinsOverSchemaAndDatabase() {
-        Routines.setSchemaLockSettings(dsl.configuration(), SCHEMA, 200, 300, 40);
-        Routines.setTableLockSettings(dsl.configuration(), SCHEMA, TABLE, 10, 20, 30);
+        setSchemaLockSettings(SCHEMA, 200, 300, 40);
+        setTableLockSettings(SCHEMA, TABLE, 10, 20, 30);
 
         Record settings = getLockSettings(SCHEMA, TABLE);
 
@@ -110,13 +108,6 @@ class GetLockSettingsTest extends PostgresTestBase {
         } finally {
             restoreDatabaseDefaults();
         }
-    }
-
-    private Record getLockSettings(String schema, String table) {
-        return dsl.fetchOne("""
-                SELECT ddl_lock_timeout, sleep_time, statement_duration
-                FROM ddl_utils.get_lock_settings(?, ?)
-                """, schema, table);
     }
 
     private void deleteDatabaseDefaults() {
