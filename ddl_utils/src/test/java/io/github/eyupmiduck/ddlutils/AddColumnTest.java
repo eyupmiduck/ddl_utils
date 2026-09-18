@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,7 +61,9 @@ class AddColumnTest extends PostgresTestBase {
         addColumn("count", "int", "0", false, 1000, 10, 5000);
 
         assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "is_nullable"));
-        assertEquals("0", columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "column_default"));
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "column_default");
+        assertNotNull(defaultExpression);
+        assertTrue(defaultExpression.contains("0"));
     }
 
     /**

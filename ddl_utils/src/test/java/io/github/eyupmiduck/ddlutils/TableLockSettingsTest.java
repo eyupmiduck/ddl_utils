@@ -2,6 +2,7 @@ package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.jooq.Record;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -21,6 +22,16 @@ class TableLockSettingsTest extends PostgresTestBase {
     private static final String TABLE = "table_lock_settings_test_table";
     private static final String CLEAR_TABLE = "table_lock_settings_clear_table";
     private static final String KEEP_TABLE = "table_lock_settings_keep_table";
+
+    /**
+     * Removes any rows this class created, so its tests stay order-independent.
+     */
+    @AfterEach
+    void clearSeededRows() {
+        clearTableLockSettings(SCHEMA, TABLE);
+        clearTableLockSettings(SCHEMA, CLEAR_TABLE);
+        clearTableLockSettings(SCHEMA, KEEP_TABLE);
+    }
 
     /**
      * get_table_lock_settings returns no row for a table that has no settings.

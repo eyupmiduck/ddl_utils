@@ -15,6 +15,8 @@ DECLARE
     l_statement             text;
     l_started_at            timestamptz;
     l_previous_lock_timeout text;
+    l_lock_timeout          integer;
+    l_remaining_ms          integer;
 BEGIN
     IF pg_catalog.btrim(i_alter_table_fragment) = '' THEN
         RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment must not be blank'
@@ -48,13 +50,26 @@ BEGIN
         -- lock_timeout is transaction scoped; set it outside the exception
         -- block on every attempt so a caught failure cannot leave it unset.
         -- (Setting it inside the block would be rolled back with the
-        -- subtransaction.) In PostgreSQL a lock_timeout of 0 disables the
-        -- timeout, in which case the retry and duration logic cannot apply.
-        -- Zero is accepted as a deliberate caller choice (a sleep_time of 0
-        -- busy-waits) rather than rejected.
+        -- subtransaction.) The per-attempt timeout is capped by the remaining
+        -- statement budget, so a single attempt cannot overshoot the deadline.
+        -- A ddl_lock_timeout of 0 is a deliberate caller choice to wait with
+        -- no timeout (and a sleep_time of 0 busy-waits); the budget then
+        -- cannot apply.
+        IF i_ddl_lock_timeout = 0 THEN
+            l_lock_timeout := 0;
+        ELSE
+            l_remaining_ms := i_statement_duration - pg_catalog.floor(
+                    pg_catalog.date_part('epoch', pg_catalog.clock_timestamp() - l_started_at) * 1000
+                    )::integer;
+            l_lock_timeout := CASE
+                WHEN l_remaining_ms < 1 THEN 1
+                WHEN l_remaining_ms < i_ddl_lock_timeout THEN l_remaining_ms
+                ELSE i_ddl_lock_timeout
+            END;
+        END IF;
         PERFORM pg_catalog.set_config(
                 'lock_timeout',
-                pg_catalog.format('%sms', i_ddl_lock_timeout),
+                pg_catalog.format('%sms', l_lock_timeout),
                 true
                 );
 

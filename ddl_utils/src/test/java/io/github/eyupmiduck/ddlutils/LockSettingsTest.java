@@ -77,6 +77,9 @@ class LockSettingsTest extends PostgresTestBase {
         Routines.setDatabaseLockSettings(dsl.configuration(), 250, 500, 60);
 
         assertEquals(250, tableRow().get("ddl_lock_timeout", Integer.class));
+        assertEquals(500, tableRow().get("sleep_time", Integer.class));
+        assertEquals(60, tableRow().get("statement_duration", Integer.class));
+        assertEquals(250, getLockSettings().get("ddl_lock_timeout", Integer.class));
         assertEquals(500, getLockSettings().get("sleep_time", Integer.class));
         assertEquals(60, getLockSettings().get("statement_duration", Integer.class));
     }

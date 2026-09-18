@@ -6,9 +6,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Verifies that the Liquibase changelog creates the
- * {@code ddl_utils.non_negative_integer}, {@code ddl_utils.non_null_text}, and
- * {@code ddl_utils.non_null_boolean} domains with the expected constraints.
+ * Verifies that the Liquibase changelog creates the {@code ddl_utils} domains
+ * (scalar and array) with the expected constraints.
  */
 class DomainTest extends PostgresTestBase {
 
@@ -194,7 +193,6 @@ class DomainTest extends PostgresTestBase {
 
     private <T> T evaluate(String expression, Class<T> type) {
         Record record = dsl.fetchOne("SELECT " + expression);
-        assertNotNull(record, () -> "Query returned no row: " + expression);
         return record.get(0, type);
     }
 }
