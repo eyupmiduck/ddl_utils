@@ -15,6 +15,9 @@ BEGIN
     -- The schema/table key is stored as given and not resolved against
     -- pg_class, so settings can be provisioned before the table exists. A typo
     -- simply never matches.
+    --
+    -- Concurrent upserts on the same key can still deadlock or fail with a
+    -- serialization error; callers that need to survive that must retry.
     INSERT INTO ddl_utils.table_lock_settings (
         schema_name, table_name, ddl_lock_timeout, sleep_time, statement_duration
     )

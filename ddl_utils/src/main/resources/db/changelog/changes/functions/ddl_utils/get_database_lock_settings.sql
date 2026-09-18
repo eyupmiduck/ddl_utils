@@ -10,6 +10,8 @@ CREATE OR REPLACE FUNCTION ddl_utils.get_database_lock_settings()
 AS
 $$
 BEGIN
+    -- The settings table is a singleton, enforced by the id = 1 check
+    -- constraint on ddl_utils.database_lock_settings.
     RETURN QUERY
         SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
         FROM ddl_utils.database_lock_settings AS ls

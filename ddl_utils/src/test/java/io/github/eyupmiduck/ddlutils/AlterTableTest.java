@@ -61,7 +61,7 @@ class AlterTableTest extends PostgresTestBase {
                 PUBLIC_SCHEMA, TARGET, "ADD COLUMN injected int; DROP TABLE " + TARGET, 1000, 10, 5000));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "injected"));
-        assertDoesNotThrow(() -> dsl.fetch("SELECT 1 FROM " + TARGET));
+        assertDoesNotThrow(() -> dsl.fetchOne("SELECT 1 FROM " + TARGET));
     }
 
     /**

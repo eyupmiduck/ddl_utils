@@ -70,8 +70,10 @@ class SchemaLockSettingsTest extends PostgresTestBase {
      */
     @Test
     void callerCannotUpdateSchemaLockSettings() {
+        setSchemaLockSettings(SCHEMA, 200, 300, 40);
+
         assertSqlState("42501", () -> dsl.execute(
-                "UPDATE ddl_utils.schema_lock_settings SET sleep_time = 1 WHERE schema_name = 'x'"));
+                "UPDATE ddl_utils.schema_lock_settings SET sleep_time = 1 WHERE schema_name = ?", SCHEMA));
     }
 
     /**

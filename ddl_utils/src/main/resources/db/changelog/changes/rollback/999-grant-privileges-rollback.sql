@@ -1,3 +1,5 @@
+-- Rollback of the caller grants: revoke what the forward changeset granted and
+-- restore PostgreSQL's default PUBLIC execute on each routine.
 REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

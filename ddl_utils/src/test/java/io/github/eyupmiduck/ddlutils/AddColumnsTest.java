@@ -18,6 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AddColumnsTest extends PostgresTestBase {
 
     private static final String TARGET = "add_columns_target";
+    private static final int DDL_LOCK_TIMEOUT = 1000;
+    private static final int SLEEP_TIME = 10;
+    private static final int STATEMENT_DURATION = 5000;
 
     @BeforeEach
     void createTargetTable() {
@@ -40,7 +43,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int", "text"},
                 new String[]{null, "'x'"},
                 new Boolean[]{true, false},
-                1000, 10, 5000);
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
@@ -62,35 +65,35 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int"},
                 new String[]{null, null},
                 new Boolean[]{true, true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         // defaults shorter than names
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first", "second"},
                 new String[]{"int", "text"},
                 new String[]{null},
                 new Boolean[]{true, true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         // nullable shorter than names
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first", "second"},
                 new String[]{"int", "text"},
                 new String[]{null, null},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         // defaults longer than names
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first"},
                 new String[]{"int"},
                 new String[]{null, null},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         // nullable longer than names
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first"},
                 new String[]{"int"},
                 new String[]{null},
                 new Boolean[]{true, true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
@@ -107,7 +110,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int"},
                 new String[]{"   "},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
     }
@@ -123,13 +126,13 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int"},
                 new String[]{null},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first"},
                 new String[]{"  "},
                 new String[]{null},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
     }
@@ -146,7 +149,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int, DROP COLUMN id"},
                 new String[]{null},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
@@ -164,7 +167,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"int"},
                 new String[]{"0, ADD COLUMN backdoor int"},
                 new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "backdoor"));
@@ -181,7 +184,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new String[]{"numeric(10,2)", "text"},
                 new String[]{"coalesce(1, 2)", "'a,b'"},
                 new Boolean[]{true, true},
-                1000, 10, 5000);
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "amount"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "label"));
@@ -193,7 +196,7 @@ class AddColumnsTest extends PostgresTestBase {
     @Test
     void rejectsEmptyArraysThroughDomains() {
         assertDomainViolation(() -> addColumns(
-                new String[0], new String[0], new String[0], new Boolean[0], 1000, 10, 5000));
+                new String[0], new String[0], new String[0], new Boolean[0], DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
     }
 
     /**
@@ -204,13 +207,13 @@ class AddColumnsTest extends PostgresTestBase {
     void rejectsNullElementInNonNullArrays() {
         assertDomainViolation(() -> addColumns(
                 new String[]{null}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> addColumns(
                 new String[]{"first"}, new String[]{null}, new String[]{null}, new Boolean[]{true},
-                1000, 10, 5000));
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> addColumns(
-                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{null},
-                1000, 10, 5000));
+                new String[]{"first"}, new String[]{"int"}, new String[]{"'x'"}, new Boolean[]{null},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
     }
 
     private void addColumns(String[] names, String[] types, String[] defaults, Boolean[] nullable,

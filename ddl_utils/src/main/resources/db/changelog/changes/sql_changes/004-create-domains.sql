@@ -9,6 +9,8 @@ CREATE DOMAIN ddl_utils.non_null_text AS text
 CREATE DOMAIN ddl_utils.non_null_boolean AS boolean
     CONSTRAINT non_null_boolean_check CHECK (value IS NOT NULL);
 
+-- Unlike the non_null variants, this domain allows NULL elements: callers that
+-- need element-level guarantees must use non_empty_non_null_text_array.
 CREATE DOMAIN ddl_utils.non_empty_text_array AS text[]
     CONSTRAINT non_empty_text_array_check CHECK (
         value IS NOT NULL AND pg_catalog.cardinality(value) >= 1

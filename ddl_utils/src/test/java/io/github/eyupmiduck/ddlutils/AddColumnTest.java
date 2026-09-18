@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,6 +68,19 @@ class AddColumnTest extends PostgresTestBase {
     }
 
     /**
+     * Adding a NOT NULL column with no default to a table that already has rows
+     * fails, leaving the table unchanged.
+     */
+    @Test
+    void rejectsNotNullColumnWithoutDefaultOnPopulatedTable() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id) VALUES (1)");
+
+        assertSqlState("23502", () -> addColumn("required", "int", null, false, 1000, 10, 5000));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "required"));
+    }
+
+    /**
      * Rejects a blank default expression, delegated to
      * {@code ddl_utils_lib.add_columns}, with an invalid-parameter error.
      */
@@ -90,12 +104,16 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void rejectsNullAndNegativeArguments() {
+        // nullable is null
         assertDomainViolation(() -> addColumn("note", "text", null, null, 100, 100, 1000));
+        // ddl_lock_timeout is null / negative
         assertDomainViolation(() -> addColumn("note", "text", null, true, null, 100, 1000));
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, null, 1000));
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, 100, null));
         assertDomainViolation(() -> addColumn("note", "text", null, true, -1, 100, 1000));
+        // sleep_time is null / negative
+        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, null, 1000));
         assertDomainViolation(() -> addColumn("note", "text", null, true, 100, -1, 1000));
+        // statement_duration is null / negative
+        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, 100, null));
         assertDomainViolation(() -> addColumn("note", "text", null, true, 100, 100, -1));
     }
 

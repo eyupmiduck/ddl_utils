@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,7 +47,9 @@ class AddColumnSettingsTest extends PostgresTestBase {
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "note"));
         assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
-        assertTrue(columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default").contains("'none'"));
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        assertNotNull(defaultExpression);
+        assertTrue(defaultExpression.contains("'none'"));
     }
 
     /**
