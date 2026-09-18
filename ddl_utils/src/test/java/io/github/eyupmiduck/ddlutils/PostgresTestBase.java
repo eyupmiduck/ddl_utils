@@ -21,6 +21,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -474,15 +475,17 @@ abstract class PostgresTestBase {
 
     /**
      * Runs {@code call} while another session holds an ACCESS SHARE lock on
-     * {@code table}, and asserts it gives up with SQLSTATE {@code 55P03}
-     * promptly (the settings passed to the call must make the budget short).
+     * {@code table}, and asserts it gives up with SQLSTATE {@code 55P03} within
+     * {@code maxMillis}. The settings passed to the call must make the budget
+     * short, so the bound distinguishes giving up from retrying for seconds.
      *
-     * @param table the locked table
-     * @param call  the call expected to fail
+     * @param table     the locked table
+     * @param maxMillis the maximum expected time to give up
+     * @param call      the call expected to fail
      * @throws SQLException         if the competing connection cannot be opened
      * @throws InterruptedException if waiting for the lock is interrupted
      */
-    protected void assertGivesUpWhileTableLocked(String table, Executable call)
+    protected void assertGivesUpWhileTableLocked(String table, long maxMillis, Executable call)
             throws SQLException, InterruptedException {
         try (Connection other = openTestConnection()) {
             holdAccessShareLock(other, table);
@@ -492,8 +495,8 @@ abstract class PostgresTestBase {
             assertSqlState("55P03", call);
             long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
 
-            assertTrue(elapsedMillis < 5000,
-                    () -> "the call did not give up promptly; took " + elapsedMillis + " ms");
+            assertTrue(elapsedMillis < maxMillis,
+                    () -> "the call did not give up within " + maxMillis + " ms; took " + elapsedMillis + " ms");
         }
     }
 
@@ -511,10 +514,23 @@ abstract class PostgresTestBase {
             awaitAccessShareLockHeld(table);
 
             CompletableFuture<Void> release = rollbackAfter(other, releaseDelayMillis);
+            Throwable failure = null;
             try {
                 call.run();
+            } catch (Throwable e) {
+                failure = e;
+                throw e;
             } finally {
-                release.join();
+                // Do not let a rollback failure hide the primary failure.
+                try {
+                    release.join();
+                } catch (CompletionException e) {
+                    if (failure != null) {
+                        failure.addSuppressed(e);
+                    } else {
+                        throw e;
+                    }
+                }
             }
         } catch (SQLException | InterruptedException e) {
             throw new IllegalStateException("failed while running under a table lock", e);

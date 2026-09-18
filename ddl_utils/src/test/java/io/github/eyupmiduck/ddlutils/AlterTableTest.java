@@ -77,7 +77,7 @@ class AlterTableTest extends PostgresTestBase {
      */
     @Test
     void givesUpAfterStatementDuration() throws Exception {
-        assertGivesUpWhileTableLocked(TARGET,
+        assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "never"));
