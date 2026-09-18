@@ -26,5 +26,13 @@ GRANT CREATE ON DATABASE ddl_utils TO ddl_utils_owner;
 \connect ddl_utils
 GRANT CREATE ON SCHEMA public TO ddl_utils_owner;
 
+-- plpgsql_check is compiled into this image and used for static analysis of
+-- the ddl_utils / ddl_utils_lib routines (for example
+-- SELECT plpgsql_check_function('ddl_utils.get_lock_settings(..., ...)'::regprocedure)).
+-- This only creates it in the ddl_utils database, and init scripts only run on
+-- first cluster initialization: an existing dev volume needs a manual
+-- `CREATE EXTENSION plpgsql_check;` (or scripts/refresh-local-db.sh).
+CREATE EXTENSION IF NOT EXISTS plpgsql_check;
+
 -- The test role exercises the same privileges as a real application caller.
 GRANT ddl_utils_caller TO ddl_utils_test;

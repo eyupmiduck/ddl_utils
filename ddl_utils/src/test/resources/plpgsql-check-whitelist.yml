@@ -1,0 +1,16 @@
+# Accepted plpgsql_check findings.
+#
+# PlpgsqlCheckTest runs plpgsql_check_function_tb(..., all_warnings => true)
+# over every routine in ddl_utils / ddl_utils_lib and matches each finding
+# against one of these entries (field by field; omit a field to match any
+# value). A finding with no match fails the test, and an entry that matches no
+# finding is reported as stale and also fails.
+- schema: ddl_utils_lib
+  function: alter_table
+  level: security
+  statement: EXECUTE
+  message: text type variable is not sanitized
+  reason: >-
+    The internal runner executes a caller-provided ALTER TABLE fragment and is
+    SECURITY INVOKER, so a caller already holds the privileges the fragment
+    would use. The dynamic SQL is deliberate; see alter_table.sql.

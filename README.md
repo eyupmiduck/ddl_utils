@@ -156,7 +156,10 @@ One module, or a single test:
 SQLFluff lints the changelog `.sql` files during `verify` (create the repo
 `.venv`, or point it at one with
 `-Dsqlfluff.executable=$PWD/.venv/bin/sqlfluff`); skip it with `-Dskip.sqlfluff`.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
+`PlpgsqlCheckTest` also runs `plpgsql_check` over every routine and fails on any
+finding not accepted in `plpgsql-check-whitelist.yml`, using the shared
+`PlpgsqlCheck` helper from `liquibase-validation`. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
 ## Local development database
 
@@ -190,9 +193,18 @@ Liquibase runs:
   lock-settings tables and `EXECUTE` on the routines).
 - `ddl_utils_test` — granted `ddl_utils_caller`; used by the integration tests.
 
-This is also where non-standard PostgreSQL extensions would be installed. The
-init script only runs on first initialization, so an existing data volume keeps
-its roles as-is.
+The image also compiles the [`plpgsql_check`](https://github.com/okbob/plpgsql_check)
+extension from source (pinned and checksum-verified), so it is available in dev
+databases for static analysis of the routines:
+
+```sql
+SELECT plpgsql_check_function('ddl_utils.get_lock_settings(text, text)'::regprocedure);
+```
+
+The init script only runs on first initialization, so an existing data volume
+keeps its roles and installed extensions as-is (it will not get
+`plpgsql_check`); recreate the volume (`scripts/refresh-local-db.sh`) to pick up
+a new image.
 
 ## Running against a different PostgreSQL version
 

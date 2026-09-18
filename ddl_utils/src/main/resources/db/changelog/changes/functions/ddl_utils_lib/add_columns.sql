@@ -16,7 +16,6 @@ AS
 $$
 DECLARE
     l_fragment text    := '';
-    l_index    integer;
     l_count    integer := pg_catalog.cardinality(i_column_names);
     l_regtype  regtype;
 BEGIN
@@ -35,7 +34,9 @@ BEGIN
     FOR l_index IN 1..l_count
         LOOP
         -- The array domains allow blank elements; reject them here so a blank
-        -- name or type cannot produce an empty identifier or malformed SQL.
+        -- name or type cannot produce an empty identifier or malformed SQL. The
+        -- trim set must stay in step with the ddl_utils.non_null_text domain
+        -- (004-create-domains.sql).
             IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';

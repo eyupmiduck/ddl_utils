@@ -18,6 +18,9 @@ DECLARE
     l_lock_timeout          integer;
     l_remaining_ms          integer;
 BEGIN
+    -- The EXECUTE below is intentionally not sanitised: the fragment is
+    -- caller-provided DDL and the function is SECURITY INVOKER (see the guard
+    -- below). PlpgsqlCheckTest allow-lists its security warning.
     IF pg_catalog.btrim(i_alter_table_fragment) = '' THEN
         RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment must not be blank'
             USING ERRCODE = '22023';

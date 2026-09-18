@@ -89,7 +89,7 @@ class AddColumnSettingsTest extends PostgresTestBase {
     void usesTableLockSettings() throws Exception {
         setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, () -> addColumn("blocked", "int", null, true));
+        assertGivesUpWhileTableLocked(TARGET, 2000, () -> addColumn("blocked", "int", null, true));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "blocked"));
     }

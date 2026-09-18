@@ -75,7 +75,32 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
     void usesTableLockSettings() throws Exception {
         setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET,
+        assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
+    }
+
+    /**
+     * drop_columns resolves the table settings and gives up while the table is
+     * locked.
+     */
+    @Test
+    void dropColumnsUsesTableLockSettings() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                        new String[]{"old_name", "keep"}));
+    }
+
+    /**
+     * rename_column resolves the table settings and gives up while the table is
+     * locked.
+     */
+    @Test
+    void renameColumnUsesTableLockSettings() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name"));
     }
 }

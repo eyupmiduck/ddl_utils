@@ -270,6 +270,7 @@ RETURNS void
 with explicit lock settings. A NULL `i_default_value` means no `DEFAULT` clause.
 
 ###
+
 `ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -285,6 +286,7 @@ RETURNS void
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.drop_columns`.
 
 ###
+
 `ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -302,6 +304,7 @@ in a single `ALTER TABLE` (all-or-nothing) via `ddl_utils_lib.alter_table`. Each
 name is quoted with `%I`; a blank element is rejected with `22023`.
 
 ###
+
 `ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
