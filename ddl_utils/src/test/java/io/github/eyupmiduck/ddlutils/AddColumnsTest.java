@@ -138,12 +138,27 @@ class AddColumnsTest extends PostgresTestBase {
     }
 
     /**
-     * Rejects a column type with a top-level comma, which could otherwise
-     * append extra clauses to the generated ALTER TABLE, leaving the table
-     * unchanged.
+     * Rejects a type that is not a single SQL type: an unknown type, a type
+     * with an appended clause, and a type with a comma that would add another
+     * clause. The table is left unchanged.
      */
     @Test
-    void rejectsTopLevelCommaInType() {
+    void rejectsInvalidType() {
+        // unknown type
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"no_such_type"},
+                new String[]{null},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        // appended clause
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int DEFAULT 0"},
+                new String[]{null},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        // comma would append another action
         assertSqlState("22023", () -> addColumns(
                 new String[]{"first"},
                 new String[]{"int, DROP COLUMN id"},
