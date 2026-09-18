@@ -128,4 +128,46 @@
             <sqlFile path="functions-rollback/ddl_utils_lib/add_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="021-drop_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/drop_column.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/drop_column-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="022-rename_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/rename_column.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/rename_column-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="023-drop_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/drop_column.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/drop_column-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="024-rename_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/rename_column.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/rename_column-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="025-drop_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/drop_columns.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/drop_columns-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="026-drop_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/drop_columns.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/drop_columns-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

@@ -1,6 +1,5 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.jooq.Record;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +25,7 @@ class LockSettingsTest extends PostgresTestBase {
      */
     @BeforeEach
     void resetLockSettings() {
-        Routines.setDatabaseLockSettings(dsl.configuration(),
-                DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
     }
 
     /**
@@ -60,7 +58,7 @@ class LockSettingsTest extends PostgresTestBase {
      */
     @Test
     void getLockSettingsReturnsCurrentValues() {
-        Record row = getLockSettings();
+        Record row = getDatabaseLockSettings();
 
         assertNotNull(row);
         assertEquals(DEFAULT_DDL_LOCK_TIMEOUT, row.get("ddl_lock_timeout", Integer.class));
@@ -74,14 +72,14 @@ class LockSettingsTest extends PostgresTestBase {
      */
     @Test
     void setLockSettingsUpdatesValues() {
-        Routines.setDatabaseLockSettings(dsl.configuration(), 250, 500, 60);
+        setDatabaseLockSettings(250, 500, 60);
 
         assertEquals(250, tableRow().get("ddl_lock_timeout", Integer.class));
         assertEquals(500, tableRow().get("sleep_time", Integer.class));
         assertEquals(60, tableRow().get("statement_duration", Integer.class));
-        assertEquals(250, getLockSettings().get("ddl_lock_timeout", Integer.class));
-        assertEquals(500, getLockSettings().get("sleep_time", Integer.class));
-        assertEquals(60, getLockSettings().get("statement_duration", Integer.class));
+        assertEquals(250, getDatabaseLockSettings().get("ddl_lock_timeout", Integer.class));
+        assertEquals(500, getDatabaseLockSettings().get("sleep_time", Integer.class));
+        assertEquals(60, getDatabaseLockSettings().get("statement_duration", Integer.class));
     }
 
     /**
@@ -90,12 +88,12 @@ class LockSettingsTest extends PostgresTestBase {
      */
     @Test
     void setLockSettingsRejectsInvalidValues() {
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), null, 1000, 30));
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), 100, null, 30));
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), 100, 1000, null));
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), -1, 1000, 30));
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), 100, -1, 30));
-        assertDomainViolation(() -> Routines.setDatabaseLockSettings(dsl.configuration(), 100, 1000, -1));
+        assertDomainViolation(() -> setDatabaseLockSettings(null, 1000, 30));
+        assertDomainViolation(() -> setDatabaseLockSettings(100, null, 30));
+        assertDomainViolation(() -> setDatabaseLockSettings(100, 1000, null));
+        assertDomainViolation(() -> setDatabaseLockSettings(-1, 1000, 30));
+        assertDomainViolation(() -> setDatabaseLockSettings(100, -1, 30));
+        assertDomainViolation(() -> setDatabaseLockSettings(100, 1000, -1));
     }
 
     private Record tableRow() {
@@ -106,10 +104,4 @@ class LockSettingsTest extends PostgresTestBase {
                 """);
     }
 
-    private Record getLockSettings() {
-        return dsl.fetchOne("""
-                SELECT ddl_lock_timeout, sleep_time, statement_duration
-                FROM ddl_utils.get_database_lock_settings()
-                """);
-    }
 }

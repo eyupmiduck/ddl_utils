@@ -1,5 +1,87 @@
 -- Rollback of the caller grants: revoke what the forward changeset granted and
 -- restore PostgreSQL's default PUBLIC execute on each routine.
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

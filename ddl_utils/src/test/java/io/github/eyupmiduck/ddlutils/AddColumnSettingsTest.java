@@ -5,9 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.util.concurrent.CompletableFuture;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -83,26 +80,18 @@ class AddColumnSettingsTest extends PostgresTestBase {
     }
 
     /**
-     * The wrapper passes the table-level lock settings to the helper: with a
-     * competing session holding a lock and a long table-level statement
-     * duration, the call keeps retrying and succeeds once the lock is released,
-     * whereas the short database default would have given up first.
+     * The wrapper passes the table-level lock settings to the helper: the
+     * table's statement budget is far below the database default (30000 ms), so
+     * a held lock makes the call give up quickly, whereas the default would have
+     * retried for ~30 s.
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 30000);
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
-        try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, TARGET);
-            awaitAccessShareLockHeld(TARGET);
+        assertGivesUpWhileTableLocked(TARGET, () -> addColumn("blocked", "int", null, true));
 
-            CompletableFuture<Void> release = rollbackAfter(other, 1000);
-
-            addColumn("eventually", "int", null, true);
-            release.join();
-        }
-
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "eventually"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "blocked"));
     }
 
     /**
@@ -134,12 +123,4 @@ class AddColumnSettingsTest extends PostgresTestBase {
         Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET, names, types, defaults, nullable);
     }
 
-    private void setTableLockSettings(String schema, String table, Integer lockTimeout,
-                                      Integer sleepTime, Integer duration) {
-        Routines.setTableLockSettings(dsl.configuration(), schema, table, lockTimeout, sleepTime, duration);
-    }
-
-    private void clearTableLockSettings(String schema, String table) {
-        Routines.clearTableLockSettings(dsl.configuration(), schema, table);
-    }
 }

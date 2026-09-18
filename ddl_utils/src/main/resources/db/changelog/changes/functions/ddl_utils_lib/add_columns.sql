@@ -36,11 +36,11 @@ BEGIN
         LOOP
         -- The array domains allow blank elements; reject them here so a blank
         -- name or type cannot produce an empty identifier or malformed SQL.
-            IF pg_catalog.btrim(i_column_names[l_index]) = '' THEN
+            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';
             END IF;
-            IF pg_catalog.btrim(i_column_types[l_index]) = '' THEN
+            IF pg_catalog.btrim(i_column_types[l_index], E' \t\n\r\f\v') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_columns: the type for column % is blank',
                     i_column_names[l_index]
                     USING ERRCODE = '22023';
@@ -85,7 +85,7 @@ BEGIN
             -- A NULL default means no DEFAULT clause; a non-null default is raw SQL
             -- (for example now()), so quoted literals must include their quotes.
             IF i_default_values[l_index] IS NOT NULL THEN
-                IF pg_catalog.btrim(i_default_values[l_index]) = '' THEN
+                IF pg_catalog.btrim(i_default_values[l_index], E' \t\n\r\f\v') = '' THEN
                     RAISE EXCEPTION
                         'ddl_utils_lib.add_columns: default value for column % is blank',
                         i_column_names[l_index]

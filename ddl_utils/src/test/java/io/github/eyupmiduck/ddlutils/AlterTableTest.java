@@ -7,9 +7,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.util.concurrent.CompletableFuture;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -67,18 +64,9 @@ class AlterTableTest extends PostgresTestBase {
      * it, so success proves at least one retry happened.
      */
     @Test
-    void retriesUntilTheLockIsAvailable() throws Exception {
-        try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, TARGET);
-            awaitAccessShareLockHeld(TARGET);
-
-            CompletableFuture<Void> release = rollbackAfter(other, 1000);
-            try {
-                alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000);
-            } finally {
-                release.join();
-            }
-        }
+    void retriesUntilTheLockIsAvailable() {
+        runWhileTableLocked(TARGET, 1000,
+                () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN retried int", 200, 200, 30000));
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "retried"));
     }
@@ -89,14 +77,10 @@ class AlterTableTest extends PostgresTestBase {
      */
     @Test
     void givesUpAfterStatementDuration() throws Exception {
-        try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, TARGET);
-            awaitAccessShareLockHeld(TARGET);
+        assertGivesUpWhileTableLocked(TARGET,
+                () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
 
-            assertSqlState("55P03", () -> alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN never int", 100, 100, 300));
-
-            assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "never"));
-        }
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "never"));
     }
 
     /**

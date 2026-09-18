@@ -184,3 +184,85 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_column(
     ddl_utils.non_null_boolean,
     text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.rename_column(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_columns(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO ddl_utils_caller;

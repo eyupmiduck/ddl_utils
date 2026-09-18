@@ -1,6 +1,5 @@
 package io.github.eyupmiduck.ddlutils;
 
-import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
@@ -96,18 +95,4 @@ class SchemaLockSettingsTest extends PostgresTestBase {
         assertDomainViolation(() -> clearSchemaLockSettings(null));
     }
 
-    private void clearSchemaLockSettings(String schema) {
-        Routines.clearSchemaLockSettings(dsl.configuration(), schema);
-    }
-
-    private void setSchemaLockSettings(String schema, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.setSchemaLockSettings(dsl.configuration(), schema, lockTimeout, sleepTime, duration);
-    }
-
-    private Record getSchemaLockSettings(String schema) {
-        return dsl.fetchOne("""
-                SELECT ddl_lock_timeout, sleep_time, statement_duration
-                FROM ddl_utils.get_schema_lock_settings(?)
-                """, schema);
-    }
 }
