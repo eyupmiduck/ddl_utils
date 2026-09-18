@@ -18,12 +18,9 @@ BEGIN
     --
     -- Concurrent upserts on the same key can still deadlock or fail with a
     -- serialization error; callers that need to survive that must retry.
-    INSERT INTO ddl_utils.table_lock_settings (
-        schema_name, table_name, ddl_lock_timeout, sleep_time, statement_duration
-    )
-    VALUES (
-        i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration
-    )
+    INSERT INTO ddl_utils.table_lock_settings (schema_name, table_name, ddl_lock_timeout, sleep_time,
+                                               statement_duration)
+    VALUES (i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)
     ON CONFLICT (schema_name, table_name) DO UPDATE
         SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,
             sleep_time         = EXCLUDED.sleep_time,

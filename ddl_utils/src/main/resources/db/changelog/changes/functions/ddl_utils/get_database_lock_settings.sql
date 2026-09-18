@@ -1,9 +1,10 @@
 CREATE OR REPLACE FUNCTION ddl_utils.get_database_lock_settings()
-    RETURNS TABLE (
-        ddl_lock_timeout   integer,
-        sleep_time         integer,
-        statement_duration integer
-    )
+    RETURNS TABLE
+            (
+                ddl_lock_timeout   integer,
+                sleep_time         integer,
+                statement_duration integer
+            )
     LANGUAGE plpgsql
     STABLE
     SECURITY INVOKER

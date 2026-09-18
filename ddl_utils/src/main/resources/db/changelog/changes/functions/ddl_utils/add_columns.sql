@@ -19,9 +19,9 @@ BEGIN
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
     INTO l_ddl_lock_timeout, l_sleep_time, l_statement_duration
     FROM ddl_utils.get_lock_settings(
-        i_schema_name => i_schema_name,
-        i_table_name => i_table_name
-    ) AS ls;
+                 i_schema_name => i_schema_name,
+                 i_table_name => i_table_name
+         ) AS ls;
 
     -- get_lock_settings raises when nothing matches, so this cannot normally
     -- happen; guard anyway so a NULL settings row cannot reach the helper.
@@ -32,15 +32,15 @@ BEGIN
     END IF;
 
     PERFORM ddl_utils_lib.add_columns(
-        i_schema_name => i_schema_name,
-        i_table_name => i_table_name,
-        i_column_names => i_column_names,
-        i_column_types => i_column_types,
-        i_default_values => i_default_values,
-        i_nullable => i_nullable,
-        i_ddl_lock_timeout => l_ddl_lock_timeout,
-        i_sleep_time => l_sleep_time,
-        i_statement_duration => l_statement_duration
-    );
+            i_schema_name => i_schema_name,
+            i_table_name => i_table_name,
+            i_column_names => i_column_names,
+            i_column_types => i_column_types,
+            i_default_values => i_default_values,
+            i_nullable => i_nullable,
+            i_ddl_lock_timeout => l_ddl_lock_timeout,
+            i_sleep_time => l_sleep_time,
+            i_statement_duration => l_statement_duration
+            );
 END;
 $$;

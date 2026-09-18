@@ -13,8 +13,8 @@ BEGIN
     -- Last writer wins; a concurrent read-modify-write can lose the other
     -- fields. That is acceptable for a plain setter.
     UPDATE ddl_utils.database_lock_settings
-    SET ddl_lock_timeout = i_ddl_lock_timeout,
-        sleep_time = i_sleep_time,
+    SET ddl_lock_timeout   = i_ddl_lock_timeout,
+        sleep_time         = i_sleep_time,
         statement_duration = i_statement_duration
     WHERE id = 1;
 

@@ -22,10 +22,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Base class for tests that need a migrated PostgreSQL database.
@@ -42,14 +39,17 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class PostgresTestBase {
 
+    /**
+     * The schema tests create their own tables in; the test role has CREATE on
+     * it.
+     */
+    protected static final String PUBLIC_SCHEMA = "public";
     private static final String CHANGELOG = "db/changelog/db.changelog-master.xml";
     private static final String TEMPLATE_DATABASE = "ddl_utils_template";
-
     private static final String OWNER_USER = "ddl_utils_owner";
     private static final String OWNER_PASSWORD = "ddl_utils_owner";
     private static final String TEST_USER = "ddl_utils_test";
     private static final String TEST_PASSWORD = "ddl_utils_test";
-
     /**
      * The PostgreSQL image to run, matching the one used for jOOQ codegen.
      * Set by surefire from the {@code postgres.image} Maven property. The
@@ -57,7 +57,6 @@ abstract class PostgresTestBase {
      */
     private static final String POSTGRES_IMAGE =
             System.getProperty("postgres.image", "ddl-utils-postgres:17-alpine");
-
     private static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE)
                     .asCompatibleSubstituteFor("postgres"))
@@ -72,13 +71,6 @@ abstract class PostgresTestBase {
      * jOOQ context connected to this test class's private database.
      */
     protected DSLContext dsl;
-
-    /**
-     * The schema tests create their own tables in; the test role has CREATE on
-     * it.
-     */
-    protected static final String PUBLIC_SCHEMA = "public";
-
     private String databaseName;
     private Connection connection;
 
@@ -131,6 +123,44 @@ abstract class PostgresTestBase {
                 "jdbc:postgresql://" + POSTGRES.getHost() + ":"
                         + POSTGRES.getMappedPort(5432) + "/" + database,
                 user, password);
+    }
+
+    /**
+     * Returns the SQLSTATE of the first {@link SQLException} in a throwable's
+     * cause chain, or {@code null} when there is none.
+     *
+     * @param throwable the throwable to inspect
+     * @return the SQLSTATE, or {@code null}
+     */
+    protected static String sqlState(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                return sqlException.getSQLState();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Asserts that a call fails with the given SQLSTATE.
+     *
+     * @param expectedSqlState the expected SQLSTATE
+     * @param call             the call under test
+     */
+    protected static void assertSqlState(String expectedSqlState, Executable call) {
+        DataAccessException exception = assertThrows(DataAccessException.class, call);
+        assertEquals(expectedSqlState, sqlState(exception),
+                () -> "expected SQLSTATE " + expectedSqlState + " but was: " + exception.getMessage());
+    }
+
+    /**
+     * Asserts that a call fails with SQLSTATE {@code 23514}
+     * ({@code check_violation}), as a domain constraint violation does.
+     *
+     * @param call the call under test
+     */
+    protected static void assertDomainViolation(Executable call) {
+        assertSqlState("23514", call);
     }
 
     /**
@@ -201,17 +231,17 @@ abstract class PostgresTestBase {
         for (int attempt = 0; attempt < 100; attempt++) {
             Object held = dsl.fetchValue(
                     """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM pg_locks l
-                        JOIN pg_class c ON c.oid = l.relation
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE c.relname = ?
-                            AND n.nspname = current_schema()
-                            AND l.mode = 'AccessShareLock'
-                            AND l.granted
-                    )
-                    """,
+                            SELECT EXISTS (
+                                SELECT 1
+                                FROM pg_locks l
+                                JOIN pg_class c ON c.oid = l.relation
+                                JOIN pg_namespace n ON n.oid = c.relnamespace
+                                WHERE c.relname = ?
+                                    AND n.nspname = current_schema()
+                                    AND l.mode = 'AccessShareLock'
+                                    AND l.granted
+                            )
+                            """,
                     table);
             if (Boolean.TRUE.equals(held)) {
                 return;
@@ -248,22 +278,6 @@ abstract class PostgresTestBase {
     }
 
     /**
-     * Returns the SQLSTATE of the first {@link SQLException} in a throwable's
-     * cause chain, or {@code null} when there is none.
-     *
-     * @param throwable the throwable to inspect
-     * @return the SQLSTATE, or {@code null}
-     */
-    protected static String sqlState(Throwable throwable) {
-        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sqlException) {
-                return sqlException.getSQLState();
-            }
-        }
-        return null;
-    }
-
-    /**
      * Creates a table owned by the test role, so SECURITY INVOKER routines that
      * require ownership can operate on it.
      *
@@ -296,10 +310,10 @@ abstract class PostgresTestBase {
     protected Record column(String schema, String table, String column) {
         return dsl.fetchOne(
                 """
-                SELECT *
-                FROM information_schema.columns
-                WHERE table_schema = ? AND table_name = ? AND column_name = ?
-                """,
+                        SELECT *
+                        FROM information_schema.columns
+                        WHERE table_schema = ? AND table_name = ? AND column_name = ?
+                        """,
                 schema, table, column);
     }
 
@@ -329,28 +343,6 @@ abstract class PostgresTestBase {
         Record record = column(schema, table, column);
         assertNotNull(record, () -> "column not found: " + schema + "." + table + "." + column);
         return record.get(attribute, String.class);
-    }
-
-    /**
-     * Asserts that a call fails with the given SQLSTATE.
-     *
-     * @param expectedSqlState the expected SQLSTATE
-     * @param call             the call under test
-     */
-    protected static void assertSqlState(String expectedSqlState, Executable call) {
-        DataAccessException exception = assertThrows(DataAccessException.class, call);
-        assertEquals(expectedSqlState, sqlState(exception),
-                () -> "expected SQLSTATE " + expectedSqlState + " but was: " + exception.getMessage());
-    }
-
-    /**
-     * Asserts that a call fails with SQLSTATE {@code 23514}
-     * ({@code check_violation}), as a domain constraint violation does.
-     *
-     * @param call the call under test
-     */
-    protected static void assertDomainViolation(Executable call) {
-        assertSqlState("23514", call);
     }
 
     /**

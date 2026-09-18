@@ -61,12 +61,12 @@ BEGIN
         ELSE
             l_remaining_ms := i_statement_duration - pg_catalog.floor(
                     pg_catalog.date_part('epoch', pg_catalog.clock_timestamp() - l_started_at) * 1000
-                    )::integer;
+                                                     )::integer;
             l_lock_timeout := CASE
-                WHEN l_remaining_ms < 1 THEN 1
-                WHEN l_remaining_ms < i_ddl_lock_timeout THEN l_remaining_ms
-                ELSE i_ddl_lock_timeout
-            END;
+                                  WHEN l_remaining_ms < 1 THEN 1
+                                  WHEN l_remaining_ms < i_ddl_lock_timeout THEN l_remaining_ms
+                                  ELSE i_ddl_lock_timeout
+                END;
         END IF;
         PERFORM pg_catalog.set_config(
                 'lock_timeout',

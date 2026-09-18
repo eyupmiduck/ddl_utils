@@ -3,7 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Verifies that the Liquibase changelog creates the {@code ddl_utils} domains

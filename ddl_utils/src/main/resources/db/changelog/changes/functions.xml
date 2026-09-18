@@ -18,56 +18,64 @@
     <changeSet id="005-get_database_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/get_database_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/get_database_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="006-set_database_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/set_database_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/set_database_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="007-get_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/get_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/get_schema_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="008-set_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/set_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/set_schema_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="009-clear_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/clear_schema_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/clear_schema_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="010-get_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/get_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/get_table_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="011-set_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/set_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/set_table_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
     <changeSet id="012-clear_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/clear_table_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils/clear_table_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
@@ -102,7 +110,8 @@
     <changeSet id="017-has_top_level_comma" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/has_top_level_comma.sql" relativeToChangelogFile="true"/>
         <rollback>
-            <sqlFile path="functions-rollback/ddl_utils_lib/has_top_level_comma-rollback.sql" relativeToChangelogFile="true"/>
+            <sqlFile path="functions-rollback/ddl_utils_lib/has_top_level_comma-rollback.sql"
+                     relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
