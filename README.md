@@ -294,6 +294,25 @@ scope must be configured under the `github` server id in `~/.m2/settings.xml`
 for local builds. See that project's README for the settings snippet and the CI
 access requirements.
 
+## Open source projects
+
+ddl_utils is built on and maintained with these open source projects:
+
+- [Liquibase](https://www.liquibase.org/) — applies and versions the database
+  schema changes.
+- [jOOQ](https://www.jooq.org/) — generates the type-safe Java classes used by
+  the tests and consumers.
+- [Testcontainers](https://testcontainers.com/) — runs the throwaway PostgreSQL
+  container for jOOQ code generation and the integration tests.
+- [plpgsql_check](https://github.com/okbob/plpgsql_check) — statically analyses
+  the PL/pgSQL routines.
+- [Dependabot](https://github.com/dependabot) — keeps the Maven and GitHub
+  Actions dependencies up to date.
+- [Apache Maven](https://maven.apache.org/) — builds the project and manages
+  dependencies (through the Maven Wrapper).
+- [OpenCodeReview](https://open-codereview.ai/) — runs the AI code review on
+  pull requests.
+
 ## More
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — build, test, and changelog conventions
