@@ -95,7 +95,21 @@ on pull requests to `main`.
 
 - **Prefer stored functions over stored procedures.** Functions cannot
   `COMMIT`/`ROLLBACK` or manage transactions, so transaction control can never
-  leak into code that must run inside the caller's transaction.
+  leak into code that must run inside the caller's transaction. Use a procedure
+  only when an operation genuinely needs several `ALTER TABLE` calls with a
+  `COMMIT` between them to release each lock (for example making a column
+  `NOT NULL` without holding `ACCESS EXCLUSIVE` across the scan); keep such
+  routines in `ddl_utils`.
+- **A procedure orchestrates; it does not implement DDL or locking.** Each step
+  calls a purpose-named single-call function (preferably the matching
+  `ddl_utils_lib` helper); a procedure never calls `ddl_utils_lib.alter_table`
+  directly and never contains a `lock_timeout`, retry, sleep or spin loop. A
+  procedure owns only the `COMMIT` boundaries and the idempotency checks, reads
+  the settings once via `ddl_utils.get_lock_settings`, and must be safely
+  re-runnable after a partial failure (each step tests the catalog before
+  acting). See `changes/procedures/README.md`.
+- Procedures must run in autocommit: `CALL` inside a client transaction block
+  fails with `invalid transaction termination`.
 - Prefix input arguments with `i_`, output arguments with `o_`, and local
   variables with `l_`. Use `snake_case` for object names, arguments, and
   variables.
