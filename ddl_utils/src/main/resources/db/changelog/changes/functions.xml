@@ -222,4 +222,68 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="033-set_column_statistics" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/set_column_statistics.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/set_column_statistics-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="034-set_column_statistics" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/set_column_statistics.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/set_column_statistics-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="035-set_column_storage" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/set_column_storage.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/set_column_storage-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="036-set_column_storage" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/set_column_storage.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/set_column_storage-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="037-set_column_compression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/set_column_compression.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/set_column_compression-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="038-set_column_compression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/set_column_compression.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/set_column_compression-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="039-drop_expression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/drop_expression.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/drop_expression-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="040-drop_expression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/drop_expression.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/drop_expression-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
