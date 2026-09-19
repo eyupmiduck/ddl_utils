@@ -138,7 +138,7 @@ RETURNS trigger
 granted to no one). The shared `BEFORE UPDATE ... FOR EACH ROW` trigger function
 that stamps `NEW.updated_at := now()` on every table, so no caller can bypass
 it. Attach it to each table with a trigger named
-`<table>_set_updated_at`; see `changes/sql_changes/069-create-updated-at-triggers.sql`.
+`<table>_set_updated_at`; see `changes/sql_changes/005-create-updated-at-triggers.sql`.
 
 ### `ddl_utils.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable)`
 
