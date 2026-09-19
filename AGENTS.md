@@ -16,9 +16,10 @@ Primary technologies:
 
 ## Repo state
 
-Early stage: Maven multi-module stub exists, but no real source code yet.
-CI: GitHub Actions (`.github/workflows/maven.yml`) runs `./mvnw clean verify`
-on pull requests to `main`.
+Maven multi-module project: `ddl_utils` carries the Liquibase-managed schemas,
+jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions (`.github/workflows/maven.yml`) runs
+`./mvnw clean verify` on pull requests to
+`main`.
 
 - Root `pom.xml`: parent POM (`ddl-utils-parent`); all dependency and plugin
   versions are pinned here in `dependencyManagement` / `pluginManagement`.
@@ -32,13 +33,22 @@ on pull requests to `main`.
       `NNN-`prefixed changeset per routine (one `createProcedure` plus its
       rollback), with one file per routine under `changes/functions/<schema>/`
       and `changes/procedures/<schema>/` (rollback bodies under
-      `changes/functions-rollback/<schema>/`). `changes/functions/README.md`
+      `changes/functions-rollback/<schema>/`).       `changes/functions/README.md`
       lists each routine's signature and purpose. The `ddl_utils`
       schema holds the lock-settings tables/accessors, the shared domains, and
-      the lock-aware `add_column`/`add_columns` wrappers that resolve their
-      settings through `get_lock_settings`; `ddl_utils_lib` holds the generic
-      DDL helpers (`alter_table`, `add_column`, `add_columns`) that take the
-      settings explicitly.
+      the lock-aware DDL wrappers (columns, constraints and tables) that resolve
+      their settings through `get_lock_settings`; `ddl_utils_lib` holds the
+      generic DDL helpers of the same names that take the settings explicitly,
+      with `alter_table` as the internal runner. Expose and lock-wrap only
+      `ALTER TABLE` work that blocks concurrent DML (it takes `ACCESS
+      EXCLUSIVE`, or `SHARE ROW EXCLUSIVE` for `add_foreign_key`); an operation
+      that takes only `SHARE UPDATE EXCLUSIVE` (for example `VALIDATE
+      CONSTRAINT`) needs no lock-aware wrapper and is a `ddl_utils_lib` helper
+      only. A function must make a single `ALTER TABLE` call because it
+      cannot commit mid-call; multi-step sequences (for example
+      check-validate-set NOT NULL) are implemented as procedures in the
+      `ddl_utils` schema that commit between steps (see the PL/pgSQL section and
+      `changes/procedures/README.md`).
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
       `testcontainers-jooq-codegen-maven-plugin`, which starts a real
@@ -90,7 +100,21 @@ on pull requests to `main`.
 
 - **Prefer stored functions over stored procedures.** Functions cannot
   `COMMIT`/`ROLLBACK` or manage transactions, so transaction control can never
-  leak into code that must run inside the caller's transaction.
+  leak into code that must run inside the caller's transaction. Use a procedure
+  only when an operation genuinely needs several `ALTER TABLE` calls with a
+  `COMMIT` between them to release each lock (for example making a column
+  `NOT NULL` without holding `ACCESS EXCLUSIVE` across the scan); keep such
+  routines in `ddl_utils`.
+- **A procedure orchestrates; it does not implement DDL or locking.** Each step
+  calls a purpose-named single-call function (preferably the matching
+  `ddl_utils_lib` helper); a procedure never calls `ddl_utils_lib.alter_table`
+  directly and never contains a `lock_timeout`, retry, sleep or spin loop. A
+  procedure owns only the `COMMIT` boundaries and the idempotency checks, reads
+  the settings once via `ddl_utils.get_lock_settings`, and must be safely
+  re-runnable after a partial failure (each step tests the catalog before
+  acting). See `changes/procedures/README.md`.
+- Procedures must run in autocommit: `CALL` inside a client transaction block
+  fails with `invalid transaction termination`.
 - Prefix input arguments with `i_`, output arguments with `o_`, and local
   variables with `l_`. Use `snake_case` for object names, arguments, and
   variables.
