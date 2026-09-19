@@ -174,4 +174,20 @@
             <sqlFile path="functions-rollback/ddl_utils/drop_columns-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="027-set_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/set_column_default.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/set_column_default-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="028-set_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/set_column_default.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/set_column_default-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
