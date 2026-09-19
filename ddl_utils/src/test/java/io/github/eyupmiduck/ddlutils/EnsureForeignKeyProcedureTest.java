@@ -56,6 +56,20 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A same-named foreign key with a different definition (here, a different
+     * referencing column) is not mistaken for the requested one: the procedure
+     * fails loudly instead of silently accepting the wrong constraint.
+     */
+    @Test
+    void rejectsSameNamedForeignKeyWithDifferentDefinition() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_parent FOREIGN KEY (id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id)");
+
+        assertSqlState("42710", () -> callEnsureForeignKey("fk_parent"));
+    }
+
+    /**
      * A second call on an already valid constraint is a no-op.
      */
     @Test

@@ -137,6 +137,13 @@ A re-run skips the add when the constraint exists and the validate when it is
 already valid. A violation by existing rows fails validation with `23514` and
 leaves the constraint `NOT VALID`; fix the data and re-run.
 
+The constraint **name is the identity**: a same-named `CHECK` is treated as the
+target and its expression is not re-checked. A `CHECK` expression cannot be
+compared exactly (`pg_get_constraintdef` returns a normalized, version-dependent
+form), so use a distinct name per expression. `ensure_foreign_key` is stricter:
+it compares `confrelid`/`conkey`/`confkey` and raises `42710` when a same-named
+key has a different definition.
+
 ### `ddl_utils.ensure_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names)`
 
 ```sql

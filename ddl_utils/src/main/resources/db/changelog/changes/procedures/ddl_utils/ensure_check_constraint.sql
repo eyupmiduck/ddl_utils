@@ -24,6 +24,13 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- The name is the identity: a same-named CHECK is treated as the target and
+    -- its expression is not re-checked. Unlike a foreign key, the definition
+    -- cannot be compared exactly -- pg_get_constraintdef returns a normalized,
+    -- version-dependent form of the expression -- so a same-named constraint
+    -- with a different expression is not detected. Use a distinct name per
+    -- expression.
+    --
     -- Step 1: add the constraint as NOT VALID (instant; brief ACCESS
     -- EXCLUSIVE). Skipped when it already exists, which is how a re-run
     -- recovers after the add committed but validation did not.
