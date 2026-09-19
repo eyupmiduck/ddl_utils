@@ -13,7 +13,7 @@
 
          A procedure commits between its ALTER TABLE steps, so it must run in
          autocommit; see procedures/README.md for the orchestration rules. -->
-    <changeSet id="065-ensure_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_not_null-rollback.sql"
@@ -21,7 +21,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="066-ensure_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_check_constraint-rollback.sql"
@@ -29,7 +29,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="067-ensure_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_foreign_key.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_foreign_key-rollback.sql"

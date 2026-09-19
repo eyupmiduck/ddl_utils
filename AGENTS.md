@@ -30,8 +30,8 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
       the schema/table changesets; forward SQL lives in
       `changes/sql_changes/`, rollback SQL in `changes/rollback/`).
       `changes/functions.xml` and `changes/procedures.xml` each hold one
-      `NNN-`prefixed changeset per routine (one `createProcedure` plus its
-      rollback), with one file per routine under `changes/functions/<schema>/`
+      changeset per routine (one `createProcedure` plus its rollback), with one
+      file per routine under `changes/functions/<schema>/`
       and `changes/procedures/<schema>/` (rollback bodies under
       `changes/functions-rollback/<schema>/`).       `changes/functions/README.md`
       lists each routine's signature and purpose. The `ddl_utils`
@@ -137,9 +137,12 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   `ddl_utils/src/main/resources/db/changelog/changes/functions/<schema>/<name>.sql`,
   procedures in `.../changes/procedures/<schema>/<name>.sql`, named `snake_case`
   without an `NNN-` prefix. `changes/functions.xml` and
-  `changes/procedures.xml` each contain one `NNN-`prefixed changeset per
-  routine (one `createProcedure` plus its rollback); both are included from
-  `changes/changes.xml`.
+  `changes/procedures.xml` each contain one changeset per routine, with the id
+  `function-<schema>.<name>` or `procedure-<schema>.<name>` (one
+  `createProcedure` plus its rollback); both are included from
+  `changes/changes.xml`. The schema is part of the id because the same routine
+  name exists in both `ddl_utils` and `ddl_utils_lib`. Overloads of one routine
+  (same schema and name, different signature) share a single changeset.
 - Load a routine with the `createProcedure` change type and an external body:
   `<createProcedure path="functions/<schema>/<name>.sql" relativeToChangelogFile="true"/>`.
   Liquibase has no `createFunction` change type, so functions use
