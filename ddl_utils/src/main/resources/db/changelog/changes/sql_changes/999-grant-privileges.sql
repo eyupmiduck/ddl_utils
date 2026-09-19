@@ -820,3 +820,13 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_not_null(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON PROCEDURE ddl_utils.ensure_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON PROCEDURE ddl_utils.ensure_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;

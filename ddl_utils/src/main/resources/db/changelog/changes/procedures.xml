@@ -6,9 +6,18 @@
 
     <!-- One changeset per stored procedure, mirroring functions.xml. Each
          procedure lives in its own file under procedures/<schema>/ and is added
-         with createProcedure. Intentionally empty for now: add a changeset with
-         the createProcedure and its rollback here once the first procedure
-         exists. -->
-    <changeSet id="020-create-procedures" author="ddl_utils" dbms="postgresql" runOnChange="true">
+         with createProcedure (Liquibase has no createFunction/createProcedure
+         distinction beyond the change type). runOnChange re-applies only the
+         body that changed, and each routine carries its own rollback under
+         procedures-rollback/<schema>/.
+
+         A procedure commits between its ALTER TABLE steps, so it must run in
+         autocommit; see procedures/README.md for the orchestration rules. -->
+    <changeSet id="020-ensure_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="procedures/ddl_utils/ensure_not_null.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="procedures-rollback/ddl_utils/ensure_not_null-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
     </changeSet>
 </databaseChangeLog>

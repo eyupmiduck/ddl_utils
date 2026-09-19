@@ -82,7 +82,13 @@ From JDBC/jOOQ that means autocommit on (the tests do this).
 
 ## Procedures
 
-### `ddl_utils.set_not_null(i_schema_name, i_table_name, i_column_name)`
+A procedure cannot share a name and argument types with a function, so the
+multi-step procedures take an `ensure_` prefix while the single-call function of
+the same name stays as-is (for example `ddl_utils.ensure_not_null` procedure vs
+`ddl_utils.set_not_null` function). The `ensure_` name signals "make it so,
+re-runnably".
+
+### `ddl_utils.ensure_not_null(i_schema_name, i_table_name, i_column_name)`
 
 ```sql
 i_schema_name ddl_utils.non_null_text
