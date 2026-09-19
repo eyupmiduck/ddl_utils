@@ -192,6 +192,29 @@ RETURNS void
 `SECURITY INVOKER`. Lock-aware wrapper; resolves the table's settings via
 `get_lock_settings` and delegates to `ddl_utils_lib.rename_column`.
 
+### Column attributes
+
+`ddl_utils.set_column_default`, `drop_column_default`, `drop_not_null`,
+`set_column_statistics`, `set_column_storage`, `set_column_compression`,
+`drop_expression`, `add_identity` and `drop_identity` are lock-aware wrappers
+over the matching `ddl_utils_lib` helpers (same names). All are `SECURITY
+INVOKER`, resolve the settings via `get_lock_settings`, and are metadata-only
+(no scan or rewrite): they change the catalog, not the stored rows. The single
+`SET NOT NULL` inverse is not offered because it scans.
+
+### Constraints and tables
+
+`ddl_utils.add_check_constraint`, `add_foreign_key`, `validate_constraint`,
+`drop_constraint`, `rename_constraint`, `add_primary_key_using_index`,
+`add_unique_constraint_using_index`, `rename_table` and
+`set_table_storage_parameter` are lock-aware wrappers over the matching
+`ddl_utils_lib` helpers (same names). `add_check_constraint` and
+`add_foreign_key` emit `NOT VALID` (metadata-only); call `validate_constraint`
+separately to enforce the constraint against existing rows (it scans but takes
+only `SHARE UPDATE EXCLUSIVE`). The two `*_using_index` helpers attach a
+pre-built unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is
+metadata-only when the index is valid.
+
 ## `ddl_utils_lib`
 
 ###
@@ -320,3 +343,74 @@ RETURNS void
 
 `SECURITY INVOKER`. Renames one column; both names are quoted with `%I` and
 applied through `ddl_utils_lib.alter_table` with explicit lock settings.
+
+### `ddl_utils_lib.set_column_default(i_schema_name, i_table_name, i_column_name, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+
+`SECURITY INVOKER`. Sets a column default. `i_default_value` is raw SQL (quoted
+literals must include their quotes); a top-level comma is rejected with `22023`.
+
+### `ddl_utils_lib.drop_column_default(...)` / `ddl_utils_lib.drop_not_null(...)`
+
+`SECURITY INVOKER`. Drop a column default or its `NOT NULL`, respectively; both
+are metadata-only and take only a brief `ACCESS EXCLUSIVE` lock.
+
+### `ddl_utils_lib.set_column_statistics(i_schema_name, i_table_name, i_column_name, i_statistics, settings...)`
+
+`SECURITY INVOKER`. Sets the per-column statistics target. `i_statistics` must
+be `-1` (reset) or between `0` and `10000`; any other value is rejected with
+`22023`. Takes only `SHARE UPDATE EXCLUSIVE`.
+
+### `ddl_utils_lib.set_column_storage(...)` / `ddl_utils_lib.set_column_compression(...)`
+
+`SECURITY INVOKER`. Set a column's storage (`PLAIN`, `EXTERNAL`, `EXTENDED`,
+`MAIN`) or compression (`pglz`, `lz4`, `default`); an unknown keyword is
+rejected with `22023`. Both affect future writes only.
+
+### `ddl_utils_lib.drop_expression(...)`
+
+`SECURITY INVOKER`. Turns a generated column into a plain base column; a column
+that is not a stored generated column raises `55000`.
+
+### `ddl_utils_lib.add_identity(i_schema_name, i_table_name, i_column_name, i_generated, settings...)` / `ddl_utils_lib.drop_identity(..., i_if_exists, ...)`
+
+`SECURITY INVOKER`. Add (`ALWAYS`/`BY DEFAULT`) or drop an identity. An invalid
+generated mode is rejected with `22023`; `i_if_exists` controls `IF EXISTS`.
+
+### `ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
+
+`SECURITY INVOKER`. Adds a `CHECK` constraint as `NOT VALID` (metadata-only).
+The expression is raw SQL; a top-level comma is rejected with `22023`.
+
+### `ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
+
+`SECURITY INVOKER`. Adds a foreign key as `NOT VALID` (no scan; takes `SHARE
+ROW EXCLUSIVE` on both tables). The two column arrays must be non-empty and of
+equal length; blank names are rejected with `22023`.
+
+### `ddl_utils_lib.validate_constraint(i_schema_name, i_table_name, i_constraint_name, settings...)`
+
+`SECURITY INVOKER`. Validates a constraint, scanning existing rows under
+`SHARE UPDATE EXCLUSIVE` (does not block concurrent DML). Use it after the
+`NOT VALID` helpers.
+
+### `ddl_utils_lib.drop_constraint(...)` / `ddl_utils_lib.rename_constraint(..., i_new_constraint_name, ...)`
+
+`SECURITY INVOKER`. Drop or rename a constraint; both are metadata-only.
+`drop_constraint` does not use `IF EXISTS`, so a wrong name fails.
+
+### `ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)` / `ddl_utils_lib.add_unique_constraint_using_index(...)`
+
+`SECURITY INVOKER`. Attach a pre-built unique index as a primary key or unique
+constraint. Build the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the
+attach is metadata-only when the index is valid.
+
+### `ddl_utils_lib.rename_table(i_schema_name, i_table_name, i_new_table_name, settings...)`
+
+`SECURITY INVOKER`. Renames a table within its schema; metadata-only.
+
+### `ddl_utils_lib.set_table_storage_parameter(i_schema_name, i_table_name, i_parameter_name, i_parameter_value, settings...)`
+
+`SECURITY INVOKER`. Sets one storage parameter accepted under `SHARE UPDATE
+EXCLUSIVE` (`fillfactor`, the `autovacuum_*` / `toast.autovacuum_*` family and
+`parallel_workers`); any other name is rejected with `22023`, so a
+rewrite-inducing option cannot be reached through this helper.

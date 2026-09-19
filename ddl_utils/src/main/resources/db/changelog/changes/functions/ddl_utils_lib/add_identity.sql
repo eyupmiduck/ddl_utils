@@ -1,0 +1,40 @@
+CREATE OR REPLACE FUNCTION ddl_utils_lib.add_identity(
+    i_schema_name ddl_utils.non_null_text,
+    i_table_name ddl_utils.non_null_text,
+    i_column_name ddl_utils.non_null_text,
+    i_generated ddl_utils.non_null_text,
+    i_ddl_lock_timeout ddl_utils.non_negative_integer,
+    i_sleep_time ddl_utils.non_negative_integer,
+    i_statement_duration ddl_utils.non_negative_integer
+)
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY INVOKER
+AS
+$$
+BEGIN
+    -- The generated mode is a two-value keyword set; validate it so a caller
+    -- cannot splice arbitrary SQL. It is emitted verbatim (not as an
+    -- identifier) because these are unquoted PostgreSQL keywords.
+    IF upper(i_generated) NOT IN ('ALWAYS', 'BY DEFAULT') THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_identity: generated must be ALWAYS or BY DEFAULT'
+            USING ERRCODE = '22023';
+    END IF;
+
+    -- Adding an identity is metadata-only (like SET DEFAULT) and affects future
+    -- rows only.
+    PERFORM ddl_utils_lib.alter_table(
+            i_schema_name => i_schema_name,
+            i_table_name => i_table_name,
+            i_alter_table_fragment => pg_catalog.format(
+                    'ALTER COLUMN %I ADD GENERATED %s AS IDENTITY',
+                    i_column_name,
+                    upper(i_generated)
+                                      ),
+            i_ddl_lock_timeout => i_ddl_lock_timeout,
+            i_sleep_time => i_sleep_time,
+            i_statement_duration => i_statement_duration
+            );
+END;
+$$;

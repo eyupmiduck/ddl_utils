@@ -463,3 +463,333 @@ REVOKE SELECT ON ddl_utils.schema_lock_settings FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.database_lock_settings FROM ddl_utils_caller;
 REVOKE USAGE ON SCHEMA ddl_utils_lib FROM ddl_utils_caller;
 REVOKE USAGE ON SCHEMA ddl_utils FROM ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.set_table_storage_parameter(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.set_table_storage_parameter(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.rename_table(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.rename_table(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_unique_constraint_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_unique_constraint_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_primary_key_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_primary_key_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.rename_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.rename_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.validate_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.validate_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.drop_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_boolean
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.drop_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_boolean
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.add_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.add_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.set_table_storage_parameter(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_table_storage_parameter(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.rename_table(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.rename_table(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_unique_constraint_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_unique_constraint_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_primary_key_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_primary_key_using_index(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.rename_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.rename_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.validate_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.validate_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_boolean,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.drop_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_boolean,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_identity(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
