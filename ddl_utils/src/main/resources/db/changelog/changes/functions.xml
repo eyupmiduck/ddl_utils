@@ -466,4 +466,20 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="063-set_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/set_not_null.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/set_not_null-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="064-set_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/set_not_null.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/set_not_null-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

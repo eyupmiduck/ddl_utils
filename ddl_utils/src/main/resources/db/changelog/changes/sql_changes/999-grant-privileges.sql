@@ -794,3 +794,29 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_table_storage_parameter(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;

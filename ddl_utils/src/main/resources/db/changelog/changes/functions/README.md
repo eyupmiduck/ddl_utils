@@ -195,12 +195,14 @@ RETURNS void
 ### Column attributes
 
 `ddl_utils.set_column_default`, `drop_column_default`, `drop_not_null`,
-`set_column_statistics`, `set_column_storage`, `set_column_compression`,
-`drop_expression`, `add_identity` and `drop_identity` are lock-aware wrappers
-over the matching `ddl_utils_lib` helpers (same names). All are `SECURITY
-INVOKER`, resolve the settings via `get_lock_settings`, and are metadata-only
-(no scan or rewrite): they change the catalog, not the stored rows. The single
-`SET NOT NULL` inverse is not offered because it scans.
+`set_not_null`, `set_column_statistics`, `set_column_storage`,
+`set_column_compression`, `drop_expression`, `add_identity` and `drop_identity`
+are lock-aware wrappers over the matching `ddl_utils_lib` helpers (same names).
+All are `SECURITY INVOKER` and resolve the settings via `get_lock_settings`.
+All are metadata-only (no scan or rewrite) except `set_not_null`, which
+ordinarily scans the table under `ACCESS EXCLUSIVE` unless a valid `CHECK`
+constraint proves the column non-null; the `ddl_utils.set_not_null` procedure
+composes that scan-avoiding sequence.
 
 ### Constraints and tables
 
@@ -386,8 +388,22 @@ settings             (see above)
 RETURNS void
 ```
 
-`SECURITY INVOKER`. Drops `NOT NULL`; metadata-only. The inverse `SET NOT NULL`
-scans and is not offered.
+`SECURITY INVOKER`. Drops `NOT NULL`; metadata-only.
+
+### `ddl_utils_lib.set_not_null(i_schema_name, i_table_name, i_column_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Sets `NOT NULL` in a single `ALTER TABLE`. This is **not**
+metadata-only: unless a valid `CHECK` constraint already proves the column
+non-null, PostgreSQL scans the table under `ACCESS EXCLUSIVE`. The
+`ddl_utils.set_not_null` procedure is the scan-avoiding, resumable form.
 
 ### `ddl_utils_lib.set_column_statistics(i_schema_name, i_table_name, i_column_name, i_statistics, settings...)`
 

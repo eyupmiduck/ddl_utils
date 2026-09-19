@@ -89,6 +89,7 @@ EXCLUSIVE` lock) and neither scan nor rewrite the table:
 
 - **Columns**: `add_column(s)` (with an optional default), `drop_column(s)`,
   `rename_column`, `set_column_default`, `drop_column_default`, `drop_not_null`,
+  `set_not_null`,
   `set_column_statistics`, `set_column_storage`, `set_column_compression`,
   `drop_expression`, `add_identity`, `drop_identity`.
 - **Constraints**: `add_check_constraint` and `add_foreign_key` (both emitted as

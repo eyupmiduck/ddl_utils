@@ -793,3 +793,29 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_identity(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_not_null(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer,
+    ddl_utils.non_negative_integer
+    ) TO public;
