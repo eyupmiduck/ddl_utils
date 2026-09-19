@@ -44,6 +44,18 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A same-named constraint of another type is not mistaken for the requested
+     * foreign key, so the procedure fails loudly instead of silently skipping it.
+     */
+    @Test
+    void rejectsSameNamedNonForeignKeyConstraint() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_parent UNIQUE (parent_id)");
+
+        assertSqlState("42710", () -> callEnsureForeignKey("fk_parent"));
+    }
+
+    /**
      * A second call on an already valid constraint is a no-op.
      */
     @Test

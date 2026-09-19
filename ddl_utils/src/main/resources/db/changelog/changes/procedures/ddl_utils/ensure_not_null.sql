@@ -11,6 +11,7 @@ DECLARE
     l_lock_timeout       integer;
     l_sleep_time         integer;
     l_statement_duration integer;
+    l_base               text;
     l_constraint_name    text;
     l_relation           regclass;
 BEGIN
@@ -24,11 +25,28 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- Fail with a clear error rather than an opaque undefined_column from the
+    -- generated CHECK when the column does not exist.
+    IF NOT EXISTS (SELECT 1
+                   FROM pg_catalog.pg_attribute
+                   WHERE attrelid = l_relation
+                       AND attname = i_column_name
+                       AND attnum > 0
+                       AND NOT attisdropped) THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_not_null: column %.% does not exist',
+            i_table_name, i_column_name
+            USING ERRCODE = '42703';
+    END IF;
+
     -- A deterministic, collision-resistant name (<= 63 bytes) so a re-run after
     -- a partial failure finds the same temporary constraint instead of making a
-    -- second one.
-    l_constraint_name := pg_catalog.left(
-            pg_catalog.format('%s_%s_not_null', i_table_name, i_column_name), 45)
+    -- second one. Replace non-ASCII characters before truncating: left() counts
+    -- characters, so a multibyte name could still exceed the 63-byte identifier
+    -- limit and be truncated by ADD CONSTRAINT, breaking the re-run lookup.
+    l_base := pg_catalog.regexp_replace(
+            pg_catalog.format('%s_%s_not_null', i_table_name, i_column_name),
+            '[^A-Za-z0-9_]', '_', 'g');
+    l_constraint_name := pg_catalog.left(l_base, 45)
         || '_' || pg_catalog.substr(pg_catalog.md5(
             pg_catalog.format('%s.%s.%s', i_schema_name, i_table_name, i_column_name)), 1, 8);
 
@@ -37,7 +55,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1
                    FROM pg_catalog.pg_constraint
                    WHERE conname = l_constraint_name
-                       AND conrelid = l_relation) THEN
+                       AND conrelid = l_relation
+                       AND contype = 'c') THEN
         PERFORM ddl_utils_lib.add_check_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -57,6 +76,7 @@ BEGIN
                FROM pg_catalog.pg_constraint
                WHERE conname = l_constraint_name
                    AND conrelid = l_relation
+                   AND contype = 'c'
                    AND NOT convalidated) THEN
         PERFORM ddl_utils_lib.validate_constraint(
                 i_schema_name => i_schema_name,
@@ -90,7 +110,8 @@ BEGIN
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = l_constraint_name
-                   AND conrelid = l_relation) THEN
+                   AND conrelid = l_relation
+                   AND contype = 'c') THEN
         PERFORM ddl_utils_lib.drop_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,

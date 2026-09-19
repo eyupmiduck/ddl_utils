@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verifies {@code ddl_utils_lib.add_identity} and {@code drop_identity}: they
@@ -38,7 +38,7 @@ class AddDropIdentityTest extends PostgresTestBase {
     void addsIdentity() {
         addIdentity("id", "BY DEFAULT");
 
-        assertTrue(identity("id") != null);
+        assertNotNull(identity("id"));
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (note) VALUES ('a')");
         Integer next = dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
         assertEquals(1, next);

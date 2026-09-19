@@ -61,6 +61,17 @@ class SetTableStorageParameterTest extends PostgresTestBase {
     }
 
     /**
+     * A value that would close the {@code SET (...)} list and append another
+     * ALTER TABLE action is rejected.
+     */
+    @Test
+    void rejectsUnsafeValue() {
+        assertSqlState("22023", () -> setParameter("fillfactor", "70) , ALTER COLUMN id TYPE bigint"));
+        assertSqlState("22023", () -> setParameter("fillfactor", "70, autovacuum_enabled = true"));
+        assertSqlState("22023", () -> setParameter("fillfactor", "1; DROP TABLE " + TARGET));
+    }
+
+    /**
      * Rejects null arguments through their domains.
      */
     @Test

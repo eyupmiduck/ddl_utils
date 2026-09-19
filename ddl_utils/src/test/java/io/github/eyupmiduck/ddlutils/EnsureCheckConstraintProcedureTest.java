@@ -41,6 +41,18 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A same-named constraint of another type is not mistaken for the requested
+     * CHECK, so the procedure fails loudly instead of silently skipping it.
+     */
+    @Test
+    void rejectsSameNamedNonCheckConstraint() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT positive UNIQUE (value)");
+
+        assertSqlState("42710", () -> callEnsureCheckConstraint("positive", "value > 0"));
+    }
+
+    /**
      * A second call on an already valid constraint is a no-op.
      */
     @Test

@@ -66,11 +66,30 @@ class SetColumnAttributeTest extends PostgresTestBase {
     }
 
     /**
+     * A null statistics target is rejected rather than being emitted as
+     * {@code SET STATISTICS NULL}.
+     */
+    @Test
+    void rejectsNullStatistics() {
+        assertSqlState("22023", () -> setStatistics("note", null));
+    }
+
+    /**
      * Sets the storage mode, which is stored on the column.
      */
     @Test
     void setsStorage() {
         setStorage("note", "EXTERNAL");
+
+        assertEquals("external", storage("note"));
+    }
+
+    /**
+     * The storage keyword is case-insensitive, like the compression method.
+     */
+    @Test
+    void acceptsCaseInsensitiveStorage() {
+        setStorage("note", "external");
 
         assertEquals("external", storage("note"));
     }
@@ -118,8 +137,16 @@ class SetColumnAttributeTest extends PostgresTestBase {
     void rejectsNullArguments() {
         assertDomainViolation(() -> setStatistics(null, 100));
         assertDomainViolation(() -> setStatistics("note", 100, null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStatistics("note", 100, DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStatistics("note", 100, DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
         assertDomainViolation(() -> setStorage("note", null));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
         assertDomainViolation(() -> setCompression("note", null));
+        assertDomainViolation(() -> setCompression("note", "pglz", null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
     }
 
     private Integer statistics(String column) {
@@ -184,12 +211,22 @@ class SetColumnAttributeTest extends PostgresTestBase {
     }
 
     private void setStorage(String column, String storage) {
+        setStorage(column, storage, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+    }
+
+    private void setStorage(String column, String storage, Integer lockTimeout,
+                            Integer sleepTime, Integer duration) {
         Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, storage,
-                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+                lockTimeout, sleepTime, duration);
     }
 
     private void setCompression(String column, String compression) {
+        setCompression(column, compression, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+    }
+
+    private void setCompression(String column, String compression, Integer lockTimeout,
+                                Integer sleepTime, Integer duration) {
         Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, compression,
-                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+                lockTimeout, sleepTime, duration);
     }
 }

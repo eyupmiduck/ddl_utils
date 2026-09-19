@@ -55,6 +55,25 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A multibyte column name still yields a generated constraint name short
+     * enough for PostgreSQL, so a second call finds the temporary constraint
+     * instead of failing on a name that was silently truncated.
+     */
+    @Test
+    void isIdempotentWithMultibyteColumnName() {
+        String column = "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9";
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD COLUMN \"" + column + "\" text");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, \"" + column + "\") VALUES (1, 'a')");
+
+        callEnsureNotNull(column);
+        callEnsureNotNull(column);
+
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, column, "is_nullable"));
+        assertEquals(0, temporaryConstraints());
+    }
+
+    /**
      * A call interrupted after the first step (the NOT VALID constraint was
      * committed but validation had not run) is completed by calling again.
      */
@@ -117,7 +136,11 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     }
 
     private void callEnsureNotNull() {
-        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, TARGET, "note");
+        callEnsureNotNull("note");
+    }
+
+    private void callEnsureNotNull(String column) {
+        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, TARGET, column);
     }
 
     private int temporaryConstraints() {

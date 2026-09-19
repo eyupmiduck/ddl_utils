@@ -13,11 +13,11 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.set_column_storage(
 AS
 $$
 BEGIN
-    -- Storage is a small, fixed keyword set; validate it against pg_type's
-    -- typtype-independent typstorage codes so a caller cannot splice arbitrary
-    -- SQL. The keyword is emitted verbatim (not as an identifier) because these
-    -- are unquoted PostgreSQL keywords.
-    IF i_storage NOT IN ('PLAIN', 'EXTERNAL', 'EXTENDED', 'MAIN') THEN
+    -- Storage is a small, fixed keyword set; validate it (case-insensitively,
+    -- matching set_column_compression) so a caller cannot splice arbitrary SQL.
+    -- The keyword is emitted verbatim (not as an identifier) because these are
+    -- unquoted PostgreSQL keywords.
+    IF lower(i_storage) NOT IN ('plain', 'external', 'extended', 'main') THEN
         RAISE EXCEPTION
             'ddl_utils_lib.set_column_storage: storage must be one of PLAIN, EXTERNAL, EXTENDED, MAIN'
             USING ERRCODE = '22023';
@@ -29,7 +29,7 @@ BEGIN
             i_alter_table_fragment => pg_catalog.format(
                     'ALTER COLUMN %I SET STORAGE %s',
                     i_column_name,
-                    i_storage
+                    lower(i_storage)
                                       ),
             i_ddl_lock_timeout => i_ddl_lock_timeout,
             i_sleep_time => i_sleep_time,

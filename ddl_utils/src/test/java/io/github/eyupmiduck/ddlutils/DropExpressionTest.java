@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +44,7 @@ class DropExpressionTest extends PostgresTestBase {
         assertFalse(isGenerated("b"));
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (a, b) VALUES (1, 99)");
         Integer value = dsl.fetchOne("SELECT b FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
-        assertTrue(value == 99);
+        assertEquals(99, value);
     }
 
     /**
@@ -62,6 +63,8 @@ class DropExpressionTest extends PostgresTestBase {
     void rejectsNullArguments() {
         assertDomainViolation(() -> dropExpression(null));
         assertDomainViolation(() -> dropExpression("b", null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropExpression("b", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropExpression("b", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
     }
 
     private boolean isGenerated(String column) {

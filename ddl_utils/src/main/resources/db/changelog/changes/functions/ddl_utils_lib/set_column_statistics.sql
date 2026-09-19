@@ -15,8 +15,10 @@ $$
 BEGIN
     -- Statistics targets run from 0 to 10000; -1 resets the column to the
     -- default. This is metadata-only and takes only SHARE UPDATE EXCLUSIVE, so
-    -- it does not block concurrent DML.
-    IF i_statistics <> -1 AND (i_statistics < 0 OR i_statistics > 10000) THEN
+    -- it does not block concurrent DML. NULL is rejected explicitly: the range
+    -- test alone would evaluate to NULL and let `SET STATISTICS NULL` through.
+    IF i_statistics IS NULL
+        OR (i_statistics <> -1 AND (i_statistics < 0 OR i_statistics > 10000)) THEN
         RAISE EXCEPTION
             'ddl_utils_lib.set_column_statistics: the statistics target must be -1 or between 0 and 10000'
             USING ERRCODE = '22023';

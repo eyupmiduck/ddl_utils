@@ -53,6 +53,16 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- The value is interpolated verbatim, so accept only a single unquoted
+    -- token. This rejects commas, parentheses, quotes and whitespace, which a
+    -- caller could otherwise use to close the SET (...) list and append another
+    -- ALTER TABLE action.
+    IF i_parameter_value !~ '^[A-Za-z0-9_.+-]+$' THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.set_table_storage_parameter: the value must be a single unquoted token'
+            USING ERRCODE = '22023';
+    END IF;
+
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,

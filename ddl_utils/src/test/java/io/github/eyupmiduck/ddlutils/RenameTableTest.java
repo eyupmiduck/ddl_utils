@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,7 +46,7 @@ class RenameTableTest extends PostgresTestBase {
         assertTrue(tableExists(NEW_NAME));
         Integer count = dsl.fetchOne("SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + NEW_NAME)
                 .get(0, Integer.class);
-        assertTrue(count == 1);
+        assertEquals(1, count);
     }
 
     /**
