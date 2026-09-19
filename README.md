@@ -298,14 +298,19 @@ access requirements.
 
 ddl_utils is built on and maintained with these open source projects:
 
+- [PostgreSQL](https://www.postgresql.org/) — the database these helpers target
+  and exercise.
 - [Liquibase](https://www.liquibase.org/) — applies and versions the database
   schema changes.
 - [jOOQ](https://www.jooq.org/) — generates the type-safe Java classes used by
   the tests and consumers.
 - [Testcontainers](https://testcontainers.com/) — runs the throwaway PostgreSQL
   container for jOOQ code generation and the integration tests.
+- [JUnit 5](https://junit.org/) — the test framework.
 - [plpgsql_check](https://github.com/okbob/plpgsql_check) — statically analyses
   the PL/pgSQL routines.
+- [SQLFluff](https://sqlfluff.com/) — lints the changelog SQL files.
+- [CodeQL](https://codeql.github.com/) — static analysis of the Java code in CI.
 - [Dependabot](https://github.com/dependabot) — keeps the Maven and GitHub
   Actions dependencies up to date.
 - [Apache Maven](https://maven.apache.org/) — builds the project and manages
