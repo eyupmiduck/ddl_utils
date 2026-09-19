@@ -31,9 +31,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1
                    FROM pg_catalog.pg_attribute
                    WHERE attrelid = l_relation
-                       AND attname = i_column_name
-                       AND attnum > 0
-                       AND NOT attisdropped) THEN
+                     AND attname = i_column_name
+                     AND attnum > 0
+                     AND NOT attisdropped) THEN
         RAISE EXCEPTION 'ddl_utils.ensure_not_null: column %.% does not exist',
             i_table_name, i_column_name
             USING ERRCODE = '42703';
@@ -48,8 +48,9 @@ BEGIN
             pg_catalog.format('%s_%s_not_null', i_table_name, i_column_name),
             '[^A-Za-z0-9_]', '_', 'g');
     l_constraint_name := pg_catalog.left(l_base, 45)
-        || '_' || pg_catalog.substr(pg_catalog.md5(
-            pg_catalog.format('%s.%s.%s', i_schema_name, i_table_name, i_column_name)), 1, 8);
+                             || '_' || pg_catalog.substr(pg_catalog.md5(
+                                                                 pg_catalog.format('%s.%s.%s', i_schema_name,
+                                                                                   i_table_name, i_column_name)), 1, 8);
 
     -- An already-NOT-NULL column needs no proof, so skip the add/validate/set
     -- steps and do not take a fresh ACCESS EXCLUSIVE lock or re-scan the table.
@@ -59,7 +60,7 @@ BEGIN
     INTO l_already_not_null
     FROM pg_catalog.pg_attribute AS a
     WHERE a.attrelid = l_relation
-        AND a.attname = i_column_name;
+      AND a.attname = i_column_name;
 
     -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS EXCLUSIVE
     -- lock). Skipped when the column is already NOT NULL or the constraint
@@ -68,8 +69,8 @@ BEGIN
         AND NOT EXISTS (SELECT 1
                         FROM pg_catalog.pg_constraint
                         WHERE conname = l_constraint_name
-                            AND conrelid = l_relation
-                            AND contype = 'c') THEN
+                          AND conrelid = l_relation
+                          AND contype = 'c') THEN
         PERFORM ddl_utils_lib.add_check_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -89,9 +90,9 @@ BEGIN
         AND EXISTS (SELECT 1
                     FROM pg_catalog.pg_constraint
                     WHERE conname = l_constraint_name
-                        AND conrelid = l_relation
-                        AND contype = 'c'
-                        AND NOT convalidated) THEN
+                      AND conrelid = l_relation
+                      AND contype = 'c'
+                      AND NOT convalidated) THEN
         PERFORM ddl_utils_lib.validate_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -120,8 +121,8 @@ BEGIN
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = l_constraint_name
-                   AND conrelid = l_relation
-                   AND contype = 'c') THEN
+                 AND conrelid = l_relation
+                 AND contype = 'c') THEN
         PERFORM ddl_utils_lib.drop_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,

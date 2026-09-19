@@ -348,8 +348,8 @@ RETURNS void
 `SECURITY INVOKER`. Renames one column; both names are quoted with `%I` and
 applied through `ddl_utils_lib.alter_table` with explicit lock settings.
 
-The routines below all end in the same three lock settings
-(`i_ddl_lock_timeout`, `i_sleep_time`, `i_statement_duration`, all
+The routines below all end in the same three lock settings (`i_ddl_lock_timeout`, `i_sleep_time`,
+`i_statement_duration`, all
 `ddl_utils.non_negative_integer`); they are shown once here rather than repeated.
 
 ### `ddl_utils_lib.set_column_default(i_schema_name, i_table_name, i_column_name, i_default_value, settings...)`
@@ -478,7 +478,8 @@ RETURNS void
 
 `SECURITY INVOKER`. Drops an identity; `i_if_exists` controls `IF EXISTS`.
 
-### `ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
+###
+`ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -492,7 +493,8 @@ RETURNS void
 `SECURITY INVOKER`. Adds a `CHECK` constraint as `NOT VALID` (metadata-only).
 The expression is raw SQL; a top-level comma is rejected with `22023`.
 
-### `ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
+###
+`ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
 
 ```sql
 i_schema_name              ddl_utils.non_null_text
@@ -537,7 +539,8 @@ RETURNS void
 `SECURITY INVOKER`. Drops a constraint; metadata-only. It does not use
 `IF EXISTS`, so a wrong name fails.
 
-### `ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
+###
+`ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
 
 ```sql
 i_schema_name           ddl_utils.non_null_text
@@ -550,7 +553,8 @@ RETURNS void
 
 `SECURITY INVOKER`. Renames a constraint; metadata-only.
 
-### `ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+###
+`ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -565,7 +569,8 @@ RETURNS void
 the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the attach is
 metadata-only when the index is valid and the columns are already `NOT NULL`.
 
-### `ddl_utils_lib.add_unique_constraint_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+###
+`ddl_utils_lib.add_unique_constraint_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text

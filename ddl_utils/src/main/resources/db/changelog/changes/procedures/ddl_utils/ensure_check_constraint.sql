@@ -37,8 +37,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1
                    FROM pg_catalog.pg_constraint
                    WHERE conname = i_constraint_name
-                       AND conrelid = l_relation
-                       AND contype = 'c') THEN
+                     AND conrelid = l_relation
+                     AND contype = 'c') THEN
         PERFORM ddl_utils_lib.add_check_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -55,9 +55,9 @@ BEGIN
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = i_constraint_name
-                   AND conrelid = l_relation
-                   AND contype = 'c'
-                   AND NOT convalidated) THEN
+                 AND conrelid = l_relation
+                 AND contype = 'c'
+                 AND NOT convalidated) THEN
         PERFORM ddl_utils_lib.validate_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,

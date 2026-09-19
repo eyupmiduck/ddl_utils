@@ -17,8 +17,8 @@ Primary technologies:
 ## Repo state
 
 Maven multi-module project: `ddl_utils` carries the Liquibase-managed schemas,
-jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
-(`.github/workflows/maven.yml`) runs `./mvnw clean verify` on pull requests to
+jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions (`.github/workflows/maven.yml`) runs
+`./mvnw clean verify` on pull requests to
 `main`.
 
 - Root `pom.xml`: parent POM (`ddl-utils-parent`); all dependency and plugin

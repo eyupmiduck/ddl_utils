@@ -171,6 +171,23 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
+     * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
+     * {@code AccessShareLock}.
+     *
+     * @param mode the lock mode as written in SQL
+     * @return the lock mode as reported by {@code pg_locks}
+     */
+    private static String lockModeName(String mode) {
+        StringBuilder name = new StringBuilder();
+        for (String word : mode.trim().split("\\s+")) {
+            name.append(Character.toUpperCase(word.charAt(0)))
+                    .append(word.substring(1).toLowerCase());
+        }
+        return name.append("Lock").toString();
+    }
+
+    /**
      * Creates this test class's private database from the migrated template
      * and opens a jOOQ context to it as the {@code ddl_utils_test} role.
      */
@@ -738,23 +755,6 @@ abstract class PostgresTestBase {
             assertTrue(elapsedMillis < maxMillis,
                     () -> "the call did not give up within " + maxMillis + " ms; took " + elapsedMillis + " ms");
         }
-    }
-
-    /**
-     * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
-     * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
-     * {@code AccessShareLock}.
-     *
-     * @param mode the lock mode as written in SQL
-     * @return the lock mode as reported by {@code pg_locks}
-     */
-    private static String lockModeName(String mode) {
-        StringBuilder name = new StringBuilder();
-        for (String word : mode.trim().split("\\s+")) {
-            name.append(Character.toUpperCase(word.charAt(0)))
-                    .append(word.substring(1).toLowerCase());
-        }
-        return name.append("Lock").toString();
     }
 
     /**

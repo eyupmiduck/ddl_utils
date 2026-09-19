@@ -35,29 +35,25 @@ BEGIN
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = i_constraint_name
-                   AND conrelid = l_relation
-                   AND contype = 'f')
+                 AND conrelid = l_relation
+                 AND contype = 'f')
         AND NOT EXISTS (SELECT 1
                         FROM pg_catalog.pg_constraint AS c
                         WHERE c.conname = i_constraint_name
-                            AND c.conrelid = l_relation
-                            AND c.contype = 'f'
-                            AND c.confrelid = pg_catalog.format(
+                          AND c.conrelid = l_relation
+                          AND c.contype = 'f'
+                          AND c.confrelid = pg_catalog.format(
                                 '%I.%I', i_referenced_schema_name, i_referenced_table_name)::regclass
-                            AND c.conkey = (
-                                SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
-                                FROM pg_catalog.unnest(i_column_names) WITH ORDINALITY AS t(name, ord)
-                                JOIN pg_catalog.pg_attribute AS a
-                                    ON a.attrelid = c.conrelid
-                                        AND a.attname = t.name
-                            )
-                            AND c.confkey = (
-                                SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
-                                FROM pg_catalog.unnest(i_referenced_column_names) WITH ORDINALITY AS t(name, ord)
-                                JOIN pg_catalog.pg_attribute AS a
-                                    ON a.attrelid = c.confrelid
-                                        AND a.attname = t.name
-                            )) THEN
+                          AND c.conkey = (SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
+                                          FROM pg_catalog.unnest(i_column_names) WITH ORDINALITY AS t(name, ord)
+                                                   JOIN pg_catalog.pg_attribute AS a
+                                                        ON a.attrelid = c.conrelid
+                                                            AND a.attname = t.name)
+                          AND c.confkey = (SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
+                                           FROM pg_catalog.unnest(i_referenced_column_names) WITH ORDINALITY AS t(name, ord)
+                                                    JOIN pg_catalog.pg_attribute AS a
+                                                         ON a.attrelid = c.confrelid
+                                                             AND a.attname = t.name)) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: constraint % already exists on %.% with a different definition',
             i_constraint_name, i_schema_name, i_table_name
@@ -70,8 +66,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1
                    FROM pg_catalog.pg_constraint
                    WHERE conname = i_constraint_name
-                       AND conrelid = l_relation
-                       AND contype = 'f') THEN
+                     AND conrelid = l_relation
+                     AND contype = 'f') THEN
         PERFORM ddl_utils_lib.add_foreign_key(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -91,9 +87,9 @@ BEGIN
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = i_constraint_name
-                   AND conrelid = l_relation
-                   AND contype = 'f'
-                   AND NOT convalidated) THEN
+                 AND conrelid = l_relation
+                 AND contype = 'f'
+                 AND NOT convalidated) THEN
         PERFORM ddl_utils_lib.validate_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,

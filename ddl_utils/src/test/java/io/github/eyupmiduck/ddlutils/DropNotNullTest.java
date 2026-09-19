@@ -49,7 +49,7 @@ class DropNotNullTest extends PostgresTestBase {
 
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)");
         Integer nulls = dsl.fetchOne(
-                "SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + TARGET + " WHERE note IS NULL")
+                        "SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + TARGET + " WHERE note IS NULL")
                 .get(0, Integer.class);
         assertEquals(1, nulls);
     }
