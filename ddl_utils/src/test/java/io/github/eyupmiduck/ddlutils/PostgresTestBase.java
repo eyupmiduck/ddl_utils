@@ -349,6 +349,56 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Returns the deterministic name of the temporary CHECK constraint the
+     * {@code ddl_utils.ensure_not_null} procedure uses for a column, so a test
+     * can reproduce the catalog state left by an interrupted run.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the temporary constraint name
+     */
+    protected String notNullCheckConstraintName(String schema, String table, String column) {
+        String digest = dsl.fetchOne("SELECT substr(md5(? || '.' || ? || '.' || ?), 1, 8)",
+                schema, table, column).get(0, String.class);
+        String prefix = table + "_" + column + "_not_null";
+        if (prefix.length() > 45) {
+            prefix = prefix.substring(0, 45);
+        }
+        return prefix + "_" + digest;
+    }
+
+    /**
+     * Reproduces the catalog state left when {@code ddl_utils.ensure_not_null}
+     * committed its first step but the call ended before validation: the
+     * temporary CHECK constraint exists but is {@code NOT VALID}.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     */
+    protected void simulateNotNullCheckAdded(String schema, String table, String column) {
+        dsl.execute("ALTER TABLE " + schema + "." + table
+                + " ADD CONSTRAINT " + notNullCheckConstraintName(schema, table, column)
+                + " CHECK (" + column + " IS NOT NULL) NOT VALID");
+    }
+
+    /**
+     * Reproduces the catalog state left when {@code ddl_utils.ensure_not_null}
+     * committed its first two steps but the call ended before {@code SET NOT
+     * NULL}: the temporary CHECK constraint exists and is valid.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     */
+    protected void simulateNotNullCheckValidated(String schema, String table, String column) {
+        simulateNotNullCheckAdded(schema, table, column);
+        dsl.execute("ALTER TABLE " + schema + "." + table
+                + " VALIDATE CONSTRAINT " + notNullCheckConstraintName(schema, table, column));
+    }
+
+    /**
      * Returns the {@code information_schema.columns} row for a column, or
      * {@code null} when the column does not exist.
      *

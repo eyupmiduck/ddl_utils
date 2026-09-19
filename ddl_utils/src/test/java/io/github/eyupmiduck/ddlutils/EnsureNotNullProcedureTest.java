@@ -61,8 +61,7 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     @Test
     void recoversFromPartialFailureAfterAdd() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
-                + " ADD CONSTRAINT " + temporaryConstraintName() + " CHECK (note IS NOT NULL) NOT VALID");
+        simulateNotNullCheckAdded(PUBLIC_SCHEMA, TARGET, "note");
 
         callEnsureNotNull();
 
@@ -77,10 +76,7 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     @Test
     void recoversFromPartialFailureAfterValidate() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
-                + " ADD CONSTRAINT " + temporaryConstraintName() + " CHECK (note IS NOT NULL) NOT VALID");
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
-                + " VALIDATE CONSTRAINT " + temporaryConstraintName());
+        simulateNotNullCheckValidated(PUBLIC_SCHEMA, TARGET, "note");
 
         callEnsureNotNull();
 
@@ -122,16 +118,6 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
 
     private void callEnsureNotNull() {
         dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, TARGET, "note");
-    }
-
-    private String temporaryConstraintName() {
-        String digest = dsl.fetchOne("SELECT substr(md5(? || '.' || ? || '.' || ?), 1, 8)",
-                PUBLIC_SCHEMA, TARGET, "note").get(0, String.class);
-        String prefix = TARGET + "_note_not_null";
-        if (prefix.length() > 45) {
-            prefix = prefix.substring(0, 45);
-        }
-        return prefix + "_" + digest;
     }
 
     private int temporaryConstraints() {
