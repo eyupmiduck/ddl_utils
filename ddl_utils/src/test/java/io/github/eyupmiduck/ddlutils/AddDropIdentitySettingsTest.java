@@ -53,7 +53,7 @@ class AddDropIdentitySettingsTest extends PostgresTestBase {
     /**
      * The wrappers pass the table-level lock settings to the helpers: the
      * table's statement budget is far below the database default (30000 ms), so
-     * a held lock makes the call give up quickly.
+     * a held ACCESS SHARE lock makes each call give up quickly.
      */
     @Test
     void usesTableLockSettings() throws Exception {
@@ -61,5 +61,7 @@ class AddDropIdentitySettingsTest extends PostgresTestBase {
 
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", "ALWAYS"));
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", true));
     }
 }

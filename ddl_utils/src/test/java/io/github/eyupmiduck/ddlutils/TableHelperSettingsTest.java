@@ -79,18 +79,37 @@ class TableHelperSettingsTest extends PostgresTestBase {
     }
 
     /**
-     * rename_table passes the table-level lock settings to the helper: the
-     * table's statement budget is far below the database default (30000 ms), so
-     * a held ACCESS SHARE lock makes the call give up quickly.
-     * set_table_storage_parameter is excluded because it takes only SHARE
-     * UPDATE EXCLUSIVE, which does not conflict with the held lock.
+     * rename_table, add_primary_key_using_index and
+     * add_unique_constraint_using_index pass the table-level lock settings to
+     * their helpers; a held ACCESS SHARE lock makes each give up quickly.
      */
     @Test
     void usesTableLockSettings() throws Exception {
+        dsl.execute("CREATE UNIQUE INDEX pk_idx ON " + PUBLIC_SCHEMA + "." + TARGET + " (id)");
+        dsl.execute("CREATE UNIQUE INDEX code_idx ON " + PUBLIC_SCHEMA + "." + TARGET + " (code)");
         setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
 
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.renameTable(dsl.configuration(), PUBLIC_SCHEMA, TARGET, RENAMED));
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.addPrimaryKeyUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "pk", "pk_idx"));
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                        "code_uq", "code_idx"));
+    }
+
+    /**
+     * set_table_storage_parameter passes the table-level lock settings to the
+     * helper. It takes only SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock
+     * does not block, so the competing session holds ACCESS EXCLUSIVE.
+     */
+    @Test
+    void setTableStorageParameterUsesTableLockSettings() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
+                () -> Routines.setTableStorageParameter(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                        "fillfactor", "70"));
     }
 
     private String constraintType(String name) {

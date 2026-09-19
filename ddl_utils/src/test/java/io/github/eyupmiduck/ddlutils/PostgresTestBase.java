@@ -220,9 +220,38 @@ abstract class PostgresTestBase {
      * @throws SQLException if the lock cannot be taken
      */
     protected void holdAccessShareLock(Connection connection, String table) throws SQLException {
+        holdTableLock(connection, table, "ACCESS SHARE");
+    }
+
+    /**
+     * Holds an ACCESS EXCLUSIVE lock on a table on a second connection. This
+     * conflicts with every other table lock, including the SHARE UPDATE
+     * EXCLUSIVE lock some metadata-only {@code ALTER TABLE} subcommands take
+     * (which ACCESS SHARE does not block). The caller owns the connection and
+     * must close it to release the lock.
+     *
+     * @param connection a connection to this test class's private database
+     * @param table      the table to lock
+     * @throws SQLException if the lock cannot be taken
+     */
+    protected void holdAccessExclusiveLock(Connection connection, String table) throws SQLException {
+        holdTableLock(connection, table, "ACCESS EXCLUSIVE");
+    }
+
+    /**
+     * Holds a table lock in the given mode on a second connection, so a test
+     * can make a routine wait for it. The caller owns the connection and must
+     * close it to release the lock.
+     *
+     * @param connection a connection to this test class's private database
+     * @param table      the table to lock
+     * @param mode       the PostgreSQL lock mode, for example {@code ACCESS SHARE}
+     * @throws SQLException if the lock cannot be taken
+     */
+    protected void holdTableLock(Connection connection, String table, String mode) throws SQLException {
         connection.setAutoCommit(false);
         try (Statement statement = connection.createStatement()) {
-            statement.execute("LOCK TABLE " + table + " IN ACCESS SHARE MODE");
+            statement.execute("LOCK TABLE " + table + " IN " + mode + " MODE");
         }
     }
 
@@ -235,6 +264,20 @@ abstract class PostgresTestBase {
      * @throws InterruptedException if interrupted while waiting
      */
     protected void awaitAccessShareLockHeld(String table) throws InterruptedException {
+        awaitTableLockHeld(table, "AccessShareLock");
+    }
+
+    /**
+     * Waits until a competing session holds a lock in the given mode on the
+     * table, so a test can be sure the lock is in place before calling a
+     * routine that must wait for it.
+     *
+     * @param table the table to check
+     * @param mode  the PostgreSQL lock mode as reported by {@code pg_locks},
+     *              for example {@code AccessExclusiveLock}
+     * @throws InterruptedException if interrupted while waiting
+     */
+    protected void awaitTableLockHeld(String table, String mode) throws InterruptedException {
         for (int attempt = 0; attempt < 100; attempt++) {
             Object held = dsl.fetchValue(
                     """
@@ -245,17 +288,17 @@ abstract class PostgresTestBase {
                                 JOIN pg_namespace n ON n.oid = c.relnamespace
                                 WHERE c.relname = ?
                                     AND n.nspname = current_schema()
-                                    AND l.mode = 'AccessShareLock'
+                                    AND l.mode = ?
                                     AND l.granted
                             )
                             """,
-                    table);
+                    table, mode);
             if (Boolean.TRUE.equals(held)) {
                 return;
             }
             Thread.sleep(50);
         }
-        fail("the competing session did not acquire its lock on " + table);
+        fail("the competing session did not acquire its " + mode + " lock on " + table);
     }
 
     /**
@@ -487,9 +530,29 @@ abstract class PostgresTestBase {
      */
     protected void assertGivesUpWhileTableLocked(String table, long maxMillis, Executable call)
             throws SQLException, InterruptedException {
+        assertGivesUpWhileTableLocked(table, "ACCESS SHARE", maxMillis, call);
+    }
+
+    /**
+     * Runs {@code call} while another session holds a lock in the given mode on
+     * {@code table}, and asserts it gives up with SQLSTATE {@code 55P03} within
+     * {@code maxMillis}. The settings passed to the call must make the budget
+     * short, so the bound distinguishes giving up from retrying for seconds.
+     * Use {@code ACCESS EXCLUSIVE} for routines whose final statement takes only
+     * SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock does not block.
+     *
+     * @param table     the locked table
+     * @param mode      the PostgreSQL lock mode, for example {@code ACCESS SHARE}
+     * @param maxMillis the maximum expected time to give up
+     * @param call      the call expected to fail
+     * @throws SQLException         if the competing connection cannot be opened
+     * @throws InterruptedException if waiting for the lock is interrupted
+     */
+    protected void assertGivesUpWhileTableLocked(String table, String mode, long maxMillis, Executable call)
+            throws SQLException, InterruptedException {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, table);
-            awaitAccessShareLockHeld(table);
+            holdTableLock(other, table, mode);
+            awaitTableLockHeld(table, lockModeName(mode));
 
             long startedAt = System.nanoTime();
             assertSqlState("55P03", call);
@@ -498,6 +561,23 @@ abstract class PostgresTestBase {
             assertTrue(elapsedMillis < maxMillis,
                     () -> "the call did not give up within " + maxMillis + " ms; took " + elapsedMillis + " ms");
         }
+    }
+
+    /**
+     * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
+     * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
+     * {@code AccessShareLock}.
+     *
+     * @param mode the lock mode as written in SQL
+     * @return the lock mode as reported by {@code pg_locks}
+     */
+    private static String lockModeName(String mode) {
+        StringBuilder name = new StringBuilder();
+        for (String word : mode.trim().split("\\s+")) {
+            name.append(Character.toUpperCase(word.charAt(0)))
+                    .append(word.substring(1).toLowerCase());
+        }
+        return name.append("Lock").toString();
     }
 
     /**

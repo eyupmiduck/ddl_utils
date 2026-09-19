@@ -66,8 +66,7 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
      * set_column_storage and set_column_compression pass the table-level lock
      * settings to the helpers: the table's statement budget is far below the
      * database default (30000 ms), so a held ACCESS SHARE lock makes each call
-     * give up quickly. set_column_statistics is excluded because it takes only
-     * SHARE UPDATE EXCLUSIVE, which does not conflict with the held lock.
+     * give up quickly.
      */
     @Test
     void usesTableLockSettings() throws Exception {
@@ -77,6 +76,19 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
                 () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "EXTERNAL"));
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz"));
+    }
+
+    /**
+     * set_column_statistics also passes the table-level settings to the helper.
+     * It takes only SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock does not
+     * block, so the competing session holds ACCESS EXCLUSIVE instead.
+     */
+    @Test
+    void setColumnStatisticsUsesTableLockSettings() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
+                () -> Routines.setColumnStatistics(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", 500));
     }
 
     private Integer statistics(String column) {

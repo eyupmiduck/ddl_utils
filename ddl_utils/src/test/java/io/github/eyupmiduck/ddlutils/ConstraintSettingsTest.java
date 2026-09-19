@@ -16,10 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConstraintSettingsTest extends PostgresTestBase {
 
     private static final String TARGET = "constraint_settings_target";
+    private static final String REFERENCED = "constraint_settings_referenced";
 
     @BeforeEach
     void createTargetTable() {
-        createTestTable(TARGET, "id int, value int");
+        createTestTable(REFERENCED, "id int PRIMARY KEY");
+        createTestTable(TARGET, "id int, value int, parent_id int");
     }
 
     @AfterEach
@@ -28,6 +30,7 @@ class ConstraintSettingsTest extends PostgresTestBase {
             clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
         } finally {
             dropTestTable(TARGET);
+            dropTestTable(REFERENCED);
         }
     }
 
@@ -67,6 +70,49 @@ class ConstraintSettingsTest extends PostgresTestBase {
         assertTrue(constraintExists("new_name"));
 
         Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "new_name");
+    }
+
+    /**
+     * drop_constraint and rename_constraint pass the table-level lock settings
+     * to the helpers; a held ACCESS SHARE lock makes each give up quickly.
+     */
+    @Test
+    void dropAndRenameUseTableLockSettings() throws Exception {
+        Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "value > 0");
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.renameConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name"));
+    }
+
+    /**
+     * add_foreign_key passes the table-level lock settings to the helper. It
+     * takes SHARE ROW EXCLUSIVE, which an ACCESS SHARE lock does not block, so
+     * the competing session holds ACCESS EXCLUSIVE.
+     */
+    @Test
+    void addForeignKeyUsesTableLockSettings() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
+                () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "fk_parent",
+                        new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+    }
+
+    /**
+     * validate_constraint passes the table-level lock settings to the helper.
+     * It takes only SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock does not
+     * block, so the competing session holds ACCESS EXCLUSIVE.
+     */
+    @Test
+    void validateConstraintUsesTableLockSettings() throws Exception {
+        Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive", "value > 0");
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+
+        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
+                () -> Routines.validateConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive"));
     }
 
     private boolean constraintValidated(String name) {
