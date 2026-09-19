@@ -33,20 +33,22 @@ The template every procedure follows:
 
 ```sql
 DECLARE
-    l_lock integer; l_sleep integer; l_dur integer;
+    l_lock integer;
+l_sleep integer;
+l_dur integer;
 BEGIN
     -- Read the settings once for the whole call.
-    SELECT ddl_lock_timeout, sleep_time, statement_duration
-      INTO l_lock, l_sleep, l_dur
-      FROM ddl_utils.get_lock_settings(i_schema_name, i_table_name);
+SELECT ddl_lock_timeout, sleep_time, statement_duration
+INTO l_lock, l_sleep, l_dur
+FROM ddl_utils.get_lock_settings(i_schema_name, i_table_name);
 
-    -- Step: skip when the catalog shows the work is already done.
-    IF <step not yet done> THEN
-        PERFORM ddl_utils_lib.<helper>(..., l_lock, l_sleep, l_dur);
-        COMMIT;                      -- release the lock before the next step
-    END IF;
+-- Step: skip when the catalog shows the work is already done.
+IF <step not yet done> THEN
+PERFORM ddl_utils_lib.<helper>(..., l_lock, l_sleep, l_dur);
+COMMIT; -- release the lock before the next step
+END IF;
 
-    -- ... further steps, each its own IF/PERFORM/COMMIT ...
+-- ... further steps, each its own IF/PERFORM/COMMIT ...
 END;
 ```
 
@@ -142,7 +144,8 @@ target and its expression is not re-checked. A `CHECK` expression cannot be
 compared exactly (`pg_get_constraintdef` returns a normalized, version-dependent
 form), so use a distinct name per expression.
 
-### `ddl_utils.ensure_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names)`
+###
+`ddl_utils.ensure_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names)`
 
 ```sql
 i_schema_name             ddl_utils.non_null_text

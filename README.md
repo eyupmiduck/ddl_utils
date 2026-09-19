@@ -117,7 +117,8 @@ implemented as a stored **procedure** in the `ddl_utils` schema, which can
 
 Procedures are idempotent and recoverable: each step inspects the catalog and
 skips work already committed, so a call interrupted part-way is completed by
-calling it again. Because a procedure commits, it must run in autocommit (`CALL` inside a client transaction fails with `invalid transaction
+calling it again. Because a procedure commits, it must run in autocommit
+(`CALL` inside a client transaction fails with `invalid transaction
 termination`). See
 [`procedures/README.md`](ddl_utils/src/main/resources/db/changelog/changes/procedures/README.md).
 
