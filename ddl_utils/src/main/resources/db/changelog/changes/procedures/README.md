@@ -145,6 +145,7 @@ compared exactly (`pg_get_constraintdef` returns a normalized, version-dependent
 form), so use a distinct name per expression.
 
 ###
+
 `ddl_utils.ensure_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names)`
 
 ```sql
