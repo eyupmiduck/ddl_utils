@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verifies {@code ddl_utils_lib.add_identity} and {@code drop_identity}: they
@@ -38,7 +37,7 @@ class AddDropIdentityTest extends PostgresTestBase {
     void addsIdentity() {
         addIdentity("id", "BY DEFAULT");
 
-        assertNotNull(identity("id"));
+        assertEquals("d", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (note) VALUES ('a')");
         Integer next = dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
         assertEquals(1, next);
@@ -52,7 +51,7 @@ class AddDropIdentityTest extends PostgresTestBase {
         addIdentity("id", "ALWAYS");
         dropIdentity("id", true);
 
-        assertEquals("", identity("id"));
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
     }
 
     /**
@@ -87,18 +86,6 @@ class AddDropIdentityTest extends PostgresTestBase {
         assertDomainViolation(() -> addIdentity(null, "ALWAYS"));
         assertDomainViolation(() -> addIdentity("id", null));
         assertDomainViolation(() -> dropIdentity("id", null));
-    }
-
-    private String identity(String column) {
-        return dsl.fetchOne(
-                """
-                        SELECT a.attidentity::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, String.class);
     }
 
     private void addIdentity(String column, String generated) {

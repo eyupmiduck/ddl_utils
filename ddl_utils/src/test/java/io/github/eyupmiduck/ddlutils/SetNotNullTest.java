@@ -66,11 +66,12 @@ class SetNotNullTest extends PostgresTestBase {
     }
 
     /**
-     * A valid CHECK constraint proving the column non-null lets PostgreSQL skip
-     * the scan, so the call succeeds on a populated table.
+     * Sets NOT NULL on a populated table that already carries a validated
+     * CHECK (note IS NOT NULL). This asserts the resulting state; it does not
+     * observe whether PostgreSQL skipped its own scan.
      */
     @Test
-    void usesValidCheckConstraintToSkipScan() {
+    void setsNotNullWithValidCheckConstraint() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
         dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
                 + " ADD CONSTRAINT note_nn CHECK (note IS NOT NULL) NOT VALID");

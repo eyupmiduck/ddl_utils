@@ -55,6 +55,27 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A call on an already NOT NULL column is a true no-op: it performs no
+     * ALTER TABLE, so it succeeds even while another session holds a lock that
+     * every ALTER TABLE would have to wait for.
+     */
+    @Test
+    void isNoOpWhenAlreadyNotNull() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
+        callEnsureNotNull();
+
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        try {
+            runWhileTableLocked(TARGET, 5000, this::callEnsureNotNull);
+        } finally {
+            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
+        }
+
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals(0, temporaryConstraints());
+    }
+
+    /**
      * A multibyte column name still yields a generated constraint name short
      * enough for PostgreSQL, so a second call finds the temporary constraint
      * instead of failing on a name that was silently truncated.

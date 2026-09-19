@@ -38,7 +38,7 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
 
         callEnsureForeignKey("fk_parent");
 
-        assertTrue(constraintValidated("fk_parent"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
         assertSqlState("23503",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)"));
     }
@@ -64,7 +64,7 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
 
         callEnsureForeignKey("fk_parent");
 
-        assertTrue(constraintValidated("fk_parent"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
     }
 
     /**
@@ -76,11 +76,11 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
         dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
                 + " ADD CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES "
                 + PUBLIC_SCHEMA + "." + REFERENCED + " (id) NOT VALID");
-        assertFalse(constraintValidated("fk_parent"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
 
         callEnsureForeignKey("fk_parent");
 
-        assertTrue(constraintValidated("fk_parent"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
     }
 
     /**
@@ -92,12 +92,12 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)");
 
         assertSqlState("23503", () -> callEnsureForeignKey("fk_parent"));
-        assertFalse(constraintValidated("fk_parent"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + TARGET + " SET parent_id = NULL WHERE parent_id = 999");
         callEnsureForeignKey("fk_parent");
 
-        assertTrue(constraintValidated("fk_parent"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
     }
 
     private void callEnsureForeignKey(String name) {
@@ -106,14 +106,4 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"});
     }
 
-    private boolean constraintValidated(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT convalidated
-                        FROM pg_constraint
-                        WHERE conname = ?
-                            AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
-    }
 }

@@ -38,7 +38,7 @@ class DropExpressionSettingsTest extends PostgresTestBase {
     void dropExpressionUsesDatabaseDefaults() {
         Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "b");
 
-        assertFalse(isGenerated("b"));
+        assertFalse(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
     }
 
     /**
@@ -53,18 +53,7 @@ class DropExpressionSettingsTest extends PostgresTestBase {
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "b"));
 
-        assertTrue(isGenerated("b"));
+        assertTrue(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
     }
 
-    private boolean isGenerated(String column) {
-        return dsl.fetchOne(
-                """
-                        SELECT a.attgenerated <> ''
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, Boolean.class);
-    }
 }

@@ -9,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Verifies the lock-aware column-attribute wrappers
- * {@code ddl_utils.set_column_storage}, {@code set_column_compression} and
- * {@code drop_expression}: each resolves the table's lock settings through
- * {@code get_lock_settings} and delegates to the {@code ddl_utils_lib} helper.
+ * {@code ddl_utils.set_column_storage} and {@code set_column_compression}: each
+ * resolves the table's lock settings through {@code get_lock_settings} and
+ * delegates to the {@code ddl_utils_lib} helper.
  */
 class SetColumnAttributeSettingsTest extends PostgresTestBase {
 
@@ -38,7 +38,7 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
     void setColumnStorageUsesDatabaseDefaults() {
         Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "EXTERNAL");
 
-        assertEquals("external", storage("note"));
+        assertEquals("external", columnStorage(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -48,7 +48,7 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
     void setColumnCompressionUsesDatabaseDefaults() {
         Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz");
 
-        assertEquals("pglz", compression("note"));
+        assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -67,40 +67,4 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz"));
     }
 
-    private String storage(String column) {
-        String code = dsl.fetchOne(
-                """
-                        SELECT a.attstorage::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, String.class);
-        return switch (code) {
-            case "p" -> "plain";
-            case "e" -> "external";
-            case "m" -> "main";
-            case "x" -> "extended";
-            default -> code;
-        };
-    }
-
-    private String compression(String column) {
-        String code = dsl.fetchOne(
-                """
-                        SELECT a.attcompression::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, String.class);
-        return switch (code) {
-            case "p" -> "pglz";
-            case "l" -> "lz4";
-            case "" -> "default";
-            default -> code;
-        };
-    }
 }

@@ -72,6 +72,7 @@ class UsingIndexConstraintTest extends PostgresTestBase {
         assertDomainViolation(() -> addPrimaryKeyUsingIndex(null, "idx"));
         assertDomainViolation(() -> addPrimaryKeyUsingIndex("pk", null));
         assertDomainViolation(() -> addUniqueConstraintUsingIndex(null, "idx"));
+        assertDomainViolation(() -> addUniqueConstraintUsingIndex("uq", null));
     }
 
     private String constraintType(String name) {

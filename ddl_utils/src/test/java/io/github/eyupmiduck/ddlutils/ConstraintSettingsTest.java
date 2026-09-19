@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -43,7 +44,7 @@ class ConstraintSettingsTest extends PostgresTestBase {
 
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive", "value > 0");
 
-        assertTrue(constraintExists("positive"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "positive"));
     }
 
     /**
@@ -66,9 +67,10 @@ class ConstraintSettingsTest extends PostgresTestBase {
     void dropAndRenameUseDatabaseDefaults() {
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "value > 0");
         Routines.renameConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name");
-        assertTrue(constraintExists("new_name"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"));
 
         Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "new_name");
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"));
     }
 
     /**
@@ -100,14 +102,4 @@ class ConstraintSettingsTest extends PostgresTestBase {
                         new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
     }
 
-    private boolean constraintExists(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT EXISTS (
-                            SELECT 1 FROM pg_constraint
-                            WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        )
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
-    }
 }

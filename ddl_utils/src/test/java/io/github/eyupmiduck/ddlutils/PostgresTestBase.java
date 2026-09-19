@@ -224,21 +224,6 @@ abstract class PostgresTestBase {
     }
 
     /**
-     * Holds an ACCESS EXCLUSIVE lock on a table on a second connection. This
-     * conflicts with every other table lock, including the SHARE UPDATE
-     * EXCLUSIVE lock some metadata-only {@code ALTER TABLE} subcommands take
-     * (which ACCESS SHARE does not block). The caller owns the connection and
-     * must close it to release the lock.
-     *
-     * @param connection a connection to this test class's private database
-     * @param table      the table to lock
-     * @throws SQLException if the lock cannot be taken
-     */
-    protected void holdAccessExclusiveLock(Connection connection, String table) throws SQLException {
-        holdTableLock(connection, table, "ACCESS EXCLUSIVE");
-    }
-
-    /**
      * Holds a table lock in the given mode on a second connection, so a test
      * can make a routine wait for it. The caller owns the connection and must
      * close it to release the lock.
@@ -361,7 +346,9 @@ abstract class PostgresTestBase {
     protected String notNullCheckConstraintName(String schema, String table, String column) {
         String digest = dsl.fetchOne("SELECT substr(md5(? || '.' || ? || '.' || ?), 1, 8)",
                 schema, table, column).get(0, String.class);
-        String prefix = table + "_" + column + "_not_null";
+        // Mirror the procedure: replace non-ASCII characters so the prefix is
+        // measured in bytes before it is truncated to 45 characters.
+        String prefix = (table + "_" + column + "_not_null").replaceAll("[^A-Za-z0-9_]", "_");
         if (prefix.length() > 45) {
             prefix = prefix.substring(0, 45);
         }
@@ -443,6 +430,146 @@ abstract class PostgresTestBase {
         Record record = column(schema, table, column);
         assertNotNull(record, () -> "column not found: " + schema + "." + table + "." + column);
         return record.get(attribute, String.class);
+    }
+
+    /**
+     * Returns a column's {@code pg_attribute} row, failing when the column does
+     * not exist. Used for attributes that {@code information_schema.columns}
+     * does not expose ({@code attidentity}, {@code attstorage},
+     * {@code attcompression}, {@code attgenerated}).
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the column's pg_attribute row
+     */
+    private Record pgAttribute(String schema, String table, String column) {
+        Record record = dsl.fetchOne(
+                """
+                        SELECT a.attidentity::text AS attidentity,
+                               a.attstorage::text AS attstorage,
+                               a.attcompression::text AS attcompression,
+                               (a.attgenerated <> '') AS attgenerated
+                        FROM pg_attribute a
+                        JOIN pg_class c ON c.oid = a.attrelid
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
+                        """,
+                schema, table, column);
+        assertNotNull(record, () -> "column not found: " + schema + "." + table + "." + column);
+        return record;
+    }
+
+    /**
+     * Returns a column's identity code: {@code 'a'} for ALWAYS, {@code 'd'} for
+     * BY DEFAULT, {@code ''} for no identity.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the identity code
+     */
+    protected String columnIdentity(String schema, String table, String column) {
+        return pgAttribute(schema, table, column).get("attidentity", String.class);
+    }
+
+    /**
+     * Returns a column's storage mode name ({@code plain}, {@code external},
+     * {@code main} or {@code extended}).
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the storage mode name
+     */
+    protected String columnStorage(String schema, String table, String column) {
+        // attstorage is a single code: p=plain, e=external, m=main, x=extended.
+        String code = pgAttribute(schema, table, column).get("attstorage", String.class);
+        return switch (code) {
+            case "p" -> "plain";
+            case "e" -> "external";
+            case "m" -> "main";
+            case "x" -> "extended";
+            default -> code;
+        };
+    }
+
+    /**
+     * Returns a column's compression method name ({@code pglz}, {@code lz4} or
+     * {@code default}).
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the compression method name
+     */
+    protected String columnCompression(String schema, String table, String column) {
+        // attcompression is a single code: p=pglz, l=lz4, empty=default.
+        String code = pgAttribute(schema, table, column).get("attcompression", String.class);
+        return switch (code) {
+            case "p" -> "pglz";
+            case "l" -> "lz4";
+            case "" -> "default";
+            default -> code;
+        };
+    }
+
+    /**
+     * Returns whether a column is generated.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return {@code true} when the column is generated
+     */
+    protected boolean isGenerated(String schema, String table, String column) {
+        return Boolean.TRUE.equals(pgAttribute(schema, table, column).get("attgenerated", Boolean.class));
+    }
+
+    /**
+     * Returns whether the named constraint on a table is validated, failing when
+     * no such constraint exists on that table. The lookup is scoped to the
+     * {@code (schema, table, name)} triple because constraint names are only
+     * unique per table.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param name   the constraint name
+     * @return {@code true} when the constraint is validated
+     */
+    protected boolean constraintValidated(String schema, String table, String name) {
+        Record record = dsl.fetchOne(
+                """
+                        SELECT convalidated
+                        FROM pg_constraint
+                        WHERE conname = ?
+                            AND conrelid = (SELECT oid FROM pg_class WHERE relname = ?
+                                              AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                        """,
+                name, table, schema);
+        assertNotNull(record, () -> "constraint not found: " + schema + "." + table + "." + name);
+        return Boolean.TRUE.equals(record.get("convalidated", Boolean.class));
+    }
+
+    /**
+     * Returns whether the named constraint exists on a table.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param name   the constraint name
+     * @return {@code true} when the constraint exists on that table
+     */
+    protected boolean constraintExists(String schema, String table, String name) {
+        return Boolean.TRUE.equals(dsl.fetchValue(
+                """
+                        SELECT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = ?
+                                AND conrelid = (SELECT oid FROM pg_class WHERE relname = ?
+                                                  AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                        )
+                        """,
+                name, table, schema));
     }
 
     /**

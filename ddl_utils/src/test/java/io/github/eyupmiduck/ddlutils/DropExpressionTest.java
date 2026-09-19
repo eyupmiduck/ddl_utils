@@ -37,11 +37,11 @@ class DropExpressionTest extends PostgresTestBase {
      */
     @Test
     void dropsExpression() {
-        assertTrue(isGenerated("b"));
+        assertTrue(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
 
         dropExpression("b");
 
-        assertFalse(isGenerated("b"));
+        assertFalse(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (a, b) VALUES (1, 99)");
         Integer value = dsl.fetchOne("SELECT b FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
         assertEquals(99, value);
@@ -65,18 +65,6 @@ class DropExpressionTest extends PostgresTestBase {
         assertDomainViolation(() -> dropExpression("b", null, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> dropExpression("b", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> dropExpression("b", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
-    }
-
-    private boolean isGenerated(String column) {
-        return dsl.fetchOne(
-                """
-                        SELECT a.attgenerated <> ''
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, Boolean.class);
     }
 
     private void dropExpression(String column) {

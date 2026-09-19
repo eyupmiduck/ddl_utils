@@ -35,7 +35,7 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated("positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
         assertSqlState("23514",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)"));
     }
@@ -61,7 +61,7 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated("positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
     }
 
     /**
@@ -72,11 +72,11 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
     void recoversFromPartialFailureAfterAdd() {
         dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
                 + " ADD CONSTRAINT positive CHECK (value > 0) NOT VALID");
-        assertFalse(constraintValidated("positive"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated("positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
     }
 
     /**
@@ -89,12 +89,12 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)");
 
         assertSqlState("23514", () -> callEnsureCheckConstraint("positive", "value > 0"));
-        assertFalse(constraintValidated("positive"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + TARGET + " SET value = 1 WHERE value < 0");
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated("positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
     }
 
     private void callEnsureCheckConstraint(String name, String expression) {
@@ -102,14 +102,4 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
                 PUBLIC_SCHEMA, TARGET, name, expression);
     }
 
-    private boolean constraintValidated(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT convalidated
-                        FROM pg_constraint
-                        WHERE conname = ?
-                            AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
-    }
 }

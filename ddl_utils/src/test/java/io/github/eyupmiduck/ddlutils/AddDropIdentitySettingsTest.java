@@ -37,17 +37,10 @@ class AddDropIdentitySettingsTest extends PostgresTestBase {
     @Test
     void usesDatabaseDefaults() {
         Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", "ALWAYS");
-        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", true);
+        assertEquals("a", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
 
-        assertEquals("", dsl.fetchOne(
-                """
-                        SELECT a.attidentity::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, "id").get(0, String.class));
+        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", true);
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
     }
 
     /**

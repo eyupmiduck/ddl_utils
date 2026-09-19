@@ -11,6 +11,7 @@ DECLARE
     l_lock_timeout       integer;
     l_sleep_time         integer;
     l_statement_duration integer;
+    l_already_not_null   boolean;
     l_base               text;
     l_constraint_name    text;
     l_relation           regclass;
@@ -50,13 +51,25 @@ BEGIN
         || '_' || pg_catalog.substr(pg_catalog.md5(
             pg_catalog.format('%s.%s.%s', i_schema_name, i_table_name, i_column_name)), 1, 8);
 
+    -- An already-NOT-NULL column needs no proof, so skip the add/validate/set
+    -- steps and do not take a fresh ACCESS EXCLUSIVE lock or re-scan the table.
+    -- Step 4 still runs, to clean up any temporary constraint left by a partial
+    -- failure after SET NOT NULL had committed.
+    SELECT a.attnotnull
+    INTO l_already_not_null
+    FROM pg_catalog.pg_attribute AS a
+    WHERE a.attrelid = l_relation
+        AND a.attname = i_column_name;
+
     -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS EXCLUSIVE
-    -- lock). Skipped when it already exists, which is how a re-run recovers.
-    IF NOT EXISTS (SELECT 1
-                   FROM pg_catalog.pg_constraint
-                   WHERE conname = l_constraint_name
-                       AND conrelid = l_relation
-                       AND contype = 'c') THEN
+    -- lock). Skipped when the column is already NOT NULL or the constraint
+    -- already exists, which is how a re-run recovers.
+    IF NOT l_already_not_null
+        AND NOT EXISTS (SELECT 1
+                        FROM pg_catalog.pg_constraint
+                        WHERE conname = l_constraint_name
+                            AND conrelid = l_relation
+                            AND contype = 'c') THEN
         PERFORM ddl_utils_lib.add_check_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -72,12 +85,13 @@ BEGIN
     -- Step 2: validate the constraint, scanning under SHARE UPDATE EXCLUSIVE.
     -- A NOT VALID constraint with existing NULLs fails here with 23514, leaving
     -- the constraint in place so the caller can fix the data and re-run.
-    IF EXISTS (SELECT 1
-               FROM pg_catalog.pg_constraint
-               WHERE conname = l_constraint_name
-                   AND conrelid = l_relation
-                   AND contype = 'c'
-                   AND NOT convalidated) THEN
+    IF NOT l_already_not_null
+        AND EXISTS (SELECT 1
+                    FROM pg_catalog.pg_constraint
+                    WHERE conname = l_constraint_name
+                        AND conrelid = l_relation
+                        AND contype = 'c'
+                        AND NOT convalidated) THEN
         PERFORM ddl_utils_lib.validate_constraint(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
@@ -90,11 +104,7 @@ BEGIN
     END IF;
 
     -- Step 3: SET NOT NULL. The valid CHECK lets PostgreSQL skip its own scan.
-    IF NOT EXISTS (SELECT 1
-                   FROM pg_catalog.pg_attribute
-                   WHERE attrelid = l_relation
-                       AND attname = i_column_name
-                       AND attnotnull) THEN
+    IF NOT l_already_not_null THEN
         PERFORM ddl_utils_lib.set_not_null(
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,

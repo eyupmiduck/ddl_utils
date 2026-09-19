@@ -100,15 +100,22 @@ Make a column `NOT NULL` without holding `ACCESS EXCLUSIVE` across the
 verification scan. Steps, each committed before the next:
 
 1. `ddl_utils_lib.add_check_constraint(<tmp>, '<col> IS NOT NULL')` — instant,
-   `NOT VALID`, brief `ACCESS EXCLUSIVE`.
+   `NOT VALID`, brief `ACCESS EXCLUSIVE`. Skipped when the column is already
+   `NOT NULL` or `<tmp>` already exists.
 2. `ddl_utils_lib.validate_constraint(<tmp>)` — scans under `SHARE UPDATE
-   EXCLUSIVE`.
+   EXCLUSIVE`. Skipped when the column is already `NOT NULL` or `<tmp>` is
+   already valid.
 3. `ddl_utils_lib.set_not_null(<col>)` — skips its scan because the valid
-   `CHECK` proves the column non-null.
-4. `ddl_utils_lib.drop_constraint(<tmp>)` — cleanup.
+   `CHECK` proves the column non-null. Skipped when the column is already
+   `NOT NULL`.
+4. `ddl_utils_lib.drop_constraint(<tmp>)` — cleanup; always runs, so a leftover
+   temporary constraint is removed.
 
 `<tmp>` is deterministic from the table and column, so a re-run finds the same
-constraint. A call interrupted after any step is completed by re-running it.
+constraint. A call interrupted after any step is completed by re-running it. A
+call on an already-`NOT NULL` column performs no `ALTER TABLE` at all, so a
+re-applied migration does not re-take an `ACCESS EXCLUSIVE` lock or re-scan the
+table.
 
 ### `ddl_utils.ensure_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression)`
 

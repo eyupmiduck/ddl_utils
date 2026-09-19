@@ -44,7 +44,7 @@ class ConstraintTest extends PostgresTestBase {
 
         addCheckConstraint("value_positive", "value > 0");
 
-        assertFalse(constraintValidated("value_positive"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "value_positive"));
     }
 
     /**
@@ -57,7 +57,7 @@ class ConstraintTest extends PostgresTestBase {
 
         validateConstraint("value_positive");
 
-        assertTrue(constraintValidated("value_positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "value_positive"));
         assertSqlState("23514",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)"));
     }
@@ -93,7 +93,7 @@ class ConstraintTest extends PostgresTestBase {
 
         addForeignKey("fk_parent", new String[]{"parent_id"}, REFERENCED, new String[]{"id"});
 
-        assertFalse(constraintValidated("fk_parent"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
     }
 
     /**
@@ -104,7 +104,7 @@ class ConstraintTest extends PostgresTestBase {
         addForeignKey("fk_parent", new String[]{"parent_id"}, REFERENCED, new String[]{"id"});
         validateConstraint("fk_parent");
 
-        assertTrue(constraintValidated("fk_parent"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
         assertSqlState("23503",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)"));
     }
@@ -140,7 +140,7 @@ class ConstraintTest extends PostgresTestBase {
 
         dropConstraint("value_positive");
 
-        assertFalse(constraintExists("value_positive"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "value_positive"));
         assertSqlState("42704", () -> dropConstraint("missing"));
     }
 
@@ -153,8 +153,8 @@ class ConstraintTest extends PostgresTestBase {
 
         renameConstraint("old_name", "new_name");
 
-        assertFalse(constraintExists("old_name"));
-        assertTrue(constraintExists("new_name"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"));
     }
 
     /**
@@ -167,27 +167,11 @@ class ConstraintTest extends PostgresTestBase {
         assertDomainViolation(() -> validateConstraint(null));
         assertDomainViolation(() -> dropConstraint(null));
         assertDomainViolation(() -> renameConstraint("a", null));
-    }
-
-    private boolean constraintValidated(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT convalidated
-                        FROM pg_constraint
-                        WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
-    }
-
-    private boolean constraintExists(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT EXISTS (
-                            SELECT 1 FROM pg_constraint
-                            WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        )
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
+        assertDomainViolation(() -> renameConstraint(null, "b"));
+        assertDomainViolation(() -> addForeignKey(null, new String[]{"parent_id"}, REFERENCED, new String[]{"id"}));
+        assertDomainViolation(() -> addForeignKey("fk", null, REFERENCED, new String[]{"id"}));
+        assertDomainViolation(() -> addForeignKey("fk", new String[]{"parent_id"}, null, new String[]{"id"}));
+        assertDomainViolation(() -> addForeignKey("fk", new String[]{"parent_id"}, REFERENCED, null));
     }
 
     private void addCheckConstraint(String name, String expression) {

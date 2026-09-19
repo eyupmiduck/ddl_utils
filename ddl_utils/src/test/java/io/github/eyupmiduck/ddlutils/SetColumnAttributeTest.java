@@ -37,7 +37,7 @@ class SetColumnAttributeTest extends PostgresTestBase {
     void setsStorage() {
         setStorage("note", "EXTERNAL");
 
-        assertEquals("external", storage("note"));
+        assertEquals("external", columnStorage(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -47,7 +47,7 @@ class SetColumnAttributeTest extends PostgresTestBase {
     void acceptsCaseInsensitiveStorage() {
         setStorage("note", "external");
 
-        assertEquals("external", storage("note"));
+        assertEquals("external", columnStorage(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -65,7 +65,7 @@ class SetColumnAttributeTest extends PostgresTestBase {
     void setsCompression() {
         setCompression("note", "lz4");
 
-        assertEquals("lz4", compression("note"));
+        assertEquals("lz4", columnCompression(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -75,7 +75,7 @@ class SetColumnAttributeTest extends PostgresTestBase {
     void acceptsCaseInsensitiveCompression() {
         setCompression("note", "PGLZ");
 
-        assertEquals("pglz", compression("note"));
+        assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, TARGET, "note"));
     }
 
     /**
@@ -99,45 +99,6 @@ class SetColumnAttributeTest extends PostgresTestBase {
         assertDomainViolation(() -> setCompression("note", "pglz", null, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
-    }
-
-    private String storage(String column) {
-        // attstorage is a single code: p=plain, e=external, m=main, x=extended.
-        String code = dsl.fetchOne(
-                """
-                        SELECT a.attstorage::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, String.class);
-        return switch (code) {
-            case "p" -> "plain";
-            case "e" -> "external";
-            case "m" -> "main";
-            case "x" -> "extended";
-            default -> code;
-        };
-    }
-
-    private String compression(String column) {
-        // attcompression is a single code: p=pglz, l=lz4, empty=default.
-        String code = dsl.fetchOne(
-                """
-                        SELECT a.attcompression::text
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, String.class);
-        return switch (code) {
-            case "p" -> "pglz";
-            case "l" -> "lz4";
-            case "" -> "default";
-            default -> code;
-        };
     }
 
     private void setStorage(String column, String storage) {
