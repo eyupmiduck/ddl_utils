@@ -9,10 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Verifies the lock-aware column-attribute wrappers
- * {@code ddl_utils.set_column_statistics}, {@code set_column_storage},
- * {@code set_column_compression} and {@code drop_expression}: each resolves the
- * table's lock settings through {@code get_lock_settings} and delegates to the
- * {@code ddl_utils_lib} helper.
+ * {@code ddl_utils.set_column_storage}, {@code set_column_compression} and
+ * {@code drop_expression}: each resolves the table's lock settings through
+ * {@code get_lock_settings} and delegates to the {@code ddl_utils_lib} helper.
  */
 class SetColumnAttributeSettingsTest extends PostgresTestBase {
 
@@ -30,16 +29,6 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
         } finally {
             dropTestTable(TARGET);
         }
-    }
-
-    /**
-     * set_column_statistics uses the database defaults.
-     */
-    @Test
-    void setColumnStatisticsUsesDatabaseDefaults() {
-        Routines.setColumnStatistics(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", 500);
-
-        assertEquals(500, statistics("note"));
     }
 
     /**
@@ -76,31 +65,6 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
                 () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "EXTERNAL"));
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz"));
-    }
-
-    /**
-     * set_column_statistics also passes the table-level settings to the helper.
-     * It takes only SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock does not
-     * block, so the competing session holds ACCESS EXCLUSIVE instead.
-     */
-    @Test
-    void setColumnStatisticsUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
-                () -> Routines.setColumnStatistics(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", 500));
-    }
-
-    private Integer statistics(String column) {
-        return dsl.fetchOne(
-                """
-                        SELECT a.attstattarget
-                        FROM pg_attribute a
-                        JOIN pg_class c ON c.oid = a.attrelid
-                        JOIN pg_namespace n ON n.oid = c.relnamespace
-                        WHERE n.nspname = ? AND c.relname = ? AND a.attname = ?
-                        """,
-                PUBLIC_SCHEMA, TARGET, column).get(0, Integer.class);
     }
 
     private String storage(String column) {

@@ -195,9 +195,9 @@ RETURNS void
 ### Column attributes
 
 `ddl_utils.set_column_default`, `drop_column_default`, `drop_not_null`,
-`set_not_null`, `set_column_statistics`, `set_column_storage`,
-`set_column_compression`, `drop_expression`, `add_identity` and `drop_identity`
-are lock-aware wrappers over the matching `ddl_utils_lib` helpers (same names).
+`set_not_null`, `set_column_storage`, `set_column_compression`,
+`drop_expression`, `add_identity` and `drop_identity` are lock-aware wrappers
+over the matching `ddl_utils_lib` helpers (same names).
 All are `SECURITY INVOKER` and resolve the settings via `get_lock_settings`.
 All are metadata-only (no scan or rewrite) except `set_not_null`, which
 ordinarily scans the table under `ACCESS EXCLUSIVE` unless a valid `CHECK`
@@ -206,16 +206,16 @@ composes that scan-avoiding sequence.
 
 ### Constraints and tables
 
-`ddl_utils.add_check_constraint`, `add_foreign_key`, `validate_constraint`,
-`drop_constraint`, `rename_constraint`, `add_primary_key_using_index`,
-`add_unique_constraint_using_index`, `rename_table` and
-`set_table_storage_parameter` are lock-aware wrappers over the matching
-`ddl_utils_lib` helpers (same names). `add_check_constraint` and
-`add_foreign_key` emit `NOT VALID` (metadata-only); call `validate_constraint`
-separately to enforce the constraint against existing rows (it scans but takes
-only `SHARE UPDATE EXCLUSIVE`). The two `*_using_index` helpers attach a
-pre-built unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is
-metadata-only when the index is valid.
+`ddl_utils.add_check_constraint`, `add_foreign_key`, `drop_constraint`,
+`rename_constraint`, `add_primary_key_using_index`,
+`add_unique_constraint_using_index` and `rename_table` are lock-aware wrappers
+over the matching `ddl_utils_lib` helpers (same names). `add_check_constraint`
+and `add_foreign_key` emit `NOT VALID` (metadata-only); call
+`ddl_utils_lib.validate_constraint` separately to enforce the constraint
+against existing rows (it scans but takes only `SHARE UPDATE EXCLUSIVE`, so it
+has no lock-aware wrapper). The two `*_using_index` helpers attach a pre-built
+unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is metadata-only when
+the index is valid.
 
 ## `ddl_utils_lib`
 
@@ -405,23 +405,6 @@ metadata-only: unless a valid `CHECK` constraint already proves the column
 non-null, PostgreSQL scans the table under `ACCESS EXCLUSIVE`. The
 `ddl_utils.set_not_null` procedure is the scan-avoiding, resumable form.
 
-### `ddl_utils_lib.set_column_statistics(i_schema_name, i_table_name, i_column_name, i_statistics, settings...)`
-
-```sql
-i_schema_name        ddl_utils.non_null_text
-i_table_name         ddl_utils.non_null_text
-i_column_name        ddl_utils.non_null_text
-i_statistics         integer
-settings             (see above)
-RETURNS void
-```
-
-`SECURITY INVOKER`. Sets the per-column statistics target. `i_statistics` must
-be `-1` (reset) or between `0` and `10000`; any other value is rejected with
-`22023`. PostgreSQL spells the reset as `SET STATISTICS DEFAULT`, which is
-equivalent to `-1`; this helper takes the numeric form. Takes only
-`SHARE UPDATE EXCLUSIVE`.
-
 ### `ddl_utils_lib.set_column_storage(i_schema_name, i_table_name, i_column_name, i_storage, settings...)`
 
 ```sql
@@ -606,19 +589,3 @@ RETURNS void
 
 `SECURITY INVOKER`. Renames a table within its schema; metadata-only. The new
 name is unqualified.
-
-### `ddl_utils_lib.set_table_storage_parameter(i_schema_name, i_table_name, i_parameter_name, i_parameter_value, settings...)`
-
-```sql
-i_schema_name        ddl_utils.non_null_text
-i_table_name         ddl_utils.non_null_text
-i_parameter_name     ddl_utils.non_null_text
-i_parameter_value    ddl_utils.non_null_text
-settings             (see above)
-RETURNS void
-```
-
-`SECURITY INVOKER`. Sets one storage parameter accepted under `SHARE UPDATE
-EXCLUSIVE` (`fillfactor`, the `autovacuum_*` / `toast.autovacuum_*` family and
-`parallel_workers`); any other name is rejected with `22023`, so a
-rewrite-inducing option cannot be reached through this helper.

@@ -223,22 +223,6 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="033-set_column_statistics" author="ddl_utils" dbms="postgresql" runOnChange="true">
-        <createProcedure path="functions/ddl_utils_lib/set_column_statistics.sql" relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="functions-rollback/ddl_utils_lib/set_column_statistics-rollback.sql"
-                     relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
-    <changeSet id="034-set_column_statistics" author="ddl_utils" dbms="postgresql" runOnChange="true">
-        <createProcedure path="functions/ddl_utils/set_column_statistics.sql" relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/set_column_statistics-rollback.sql"
-                     relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
     <changeSet id="035-set_column_storage" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_column_storage.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -359,14 +343,6 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="050-validate_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
-        <createProcedure path="functions/ddl_utils/validate_constraint.sql" relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/validate_constraint-rollback.sql"
-                     relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
     <changeSet id="051-drop_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -446,23 +422,6 @@
         <createProcedure path="functions/ddl_utils/rename_table.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/rename_table-rollback.sql"
-                     relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
-    <changeSet id="061-set_table_storage_parameter" author="ddl_utils" dbms="postgresql" runOnChange="true">
-        <createProcedure path="functions/ddl_utils_lib/set_table_storage_parameter.sql"
-                         relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="functions-rollback/ddl_utils_lib/set_table_storage_parameter-rollback.sql"
-                     relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
-    <changeSet id="062-set_table_storage_parameter" author="ddl_utils" dbms="postgresql" runOnChange="true">
-        <createProcedure path="functions/ddl_utils/set_table_storage_parameter.sql" relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="functions-rollback/ddl_utils/set_table_storage_parameter-rollback.sql"
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>

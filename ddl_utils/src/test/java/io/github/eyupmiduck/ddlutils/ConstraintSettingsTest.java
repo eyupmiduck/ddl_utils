@@ -9,9 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies the lock-aware constraint wrappers {@code ddl_utils.add_check_constraint},
- * {@code validate_constraint}, {@code drop_constraint} and
- * {@code rename_constraint}: each resolves the table's lock settings through
- * {@code get_lock_settings} and delegates to the {@code ddl_utils_lib} helper.
+ * {@code add_foreign_key}, {@code drop_constraint} and {@code rename_constraint}:
+ * each resolves the table's lock settings through {@code get_lock_settings} and
+ * delegates to the {@code ddl_utils_lib} helper.
  */
 class ConstraintSettingsTest extends PostgresTestBase {
 
@@ -35,16 +35,15 @@ class ConstraintSettingsTest extends PostgresTestBase {
     }
 
     /**
-     * add_check_constraint and validate_constraint use the database defaults.
+     * add_check_constraint uses the database defaults.
      */
     @Test
-    void usesDatabaseDefaults() {
+    void addCheckConstraintUsesDatabaseDefaults() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (1)");
 
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive", "value > 0");
-        Routines.validateConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive");
 
-        assertTrue(constraintValidated("positive"));
+        assertTrue(constraintExists("positive"));
     }
 
     /**
@@ -99,29 +98,6 @@ class ConstraintSettingsTest extends PostgresTestBase {
         assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
                 () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "fk_parent",
                         new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
-    }
-
-    /**
-     * validate_constraint passes the table-level lock settings to the helper.
-     * It takes only SHARE UPDATE EXCLUSIVE, which an ACCESS SHARE lock does not
-     * block, so the competing session holds ACCESS EXCLUSIVE.
-     */
-    @Test
-    void validateConstraintUsesTableLockSettings() throws Exception {
-        Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive", "value > 0");
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
-                () -> Routines.validateConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive"));
-    }
-
-    private boolean constraintValidated(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT convalidated FROM pg_constraint
-                        WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
     }
 
     private boolean constraintExists(String name) {

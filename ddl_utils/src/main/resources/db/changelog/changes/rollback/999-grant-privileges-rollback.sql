@@ -142,36 +142,6 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_column_storage(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.set_column_statistics(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    integer
-    ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.set_column_statistics(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    integer
-    ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils_lib.set_column_statistics(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer
-    ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_column_statistics(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer
-    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.drop_not_null(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -463,18 +433,6 @@ REVOKE SELECT ON ddl_utils.schema_lock_settings FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.database_lock_settings FROM ddl_utils_caller;
 REVOKE USAGE ON SCHEMA ddl_utils_lib FROM ddl_utils_caller;
 REVOKE USAGE ON SCHEMA ddl_utils FROM ddl_utils_caller;
-REVOKE EXECUTE ON FUNCTION ddl_utils.set_table_storage_parameter(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text
-    ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.set_table_storage_parameter(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text
-    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.rename_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
@@ -527,16 +485,6 @@ REVOKE EXECUTE ON FUNCTION ddl_utils.drop_constraint(
     ddl_utils.non_null_text
     ) FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.drop_constraint(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text
-    ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils.validate_constraint(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text
-    ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils.validate_constraint(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
@@ -594,24 +542,6 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_identity(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
-    ) TO public;
-REVOKE EXECUTE ON FUNCTION ddl_utils_lib.set_table_storage_parameter(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer
-    ) FROM ddl_utils_caller;
-GRANT EXECUTE ON FUNCTION ddl_utils_lib.set_table_storage_parameter(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.rename_table(
     ddl_utils.non_null_text,

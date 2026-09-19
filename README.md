@@ -89,16 +89,15 @@ EXCLUSIVE` lock) and neither scan nor rewrite the table:
 
 - **Columns**: `add_column(s)` (with an optional default), `drop_column(s)`,
   `rename_column`, `set_column_default`, `drop_column_default`, `drop_not_null`,
-  `set_not_null`,
-  `set_column_statistics`, `set_column_storage`, `set_column_compression`,
+  `set_not_null`, `set_column_storage`, `set_column_compression`,
   `drop_expression`, `add_identity`, `drop_identity`.
 - **Constraints**: `add_check_constraint` and `add_foreign_key` (both emitted as
-  `NOT VALID`, so no scan), `validate_constraint` (does the scan, but under
-  `SHARE UPDATE EXCLUSIVE`), `drop_constraint`, `rename_constraint`,
+  `NOT VALID`, so no scan), `drop_constraint`, `rename_constraint`,
   `add_primary_key_using_index`, `add_unique_constraint_using_index` (attach an
-  index built with `CREATE UNIQUE INDEX CONCURRENTLY`).
-- **Tables**: `rename_table`, `set_table_storage_parameter` (restricted to the
-  parameters accepted under `SHARE UPDATE EXCLUSIVE`).
+  index built with `CREATE UNIQUE INDEX CONCURRENTLY`). The scan step is
+  `ddl_utils_lib.validate_constraint` (it takes only `SHARE UPDATE EXCLUSIVE`,
+  so it has no lock-aware wrapper and is used by the procedures).
+- **Tables**: `rename_table`.
 
 `ALTER COLUMN TYPE`, `SET LOGGED`, `SET TABLESPACE` and the other rewriting
 operations are deliberately not offered. A function must make a single
