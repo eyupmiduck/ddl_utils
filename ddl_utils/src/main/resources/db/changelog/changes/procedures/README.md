@@ -109,3 +109,40 @@ verification scan. Steps, each committed before the next:
 
 `<tmp>` is deterministic from the table and column, so a re-run finds the same
 constraint. A call interrupted after any step is completed by re-running it.
+
+### `ddl_utils.ensure_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression)`
+
+```sql
+i_schema_name      ddl_utils.non_null_text
+i_table_name       ddl_utils.non_null_text
+i_constraint_name  ddl_utils.non_null_text
+i_check_expression ddl_utils.non_null_text
+```
+
+Add a `CHECK` constraint and validate it in two committed steps, so the `ACCESS
+EXCLUSIVE` lock of `ADD CONSTRAINT` is released before the scan:
+
+1. `ddl_utils_lib.add_check_constraint(<name>, <expr>)` — `NOT VALID`, instant.
+2. `ddl_utils_lib.validate_constraint(<name>)` — scans under `SHARE UPDATE
+   EXCLUSIVE`.
+
+A re-run skips the add when the constraint exists and the validate when it is
+already valid. A violation by existing rows fails validation with `23514` and
+leaves the constraint `NOT VALID`; fix the data and re-run.
+
+### `ddl_utils.ensure_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names)`
+
+```sql
+i_schema_name             ddl_utils.non_null_text
+i_table_name              ddl_utils.non_null_text
+i_constraint_name         ddl_utils.non_null_text
+i_column_names            ddl_utils.non_empty_non_null_text_array
+i_referenced_schema_name  ddl_utils.non_null_text
+i_referenced_table_name   ddl_utils.non_null_text
+i_referenced_column_names ddl_utils.non_empty_non_null_text_array
+```
+
+Same two committed steps as `ensure_check_constraint`, for a foreign key:
+`ddl_utils_lib.add_foreign_key` (NOT VALID, `SHARE ROW EXCLUSIVE` on both
+tables) then `ddl_utils_lib.validate_constraint`. Idempotent and recoverable the
+same way.

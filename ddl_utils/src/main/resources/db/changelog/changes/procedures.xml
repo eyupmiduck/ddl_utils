@@ -20,4 +20,20 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="021-ensure_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="procedures/ddl_utils/ensure_check_constraint.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="procedures-rollback/ddl_utils/ensure_check_constraint-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="022-ensure_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="procedures/ddl_utils/ensure_foreign_key.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="procedures-rollback/ddl_utils/ensure_foreign_key-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

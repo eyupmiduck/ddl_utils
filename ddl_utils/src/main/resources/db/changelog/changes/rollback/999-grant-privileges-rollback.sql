@@ -829,3 +829,33 @@ GRANT EXECUTE ON PROCEDURE ddl_utils.ensure_not_null(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO public;
+REVOKE EXECUTE ON PROCEDURE ddl_utils.ensure_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON PROCEDURE ddl_utils.ensure_foreign_key(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array
+    ) TO public;
+REVOKE EXECUTE ON PROCEDURE ddl_utils.ensure_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON PROCEDURE ddl_utils.ensure_check_constraint(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
