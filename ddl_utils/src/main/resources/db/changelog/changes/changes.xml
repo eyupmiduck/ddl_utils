@@ -36,6 +36,17 @@
     <include file="functions.xml" relativeToChangelogFile="true"/>
     <include file="procedures.xml" relativeToChangelogFile="true"/>
 
+    <!-- Every table gets created_at/updated_at; this attaches the shared
+         ddl_utils.set_updated_at() trigger (defined in functions.xml, so this
+         runs after it) to the lock-settings tables. New tables created by
+         later changesets must do the same. -->
+    <changeSet id="069-create-updated-at-triggers" author="ddl_utils" dbms="postgresql">
+        <sqlFile path="sql_changes/069-create-updated-at-triggers.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/069-create-updated-at-triggers-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- A single, re-runnable changeset for all caller grants. runOnChange
          makes Liquibase re-apply it whenever this SQL changes, so new grants
          reach existing databases. Keep the statements idempotent. -->

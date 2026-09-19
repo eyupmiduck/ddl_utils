@@ -128,6 +128,18 @@ RETURNS TABLE
 `STABLE`, `SECURITY INVOKER`. Resolves the effective settings for a table,
 falling back table → schema → database. Raises `P0002` when nothing matches.
 
+### `ddl_utils.set_updated_at()`
+
+```sql
+RETURNS trigger
+```
+
+`SECURITY INVOKER`, not callable by users (PUBLIC `EXECUTE` is revoked and it is
+granted to no one). The shared `BEFORE UPDATE ... FOR EACH ROW` trigger function
+that stamps `NEW.updated_at := now()` on every table, so no caller can bypass
+it. Attach it to each table with a trigger named
+`<table>_set_updated_at`; see `changes/sql_changes/069-create-updated-at-triggers.sql`.
+
 ### `ddl_utils.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable)`
 
 ```sql
