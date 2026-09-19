@@ -89,9 +89,7 @@ RETURNS TABLE
 `STABLE`, `SECURITY INVOKER`. Returns the table's row, or no row when there is
 none.
 
-###
-
-`ddl_utils.set_table_lock_settings(i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils.set_table_lock_settings(i_schema_name, i_table_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -221,9 +219,7 @@ the index is valid.
 
 ## `ddl_utils_lib`
 
-###
-
-`ddl_utils_lib.alter_table(i_schema_name, i_table_name, i_alter_table_fragment, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.alter_table(i_schema_name, i_table_name, i_alter_table_fragment, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name           ddl_utils.non_null_text
@@ -254,9 +250,7 @@ RETURNS boolean
 parentheses, brackets or a string literal. Used to reject defaults that could
 append DDL clauses.
 
-###
-
-`ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -276,9 +270,7 @@ in a single `ALTER TABLE` (all-or-nothing) via `alter_table`. Validates array
 lengths, blank names/types, that each type resolves to a single SQL type (`to_regtype`), and that no default has a
 top-level comma.
 
-###
-
-`ddl_utils_lib.add_column(i_schema_name, i_table_name, i_column_name, i_column_type, i_nullable, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.add_column(i_schema_name, i_table_name, i_column_name, i_column_type, i_nullable, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -296,9 +288,7 @@ RETURNS void
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.add_columns`
 with explicit lock settings. A NULL `i_default_value` means no `DEFAULT` clause.
 
-###
-
-`ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.drop_column(i_schema_name, i_table_name, i_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -312,9 +302,7 @@ RETURNS void
 
 `SECURITY INVOKER`. Single-column convenience over `ddl_utils_lib.drop_columns`.
 
-###
-
-`ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.drop_columns(i_schema_name, i_table_name, i_column_names, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -330,9 +318,7 @@ RETURNS void
 in a single `ALTER TABLE` (all-or-nothing) via `ddl_utils_lib.alter_table`. Each
 name is quoted with `%I`; a blank element is rejected with `22023`.
 
-###
-
-`ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+### `ddl_utils_lib.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -478,8 +464,7 @@ RETURNS void
 
 `SECURITY INVOKER`. Drops an identity; `i_if_exists` controls `IF EXISTS`.
 
-###
-`ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
+### `ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -493,8 +478,7 @@ RETURNS void
 `SECURITY INVOKER`. Adds a `CHECK` constraint as `NOT VALID` (metadata-only).
 The expression is raw SQL; a top-level comma is rejected with `22023`.
 
-###
-`ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
+### `ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
 
 ```sql
 i_schema_name              ddl_utils.non_null_text
@@ -539,8 +523,7 @@ RETURNS void
 `SECURITY INVOKER`. Drops a constraint; metadata-only. It does not use
 `IF EXISTS`, so a wrong name fails.
 
-###
-`ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
+### `ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
 
 ```sql
 i_schema_name           ddl_utils.non_null_text
@@ -553,8 +536,7 @@ RETURNS void
 
 `SECURITY INVOKER`. Renames a constraint; metadata-only.
 
-###
-`ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+### `ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
@@ -569,8 +551,7 @@ RETURNS void
 the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the attach is
 metadata-only when the index is valid and the columns are already `NOT NULL`.
 
-###
-`ddl_utils_lib.add_unique_constraint_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+### `ddl_utils_lib.add_unique_constraint_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
 
 ```sql
 i_schema_name        ddl_utils.non_null_text
