@@ -74,20 +74,43 @@ Liquibase loads two schemas:
       accessors;
     - `get_lock_settings(schema, table)`, which resolves the effective settings
       with the table → schema → database fallback;
-    - lock-aware column wrappers (`add_column`, `add_columns`, `drop_column`,
-      `drop_columns`, `rename_column`) that read the settings for you;
+    - lock-aware wrappers that read the settings for you (see the list below);
     - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
       array domains used to validate inputs.
-- **`ddl_utils_lib`** — generic helpers that take the settings explicitly:
-  `add_column`, `add_columns`, `drop_column`, `drop_columns`, `rename_column`,
-  and `has_top_level_comma`. `alter_table` is the internal runner they build on:
-  it
-  is the only routine that executes dynamic SQL, and callers should prefer the
-  structured operations so the fragment is built from validated identifiers.
+- **`ddl_utils_lib`** — generic helpers that take the settings explicitly (the
+  same operations, plus `has_top_level_comma`). `alter_table` is the internal
+  runner they build on: it is the only routine that executes dynamic SQL, and
+  callers should prefer the structured operations so the fragment is built from
+  validated identifiers.
 
-The accessors and getters are `SECURITY INVOKER`. The setters and clearers are
-`SECURITY DEFINER`, because `ddl_utils_caller` (the application role) only has
-`SELECT` on the settings tables. See
+The helpers cover metadata-only `ALTER TABLE` work — operations that take only a
+brief `ACCESS EXCLUSIVE` lock (or a weaker `SHARE UPDATE EXCLUSIVE` / `SHARE ROW
+EXCLUSIVE` lock) and neither scan nor rewrite the table:
+
+- **Columns**: `add_column(s)` (with an optional default), `drop_column(s)`,
+  `rename_column`, `set_column_default`, `drop_column_default`, `drop_not_null`,
+  `set_column_statistics`, `set_column_storage`, `set_column_compression`,
+  `drop_expression`, `add_identity`, `drop_identity`.
+- **Constraints**: `add_check_constraint` and `add_foreign_key` (both emitted as
+  `NOT VALID`, so no scan), `validate_constraint` (does the scan, but under
+  `SHARE UPDATE EXCLUSIVE`), `drop_constraint`, `rename_constraint`,
+  `add_primary_key_using_index`, `add_unique_constraint_using_index` (attach an
+  index built with `CREATE UNIQUE INDEX CONCURRENTLY`).
+- **Tables**: `rename_table`, `set_table_storage_parameter` (restricted to the
+  parameters accepted under `SHARE UPDATE EXCLUSIVE`).
+
+`SET NOT NULL`, validating `ADD CONSTRAINT` in one step, `ALTER COLUMN TYPE`,
+`SET LOGGED`, `SET TABLESPACE` and the other rewriting operations are deliberately
+not offered; compose `add_check_constraint ... NOT VALID` → `validate_constraint`
+→ (separately) `SET NOT NULL` if you need the scan-avoiding sequence, and note a
+function must make a single `ALTER TABLE` call because it cannot commit mid-call.
+
+Every helper exists twice: a `ddl_utils` lock-aware wrapper that resolves the
+settings itself, and a matching `ddl_utils_lib` function that takes the three
+settings explicitly. The accessors, getters and DDL helpers are `SECURITY
+INVOKER`. The setters and clearers are `SECURITY DEFINER`, because
+`ddl_utils_caller` (the application role) only has `SELECT` on the settings
+tables. See
 [`functions/README.md`](ddl_utils/src/main/resources/db/changelog/changes/functions/README.md)
 for every signature and purpose.
 
@@ -114,6 +137,19 @@ SELECT ddl_utils.add_column(
        );
 SELECT ddl_utils.rename_column('public', 'orders', 'note', 'comment');
 SELECT ddl_utils.drop_column('public', 'orders', 'comment');
+
+-- metadata-only column attribute changes
+SELECT ddl_utils.set_column_default('public', 'orders', 'note', '''pending''');
+SELECT ddl_utils.drop_column_default('public', 'orders', 'note');
+SELECT ddl_utils.drop_not_null('public', 'orders', 'note');
+
+-- add a constraint without a long lock: NOT VALID now, validate separately
+SELECT ddl_utils.add_check_constraint('public', 'orders', 'orders_note_present', 'note IS NOT NULL');
+SELECT ddl_utils.validate_constraint('public', 'orders', 'orders_note_present');
+
+-- attach a unique index built concurrently as a primary/unique constraint
+--   CREATE UNIQUE INDEX CONCURRENTLY orders_id_idx ON public.orders (id);
+SELECT ddl_utils.add_primary_key_using_index('public', 'orders', 'orders_pkey', 'orders_id_idx');
 
 -- or call the explicit-settings helpers in ddl_utils_lib
 SELECT ddl_utils_lib.add_column('public', 'orders', 'note', 'text', true, NULL, 250, 500, 30000);

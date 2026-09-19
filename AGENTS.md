@@ -32,13 +32,18 @@ on pull requests to `main`.
       `NNN-`prefixed changeset per routine (one `createProcedure` plus its
       rollback), with one file per routine under `changes/functions/<schema>/`
       and `changes/procedures/<schema>/` (rollback bodies under
-      `changes/functions-rollback/<schema>/`). `changes/functions/README.md`
+      `changes/functions-rollback/<schema>/`).       `changes/functions/README.md`
       lists each routine's signature and purpose. The `ddl_utils`
       schema holds the lock-settings tables/accessors, the shared domains, and
-      the lock-aware `add_column`/`add_columns` wrappers that resolve their
-      settings through `get_lock_settings`; `ddl_utils_lib` holds the generic
-      DDL helpers (`alter_table`, `add_column`, `add_columns`) that take the
-      settings explicitly.
+      the lock-aware DDL wrappers (columns, constraints and tables) that resolve
+      their settings through `get_lock_settings`; `ddl_utils_lib` holds the
+      generic DDL helpers of the same names that take the settings explicitly,
+      with `alter_table` as the internal runner. The helpers cover only
+      metadata-only `ALTER TABLE` operations (brief `ACCESS EXCLUSIVE`, or a
+      weaker `SHARE UPDATE EXCLUSIVE`/`SHARE ROW EXCLUSIVE` lock; no scan or
+      rewrite). A function must make a single `ALTER TABLE` call because it
+      cannot commit mid-call, so multi-step sequences (for example
+      check-validate-set NOT NULL) are not implemented as one helper.
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
       `testcontainers-jooq-codegen-maven-plugin`, which starts a real

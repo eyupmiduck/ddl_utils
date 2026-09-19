@@ -344,44 +344,166 @@ RETURNS void
 `SECURITY INVOKER`. Renames one column; both names are quoted with `%I` and
 applied through `ddl_utils_lib.alter_table` with explicit lock settings.
 
-### `ddl_utils_lib.set_column_default(i_schema_name, i_table_name, i_column_name, i_default_value, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+The routines below all end in the same three lock settings
+(`i_ddl_lock_timeout`, `i_sleep_time`, `i_statement_duration`, all
+`ddl_utils.non_negative_integer`); they are shown once here rather than repeated.
+
+### `ddl_utils_lib.set_column_default(i_schema_name, i_table_name, i_column_name, i_default_value, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_default_value      ddl_utils.non_null_text
+i_ddl_lock_timeout   ddl_utils.non_negative_integer
+i_sleep_time         ddl_utils.non_negative_integer
+i_statement_duration ddl_utils.non_negative_integer
+RETURNS void
+```
 
 `SECURITY INVOKER`. Sets a column default. `i_default_value` is raw SQL (quoted
 literals must include their quotes); a top-level comma is rejected with `22023`.
 
-### `ddl_utils_lib.drop_column_default(...)` / `ddl_utils_lib.drop_not_null(...)`
+### `ddl_utils_lib.drop_column_default(i_schema_name, i_table_name, i_column_name, settings...)`
 
-`SECURITY INVOKER`. Drop a column default or its `NOT NULL`, respectively; both
-are metadata-only and take only a brief `ACCESS EXCLUSIVE` lock.
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Drops a column default; metadata-only.
+
+### `ddl_utils_lib.drop_not_null(i_schema_name, i_table_name, i_column_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Drops `NOT NULL`; metadata-only. The inverse `SET NOT NULL`
+scans and is not offered.
 
 ### `ddl_utils_lib.set_column_statistics(i_schema_name, i_table_name, i_column_name, i_statistics, settings...)`
 
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_statistics         integer
+settings             (see above)
+RETURNS void
+```
+
 `SECURITY INVOKER`. Sets the per-column statistics target. `i_statistics` must
 be `-1` (reset) or between `0` and `10000`; any other value is rejected with
-`22023`. Takes only `SHARE UPDATE EXCLUSIVE`.
+`22023`. PostgreSQL spells the reset as `SET STATISTICS DEFAULT`, which is
+equivalent to `-1`; this helper takes the numeric form. Takes only
+`SHARE UPDATE EXCLUSIVE`.
 
-### `ddl_utils_lib.set_column_storage(...)` / `ddl_utils_lib.set_column_compression(...)`
+### `ddl_utils_lib.set_column_storage(i_schema_name, i_table_name, i_column_name, i_storage, settings...)`
 
-`SECURITY INVOKER`. Set a column's storage (`PLAIN`, `EXTERNAL`, `EXTENDED`,
-`MAIN`) or compression (`pglz`, `lz4`, `default`); an unknown keyword is
-rejected with `22023`. Both affect future writes only.
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_storage            ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
 
-### `ddl_utils_lib.drop_expression(...)`
+`SECURITY INVOKER`. Sets a column's storage (`PLAIN`, `EXTERNAL`, `EXTENDED`,
+`MAIN`); an unknown keyword is rejected with `22023`. Affects future writes only.
+The helper does not accept PostgreSQL's `DEFAULT` keyword (it would require
+resolving the type's default storage, which belongs in a later operation).
+
+### `ddl_utils_lib.set_column_compression(i_schema_name, i_table_name, i_column_name, i_compression, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_compression        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Sets a column's compression (`pglz`, `lz4`, `default`,
+case-insensitive); an unknown keyword is rejected with `22023`. Affects future
+writes only.
+
+### `ddl_utils_lib.drop_expression(i_schema_name, i_table_name, i_column_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
 
 `SECURITY INVOKER`. Turns a generated column into a plain base column; a column
 that is not a stored generated column raises `55000`.
 
-### `ddl_utils_lib.add_identity(i_schema_name, i_table_name, i_column_name, i_generated, settings...)` / `ddl_utils_lib.drop_identity(..., i_if_exists, ...)`
+### `ddl_utils_lib.add_identity(i_schema_name, i_table_name, i_column_name, i_generated, settings...)`
 
-`SECURITY INVOKER`. Add (`ALWAYS`/`BY DEFAULT`) or drop an identity. An invalid
-generated mode is rejected with `22023`; `i_if_exists` controls `IF EXISTS`.
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_generated          ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Adds an identity (`ALWAYS` or `BY DEFAULT`); an invalid mode
+is rejected with `22023`.
+
+### `ddl_utils_lib.drop_identity(i_schema_name, i_table_name, i_column_name, i_if_exists, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+i_if_exists          ddl_utils.non_null_boolean
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Drops an identity; `i_if_exists` controls `IF EXISTS`.
 
 ### `ddl_utils_lib.add_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+i_check_expression   ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
 
 `SECURITY INVOKER`. Adds a `CHECK` constraint as `NOT VALID` (metadata-only).
 The expression is raw SQL; a top-level comma is rejected with `22023`.
 
 ### `ddl_utils_lib.add_foreign_key(i_schema_name, i_table_name, i_constraint_name, i_column_names, i_referenced_schema_name, i_referenced_table_name, i_referenced_column_names, settings...)`
+
+```sql
+i_schema_name              ddl_utils.non_null_text
+i_table_name               ddl_utils.non_null_text
+i_constraint_name          ddl_utils.non_null_text
+i_column_names             ddl_utils.non_empty_non_null_text_array
+i_referenced_schema_name   ddl_utils.non_null_text
+i_referenced_table_name    ddl_utils.non_null_text
+i_referenced_column_names  ddl_utils.non_empty_non_null_text_array
+settings                   (see above)
+RETURNS void
+```
 
 `SECURITY INVOKER`. Adds a foreign key as `NOT VALID` (no scan; takes `SHARE
 ROW EXCLUSIVE` on both tables). The two column arrays must be non-empty and of
@@ -389,26 +511,96 @@ equal length; blank names are rejected with `22023`.
 
 ### `ddl_utils_lib.validate_constraint(i_schema_name, i_table_name, i_constraint_name, settings...)`
 
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
 `SECURITY INVOKER`. Validates a constraint, scanning existing rows under
 `SHARE UPDATE EXCLUSIVE` (does not block concurrent DML). Use it after the
 `NOT VALID` helpers.
 
-### `ddl_utils_lib.drop_constraint(...)` / `ddl_utils_lib.rename_constraint(..., i_new_constraint_name, ...)`
+### `ddl_utils_lib.drop_constraint(i_schema_name, i_table_name, i_constraint_name, settings...)`
 
-`SECURITY INVOKER`. Drop or rename a constraint; both are metadata-only.
-`drop_constraint` does not use `IF EXISTS`, so a wrong name fails.
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
 
-### `ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)` / `ddl_utils_lib.add_unique_constraint_using_index(...)`
+`SECURITY INVOKER`. Drops a constraint; metadata-only. It does not use
+`IF EXISTS`, so a wrong name fails.
 
-`SECURITY INVOKER`. Attach a pre-built unique index as a primary key or unique
-constraint. Build the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the
-attach is metadata-only when the index is valid.
+### `ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
+
+```sql
+i_schema_name           ddl_utils.non_null_text
+i_table_name            ddl_utils.non_null_text
+i_constraint_name       ddl_utils.non_null_text
+i_new_constraint_name   ddl_utils.non_null_text
+settings                (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Renames a constraint; metadata-only.
+
+### `ddl_utils_lib.add_primary_key_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+i_index_name         ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Attaches a pre-built unique index as the primary key. Build
+the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the attach is
+metadata-only when the index is valid and the columns are already `NOT NULL`.
+
+### `ddl_utils_lib.add_unique_constraint_using_index(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+i_index_name         ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Attaches a pre-built unique index as a unique constraint;
+metadata-only when the index is valid.
 
 ### `ddl_utils_lib.rename_table(i_schema_name, i_table_name, i_new_table_name, settings...)`
 
-`SECURITY INVOKER`. Renames a table within its schema; metadata-only.
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_new_table_name     ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Renames a table within its schema; metadata-only. The new
+name is unqualified.
 
 ### `ddl_utils_lib.set_table_storage_parameter(i_schema_name, i_table_name, i_parameter_name, i_parameter_value, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_parameter_name     ddl_utils.non_null_text
+i_parameter_value    ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
 
 `SECURITY INVOKER`. Sets one storage parameter accepted under `SHARE UPDATE
 EXCLUSIVE` (`fillfactor`, the `autovacuum_*` / `toast.autovacuum_*` family and
