@@ -16,9 +16,10 @@ Primary technologies:
 
 ## Repo state
 
-Early stage: Maven multi-module stub exists, but no real source code yet.
-CI: GitHub Actions (`.github/workflows/maven.yml`) runs `./mvnw clean verify`
-on pull requests to `main`.
+Maven multi-module project: `ddl_utils` carries the Liquibase-managed schemas,
+jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
+(`.github/workflows/maven.yml`) runs `./mvnw clean verify` on pull requests to
+`main`.
 
 - Root `pom.xml`: parent POM (`ddl-utils-parent`); all dependency and plugin
   versions are pinned here in `dependencyManagement` / `pluginManagement`.
@@ -38,10 +39,12 @@ on pull requests to `main`.
       the lock-aware DDL wrappers (columns, constraints and tables) that resolve
       their settings through `get_lock_settings`; `ddl_utils_lib` holds the
       generic DDL helpers of the same names that take the settings explicitly,
-      with `alter_table` as the internal runner. The helpers cover only
-      metadata-only `ALTER TABLE` operations (brief `ACCESS EXCLUSIVE`, or a
-      weaker `SHARE UPDATE EXCLUSIVE`/`SHARE ROW EXCLUSIVE` lock; no scan or
-      rewrite). A function must make a single `ALTER TABLE` call because it
+      with `alter_table` as the internal runner. Expose and lock-wrap only
+      `ALTER TABLE` work that blocks concurrent DML (it takes `ACCESS
+      EXCLUSIVE`, or `SHARE ROW EXCLUSIVE` for `add_foreign_key`); an operation
+      that takes only `SHARE UPDATE EXCLUSIVE` (for example `VALIDATE
+      CONSTRAINT`) needs no lock-aware wrapper and is a `ddl_utils_lib` helper
+      only. A function must make a single `ALTER TABLE` call because it
       cannot commit mid-call; multi-step sequences (for example
       check-validate-set NOT NULL) are implemented as procedures in the
       `ddl_utils` schema that commit between steps (see the PL/pgSQL section and

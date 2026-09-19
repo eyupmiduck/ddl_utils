@@ -6,7 +6,9 @@ One function per `.sql` file, grouped by the schema that owns it:
 - `ddl_utils_lib/` — generic DDL helpers that take the lock settings explicitly.
   `alter_table` is the internal runner they build on (the only dynamic-SQL
   boundary); prefer the structured helpers, which assemble the fragment from
-  validated identifiers.
+  validated identifiers. A helper whose statement takes only `SHARE UPDATE
+  EXCLUSIVE` and therefore never blocks DML lives here only (`validate_constraint`
+  and `has_top_level_comma`).
 
 `changes/functions.xml` loads them one `createProcedure` per `runOnChange`
 changeset; the matching drop lives in `changes/functions-rollback/`. Every

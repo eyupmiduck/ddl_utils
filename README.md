@@ -78,14 +78,16 @@ Liquibase loads two schemas:
     - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
       array domains used to validate inputs.
 - **`ddl_utils_lib`** — generic helpers that take the settings explicitly (the
-  same operations, plus `has_top_level_comma`). `alter_table` is the internal
-  runner they build on: it is the only routine that executes dynamic SQL, and
-  callers should prefer the structured operations so the fragment is built from
-  validated identifiers.
+  same operations, plus `validate_constraint` and `has_top_level_comma`).
+  `alter_table` is the internal runner they build on: it is the only routine
+  that executes dynamic SQL, and callers should prefer the structured
+  operations so the fragment is built from validated identifiers.
 
-The helpers cover metadata-only `ALTER TABLE` work — operations that take only a
-brief `ACCESS EXCLUSIVE` lock (or a weaker `SHARE UPDATE EXCLUSIVE` / `SHARE ROW
-EXCLUSIVE` lock) and neither scan nor rewrite the table:
+The user-facing helpers cover `ALTER TABLE` work that blocks concurrent DML —
+it takes `ACCESS EXCLUSIVE` (all of these except `add_foreign_key`) or
+`SHARE ROW EXCLUSIVE` (`add_foreign_key`) — so the bounded wait is worth
+applying. Operations that take only `SHARE UPDATE EXCLUSIVE` and so never block
+DML are deliberately not wrapped (see `validate_constraint` below):
 
 - **Columns**: `add_column(s)` (with an optional default), `drop_column(s)`,
   `rename_column`, `set_column_default`, `drop_column_default`, `drop_not_null`,
@@ -120,10 +122,11 @@ calling it again. Because a procedure commits, it must run in autocommit
 termination`). See
 [`procedures/README.md`](ddl_utils/src/main/resources/db/changelog/changes/procedures/README.md).
 
-Every helper exists twice: a `ddl_utils` lock-aware wrapper that resolves the
+Most helpers exist twice: a `ddl_utils` lock-aware wrapper that resolves the
 settings itself, and a matching `ddl_utils_lib` function that takes the three
-settings explicitly. The accessors, getters and DDL helpers are `SECURITY
-INVOKER`. The setters and clearers are `SECURITY DEFINER`, because
+settings explicitly. `validate_constraint` is the exception — it does not block
+DML, so it exists only in `ddl_utils_lib`. The accessors, getters and DDL
+helpers are `SECURITY INVOKER`. The setters and clearers are `SECURITY DEFINER`, because
 `ddl_utils_caller` (the application role) only has `SELECT` on the settings
 tables. See
 [`functions/README.md`](ddl_utils/src/main/resources/db/changelog/changes/functions/README.md)
@@ -158,9 +161,10 @@ SELECT ddl_utils.set_column_default('public', 'orders', 'note', '''pending''');
 SELECT ddl_utils.drop_column_default('public', 'orders', 'note');
 SELECT ddl_utils.drop_not_null('public', 'orders', 'note');
 
--- add a constraint without a long lock: NOT VALID now, validate separately
+-- add a constraint without a long lock: NOT VALID now, validate separately.
+-- VALIDATE takes only SHARE UPDATE EXCLUSIVE, so it has no lock-aware wrapper.
 SELECT ddl_utils.add_check_constraint('public', 'orders', 'orders_note_present', 'note IS NOT NULL');
-SELECT ddl_utils.validate_constraint('public', 'orders', 'orders_note_present');
+SELECT ddl_utils_lib.validate_constraint('public', 'orders', 'orders_note_present', 250, 500, 30000);
 
 -- attach a unique index built concurrently as a primary/unique constraint
 --   CREATE UNIQUE INDEX CONCURRENTLY orders_id_idx ON public.orders (id);
