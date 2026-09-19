@@ -313,6 +313,8 @@ ddl_utils is built on and maintained with these open source projects:
 - [CodeQL](https://codeql.github.com/) — static analysis of the Java code in CI.
 - [Dependabot](https://github.com/dependabot) — keeps the Maven and GitHub
   Actions dependencies up to date.
+- [OpenJDK](https://openjdk.org/) — provides the Java runtime (Java 25) the
+  project targets.
 - [Apache Maven](https://maven.apache.org/) — builds the project and manages
   dependencies (through the Maven Wrapper).
 - [OpenCodeReview](https://open-codereview.ai/) — runs the AI code review on
