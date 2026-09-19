@@ -95,6 +95,17 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - Consider locking, transaction boundaries, concurrency, and failure recovery.
 - Avoid operations that unnecessarily require long ACCESS EXCLUSIVE locks.
 - Do not assume small tables.
+- **Every table has `created_at` and `updated_at`.** Both are
+  `timestamptz NOT NULL DEFAULT now()`; never `timestamp without time zone` and
+  never a different column name. Attach the shared
+  `ddl_utils.set_updated_at()` trigger (`BEFORE UPDATE ... FOR EACH ROW`) to the
+  table so `updated_at` is refreshed on every `UPDATE` regardless of the caller;
+  a caller must not have to set it, and must not be able to bypass it. Create a
+  table together with its trigger in the same changeset (the shared function
+  already exists). The lock-settings tables are the reference implementation for
+  the columns (`changes/sql_changes/003-create-lock-settings.sql`); their
+  triggers are attached in `069-create-updated-at-triggers.sql` only because the
+  shared function is introduced in the same release.
 
 ## PL/pgSQL
 

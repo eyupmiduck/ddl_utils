@@ -1,0 +1,3 @@
+DROP TRIGGER IF EXISTS table_lock_settings_set_updated_at ON ddl_utils.table_lock_settings;
+DROP TRIGGER IF EXISTS schema_lock_settings_set_updated_at ON ddl_utils.schema_lock_settings;
+DROP TRIGGER IF EXISTS database_lock_settings_set_updated_at ON ddl_utils.database_lock_settings;

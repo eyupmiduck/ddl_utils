@@ -356,6 +356,7 @@ GRANT EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO public;
+GRANT EXECUTE ON FUNCTION ddl_utils.set_updated_at() TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
     text
     ) FROM ddl_utils_caller;
