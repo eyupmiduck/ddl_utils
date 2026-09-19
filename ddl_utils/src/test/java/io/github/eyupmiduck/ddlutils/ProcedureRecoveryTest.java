@@ -98,12 +98,16 @@ class ProcedureRecoveryTest extends PostgresTestBase {
     }
 
     private int constraintsNamedLike(String pattern) {
+        // PostgreSQL 18+ records the column's NOT NULL as a pg_constraint row
+        // (contype 'n'), whose generated name also ends in _not_null; only the
+        // temporary CHECK constraint is of interest here.
         Integer count = dsl.fetchOne(
                 """
                         SELECT count(*)::int
                         FROM pg_constraint
                         WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
                                             AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                            AND contype = 'c'
                             AND conname LIKE ?
                         """,
                 TARGET, PUBLIC_SCHEMA, pattern).get(0, Integer.class);

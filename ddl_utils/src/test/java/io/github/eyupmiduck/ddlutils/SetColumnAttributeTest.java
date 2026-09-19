@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies the metadata-only column-attribute helpers
@@ -42,15 +42,18 @@ class SetColumnAttributeTest extends PostgresTestBase {
     }
 
     /**
-     * A target of -1 resets the column to the default, which PostgreSQL stores
-     * as a null attstattarget.
+     * A target of -1 resets the column to the default: PostgreSQL 17 and later
+     * store that as a null attstattarget, while PostgreSQL 16 stores -1, which
+     * also means "use the default".
      */
     @Test
     void resetsStatistics() {
         setStatistics("note", 500);
         setStatistics("note", -1);
 
-        assertNull(statistics("note"));
+        Integer target = statistics("note");
+        assertTrue(target == null || target == -1,
+                () -> "expected the default statistics target; got: " + target);
     }
 
     /**

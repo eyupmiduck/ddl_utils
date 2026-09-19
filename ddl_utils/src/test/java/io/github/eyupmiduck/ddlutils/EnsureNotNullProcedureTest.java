@@ -121,12 +121,15 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     }
 
     private int temporaryConstraints() {
+        // Only CHECK constraints count as the temporary proof: PostgreSQL 18+
+        // records the column's NOT NULL as a pg_constraint row (contype 'n') too.
         Integer count = dsl.fetchOne(
                 """
                         SELECT count(*)::int
                         FROM pg_constraint
                         WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
                                             AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                            AND contype = 'c'
                         """,
                 TARGET, PUBLIC_SCHEMA).get(0, Integer.class);
         return count != null ? count : -1;
