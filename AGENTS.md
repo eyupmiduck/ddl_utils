@@ -104,7 +104,7 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   table together with its trigger in the same changeset (the shared function
   already exists). The lock-settings tables are the reference implementation for
   the columns (`changes/sql_changes/003-create-lock-settings.sql`); their
-  triggers are attached in `069-create-updated-at-triggers.sql` only because the
+  triggers are attached in `005-create-updated-at-triggers.sql` only because the
   shared function is introduced in the same release.
 
 ## PL/pgSQL
