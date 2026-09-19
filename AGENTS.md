@@ -42,8 +42,10 @@ on pull requests to `main`.
       metadata-only `ALTER TABLE` operations (brief `ACCESS EXCLUSIVE`, or a
       weaker `SHARE UPDATE EXCLUSIVE`/`SHARE ROW EXCLUSIVE` lock; no scan or
       rewrite). A function must make a single `ALTER TABLE` call because it
-      cannot commit mid-call, so multi-step sequences (for example
-      check-validate-set NOT NULL) are not implemented as one helper.
+      cannot commit mid-call; multi-step sequences (for example
+      check-validate-set NOT NULL) are implemented as procedures in the
+      `ddl_utils` schema that commit between steps (see the PL/pgSQL section and
+      `changes/procedures/README.md`).
     - jOOQ classes are generated at build time into
       `target/generated-sources/jooq` by
       `testcontainers-jooq-codegen-maven-plugin`, which starts a real

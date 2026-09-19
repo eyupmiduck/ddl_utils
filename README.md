@@ -100,11 +100,26 @@ EXCLUSIVE` lock) and neither scan nor rewrite the table:
 - **Tables**: `rename_table`, `set_table_storage_parameter` (restricted to the
   parameters accepted under `SHARE UPDATE EXCLUSIVE`).
 
-`SET NOT NULL`, validating `ADD CONSTRAINT` in one step, `ALTER COLUMN TYPE`,
-`SET LOGGED`, `SET TABLESPACE` and the other rewriting operations are deliberately
-not offered; compose `add_check_constraint ... NOT VALID` → `validate_constraint`
-→ (separately) `SET NOT NULL` if you need the scan-avoiding sequence, and note a
-function must make a single `ALTER TABLE` call because it cannot commit mid-call.
+`ALTER COLUMN TYPE`, `SET LOGGED`, `SET TABLESPACE` and the other rewriting
+operations are deliberately not offered. A function must make a single
+`ALTER TABLE` call because it cannot commit mid-call, so an operation that needs
+several `ALTER TABLE` calls to release each lock (for example making a column
+`NOT NULL` without holding `ACCESS EXCLUSIVE` across the verification scan) is
+implemented as a stored **procedure** in the `ddl_utils` schema, which can
+`COMMIT` between steps:
+
+- `ensure_not_null(schema, table, column)` — add a `NOT VALID` check, validate
+  it, `SET NOT NULL`, drop the temporary constraint, committing between steps.
+- `ensure_check_constraint(schema, table, constraint, expression)` — add a
+  `CHECK` as `NOT VALID`, then validate.
+- `ensure_foreign_key(...)` — the same for a foreign key.
+
+Procedures are idempotent and recoverable: each step inspects the catalog and
+skips work already committed, so a call interrupted part-way is completed by
+calling it again. Because a procedure commits, it must run in autocommit
+(`CALL` inside a client transaction fails with `invalid transaction
+termination`). See
+[`procedures/README.md`](ddl_utils/src/main/resources/db/changelog/changes/procedures/README.md).
 
 Every helper exists twice: a `ddl_utils` lock-aware wrapper that resolves the
 settings itself, and a matching `ddl_utils_lib` function that takes the three
