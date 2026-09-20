@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: maven-${{ github.ref }}
+  cancel-in-progress: true
+
 # `packages: read` lets the reusable Maven workflow's GITHUB_TOKEN fetch the
 # liquibase-validation artifact from GitHub Packages.
 permissions:
