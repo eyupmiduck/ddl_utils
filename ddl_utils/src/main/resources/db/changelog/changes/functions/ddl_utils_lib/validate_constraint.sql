@@ -27,3 +27,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.validate_constraint IS
+    'Validates a constraint; takes only SHARE UPDATE EXCLUSIVE and never blocks DML.';

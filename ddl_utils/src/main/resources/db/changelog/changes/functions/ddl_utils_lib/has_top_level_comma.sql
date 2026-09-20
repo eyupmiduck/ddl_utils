@@ -30,3 +30,6 @@ BEGIN
     RETURN pg_catalog.strpos(l_scrubbed, ',') > 0;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.has_top_level_comma IS
+    'Returns whether a value contains a comma outside parentheses, brackets or strings.';

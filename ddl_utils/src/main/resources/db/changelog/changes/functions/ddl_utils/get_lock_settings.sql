@@ -49,3 +49,6 @@ BEGIN
     END IF;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.get_lock_settings IS
+    'Resolves the effective lock settings for a table: table, then schema, then database.';

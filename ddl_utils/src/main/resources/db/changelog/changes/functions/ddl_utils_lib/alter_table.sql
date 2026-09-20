@@ -80,3 +80,6 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.alter_table IS
+    'Internal runner: runs a caller-provided ALTER TABLE fragment with a bounded lock_timeout.';

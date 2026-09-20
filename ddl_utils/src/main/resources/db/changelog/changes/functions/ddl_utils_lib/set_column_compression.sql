@@ -37,3 +37,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.set_column_compression IS
+    'Sets a column compression method, taking the lock settings explicitly.';

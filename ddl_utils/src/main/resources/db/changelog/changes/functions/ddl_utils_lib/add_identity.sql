@@ -38,3 +38,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_identity IS
+    'Adds an identity to a column, taking the lock settings explicitly.';

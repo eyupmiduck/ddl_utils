@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_identity IS
+    'Lock-aware wrapper: adds an identity to a column.';

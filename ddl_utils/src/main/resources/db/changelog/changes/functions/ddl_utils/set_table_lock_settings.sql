@@ -27,3 +27,6 @@ BEGIN
             statement_duration = EXCLUDED.statement_duration;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.set_table_lock_settings IS
+    'Upserts the lock settings for a table.';

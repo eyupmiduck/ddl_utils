@@ -24,3 +24,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_constraint IS
+    'Drops a constraint, taking the lock settings explicitly.';

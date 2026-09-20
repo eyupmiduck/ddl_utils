@@ -28,3 +28,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.set_not_null IS
+    'Sets NOT NULL on a column, taking the lock settings explicitly.';

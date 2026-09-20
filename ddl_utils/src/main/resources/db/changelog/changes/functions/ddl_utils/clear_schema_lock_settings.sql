@@ -15,3 +15,6 @@ BEGIN
     WHERE schema_name = i_schema_name;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.clear_schema_lock_settings IS
+    'Deletes the lock settings for a schema; a no-op when there are none.';

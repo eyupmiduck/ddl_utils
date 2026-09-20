@@ -28,3 +28,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.rename_constraint IS
+    'Renames a constraint, taking the lock settings explicitly.';

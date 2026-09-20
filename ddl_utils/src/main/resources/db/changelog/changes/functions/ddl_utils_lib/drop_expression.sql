@@ -24,3 +24,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_expression IS
+    'Drops a generated column expression, taking the lock settings explicitly.';

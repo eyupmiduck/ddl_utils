@@ -36,3 +36,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.set_column_default IS
+    'Sets a column default, taking the lock settings explicitly.';

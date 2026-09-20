@@ -32,3 +32,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.drop_column_default IS
+    'Lock-aware wrapper: drops a column default.';

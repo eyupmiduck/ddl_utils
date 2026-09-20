@@ -11,3 +11,6 @@ BEGIN
     RETURN NEW;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.set_updated_at IS
+    'BEFORE UPDATE trigger that stamps NEW.updated_at with the transaction timestamp.';

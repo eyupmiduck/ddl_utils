@@ -24,3 +24,6 @@ BEGIN
     END IF;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.set_database_lock_settings IS
+    'Overwrites the singleton database lock settings; raises P0002 when the row is missing.';

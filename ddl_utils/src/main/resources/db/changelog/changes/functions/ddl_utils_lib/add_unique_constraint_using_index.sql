@@ -31,3 +31,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_unique_constraint_using_index IS
+    'Attaches a pre-built unique index as a unique constraint.';

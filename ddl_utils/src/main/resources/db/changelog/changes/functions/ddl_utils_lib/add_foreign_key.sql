@@ -73,3 +73,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_foreign_key IS
+    'Adds a foreign key as NOT VALID, taking the lock settings explicitly.';

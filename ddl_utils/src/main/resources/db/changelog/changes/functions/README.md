@@ -15,6 +15,11 @@ changeset; the matching drop lives in `changes/functions-rollback/`. Every
 routine is `SECURITY INVOKER` except the setters/clearers, which are
 `SECURITY DEFINER` (callers only have `SELECT` on the settings tables).
 
+Each routine file ends with a `COMMENT ON FUNCTION` / `COMMENT ON PROCEDURE`
+for the routine it creates, using the short form (`schema.name`, no argument
+list). If a routine is ever overloaded, include its argument types so the
+comment targets the right overload.
+
 The three lock settings are `ddl_lock_timeout` (ms before a lock attempt gives
 up), `sleep_time` (ms between retries) and `statement_duration` (ms budget for
 acquiring the lock).

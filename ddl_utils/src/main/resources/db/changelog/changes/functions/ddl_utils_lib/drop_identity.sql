@@ -29,3 +29,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_identity IS
+    'Drops a column identity, taking the lock settings explicitly.';
