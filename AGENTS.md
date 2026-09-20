@@ -106,6 +106,12 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   the columns (`changes/sql_changes/003-create-lock-settings.sql`); their
   triggers are attached in `005-create-updated-at-triggers.sql` only because the
   shared function is introduced in the same release.
+- **Every object has a comment.** Add a `COMMENT ON` for each schema, table,
+  column, domain, function and procedure, describing what it is for. Comment a
+  function or procedure at the end of the `.sql` file that creates it; comment
+  every other object right after the statement that creates it, in the same
+  changeset. Routine comments use the short form (`schema.name`); include the
+  argument types only when the routine name is overloaded.
 
 ## PL/pgSQL
 
