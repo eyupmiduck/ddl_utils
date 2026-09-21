@@ -51,6 +51,12 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- SLF4J binding for the Testcontainers logging (see the parent POM). -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Puts docker-java.properties (Docker API pin) on the test classpath -->
         <dependency>
             <groupId>io.github.eyupmiduck</groupId>
