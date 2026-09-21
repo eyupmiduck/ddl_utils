@@ -32,3 +32,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.rename_table IS
+    'Lock-aware wrapper: renames a table.';

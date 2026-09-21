@@ -29,3 +29,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.rename_column IS
+    'Renames a column, taking the lock settings explicitly.';

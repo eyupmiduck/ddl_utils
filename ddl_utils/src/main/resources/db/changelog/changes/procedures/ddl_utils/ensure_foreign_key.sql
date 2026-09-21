@@ -102,3 +102,6 @@ BEGIN
     END IF;
 END;
 $$;
+
+COMMENT ON PROCEDURE ddl_utils.ensure_foreign_key IS
+    'Adds a foreign key as NOT VALID and then validates it, committing between steps.';

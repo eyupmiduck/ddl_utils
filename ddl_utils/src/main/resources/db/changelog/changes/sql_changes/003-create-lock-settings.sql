@@ -12,6 +12,22 @@ CREATE TABLE ddl_utils.database_lock_settings
     CONSTRAINT database_lock_settings_statement_duration_check CHECK (statement_duration >= 0)
 );
 
+COMMENT ON TABLE ddl_utils.database_lock_settings IS
+    'Database-wide lock settings: a single seeded row (id = 1) used as the fallback.';
+
+COMMENT ON COLUMN ddl_utils.database_lock_settings.id IS
+    'Fixed identifier, constrained to 1 to keep the table a singleton.';
+COMMENT ON COLUMN ddl_utils.database_lock_settings.ddl_lock_timeout IS
+    'Per-attempt lock_timeout in milliseconds; 0 disables the timeout.';
+COMMENT ON COLUMN ddl_utils.database_lock_settings.sleep_time IS
+    'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
+COMMENT ON COLUMN ddl_utils.database_lock_settings.statement_duration IS
+    'Total millisecond budget for acquiring the lock.';
+COMMENT ON COLUMN ddl_utils.database_lock_settings.created_at IS
+    'Row creation time.';
+COMMENT ON COLUMN ddl_utils.database_lock_settings.updated_at IS
+    'Last update time, maintained by the set_updated_at() trigger.';
+
 INSERT INTO ddl_utils.database_lock_settings (id, ddl_lock_timeout, sleep_time, statement_duration)
 VALUES (1, 100, 1000, 30000);
 
@@ -28,6 +44,22 @@ CREATE TABLE ddl_utils.schema_lock_settings
     CONSTRAINT schema_lock_settings_statement_duration_check CHECK (statement_duration >= 0)
 );
 
+COMMENT ON TABLE ddl_utils.schema_lock_settings IS
+    'Per-schema lock settings that override the database defaults.';
+
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.schema_name IS
+    'Schema name; stored as given, not resolved against pg_namespace.';
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.ddl_lock_timeout IS
+    'Per-attempt lock_timeout in milliseconds; 0 disables the timeout.';
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.sleep_time IS
+    'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.statement_duration IS
+    'Total millisecond budget for acquiring the lock.';
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.created_at IS
+    'Row creation time.';
+COMMENT ON COLUMN ddl_utils.schema_lock_settings.updated_at IS
+    'Last update time, maintained by the set_updated_at() trigger.';
+
 CREATE TABLE ddl_utils.table_lock_settings
 (
     schema_name        text        NOT NULL,
@@ -42,3 +74,21 @@ CREATE TABLE ddl_utils.table_lock_settings
     CONSTRAINT table_lock_settings_sleep_time_check CHECK (sleep_time >= 0),
     CONSTRAINT table_lock_settings_statement_duration_check CHECK (statement_duration >= 0)
 );
+
+COMMENT ON TABLE ddl_utils.table_lock_settings IS
+    'Per-table lock settings that override the schema and database defaults.';
+
+COMMENT ON COLUMN ddl_utils.table_lock_settings.schema_name IS
+    'Schema name; stored as given, not resolved against pg_class.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.table_name IS
+    'Table name; stored as given, not resolved against pg_class.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.ddl_lock_timeout IS
+    'Per-attempt lock_timeout in milliseconds; 0 disables the timeout.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.sleep_time IS
+    'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.statement_duration IS
+    'Total millisecond budget for acquiring the lock.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.created_at IS
+    'Row creation time.';
+COMMENT ON COLUMN ddl_utils.table_lock_settings.updated_at IS
+    'Last update time, maintained by the set_updated_at() trigger.';

@@ -21,3 +21,6 @@ BEGIN
           AND tls.table_name = i_table_name;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.get_table_lock_settings IS
+    'Returns the lock settings for a table, or no row when there are none.';

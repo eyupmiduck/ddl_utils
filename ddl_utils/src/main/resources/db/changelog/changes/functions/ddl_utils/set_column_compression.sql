@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.set_column_compression IS
+    'Lock-aware wrapper: sets a column compression method.';

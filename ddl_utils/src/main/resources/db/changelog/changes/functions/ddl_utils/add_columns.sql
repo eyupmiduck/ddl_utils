@@ -36,3 +36,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_columns IS
+    'Lock-aware wrapper: adds several columns to a table.';

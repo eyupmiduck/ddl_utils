@@ -17,3 +17,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.drop_column IS
+    'Lock-aware wrapper: drops one column.';

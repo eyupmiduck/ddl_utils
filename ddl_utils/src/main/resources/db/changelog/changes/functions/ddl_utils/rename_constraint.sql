@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.rename_constraint IS
+    'Lock-aware wrapper: renames a constraint.';

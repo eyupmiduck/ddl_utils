@@ -40,3 +40,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_foreign_key IS
+    'Lock-aware wrapper: adds a foreign key as NOT VALID.';

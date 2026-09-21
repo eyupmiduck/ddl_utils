@@ -37,3 +37,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_check_constraint IS
+    'Adds a CHECK constraint as NOT VALID, taking the lock settings explicitly.';

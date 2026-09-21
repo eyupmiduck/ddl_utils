@@ -19,3 +19,6 @@ BEGIN
         WHERE sls.schema_name = i_schema_name;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.get_schema_lock_settings IS
+    'Returns the lock settings for a schema, or no row when there are none.';

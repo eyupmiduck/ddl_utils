@@ -32,3 +32,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.drop_not_null IS
+    'Lock-aware wrapper: drops NOT NULL from a column.';

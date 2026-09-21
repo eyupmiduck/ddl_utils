@@ -112,3 +112,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_columns IS
+    'Adds several columns, taking the lock settings explicitly.';

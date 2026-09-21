@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_primary_key_using_index IS
+    'Lock-aware wrapper: attaches a pre-built unique index as the primary key.';

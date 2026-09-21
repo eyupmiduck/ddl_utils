@@ -32,3 +32,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.drop_expression IS
+    'Lock-aware wrapper: drops a generated column expression.';

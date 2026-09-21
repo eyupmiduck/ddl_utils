@@ -37,3 +37,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.set_column_storage IS
+    'Sets a column storage mode, taking the lock settings explicitly.';

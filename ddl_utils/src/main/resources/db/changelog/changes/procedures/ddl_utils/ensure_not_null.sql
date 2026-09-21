@@ -135,3 +135,6 @@ BEGIN
     END IF;
 END;
 $$;
+
+COMMENT ON PROCEDURE ddl_utils.ensure_not_null IS
+    'Makes a column NOT NULL without holding ACCESS EXCLUSIVE across the scan.';

@@ -30,3 +30,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.add_column IS
+    'Adds one column, with an optional default, taking the lock settings explicitly.';

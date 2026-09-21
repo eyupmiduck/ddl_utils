@@ -15,3 +15,6 @@ BEGIN
       AND table_name = i_table_name;
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.clear_table_lock_settings IS
+    'Deletes the lock settings for a table; a no-op when there are none.';

@@ -24,3 +24,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.rename_table IS
+    'Renames a table, taking the lock settings explicitly.';

@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_check_constraint IS
+    'Lock-aware wrapper: adds a CHECK constraint as NOT VALID.';

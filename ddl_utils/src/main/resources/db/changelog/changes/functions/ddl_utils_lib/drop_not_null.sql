@@ -25,3 +25,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_not_null IS
+    'Drops NOT NULL from a column, taking the lock settings explicitly.';

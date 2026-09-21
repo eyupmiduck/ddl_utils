@@ -45,3 +45,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_columns IS
+    'Drops several columns, taking the lock settings explicitly.';

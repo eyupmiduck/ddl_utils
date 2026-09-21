@@ -23,3 +23,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_column IS
+    'Drops one column, taking the lock settings explicitly.';

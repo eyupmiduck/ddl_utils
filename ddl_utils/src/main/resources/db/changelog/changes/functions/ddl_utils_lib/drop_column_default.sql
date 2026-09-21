@@ -24,3 +24,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils_lib.drop_column_default IS
+    'Drops a column default, taking the lock settings explicitly.';

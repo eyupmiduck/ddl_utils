@@ -34,3 +34,6 @@ BEGIN
             );
 END;
 $$;
+
+COMMENT ON FUNCTION ddl_utils.add_unique_constraint_using_index IS
+    'Lock-aware wrapper: attaches a pre-built unique index as a unique constraint.';

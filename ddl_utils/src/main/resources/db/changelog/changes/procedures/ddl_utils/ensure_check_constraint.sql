@@ -70,3 +70,6 @@ BEGIN
     END IF;
 END;
 $$;
+
+COMMENT ON PROCEDURE ddl_utils.ensure_check_constraint IS
+    'Adds a CHECK constraint as NOT VALID and then validates it, committing between steps.';
