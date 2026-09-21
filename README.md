@@ -5,6 +5,12 @@ routines. They run `ALTER TABLE` work (adding columns, altering tables) against
 production-sized databases without holding a schema lock for an unbounded time,
 with lock settings that cascade table → schema → database.
 
+The deliverable is the Liquibase changelog under
+`ddl_utils/src/main/resources/db/changelog/`; the Java sources are only the
+JUnit 5 / Testcontainers harness that exercises those routines. You install
+ddl_utils with the Liquibase CLI, without building anything or running Docker
+(see [Installing with the Liquibase CLI](#installing-with-the-liquibase-cli)).
+
 ## Why: DDL locks are brutal
 
 PostgreSQL acquires an `ACCESS EXCLUSIVE` lock for almost every `ALTER TABLE`
@@ -130,6 +136,128 @@ helpers are `SECURITY INVOKER`. The setters and clearers are `SECURITY DEFINER`,
 tables. See
 [`functions/README.md`](ddl_utils/src/main/resources/db/changelog/changes/functions/README.md)
 for every signature and purpose.
+
+## Installing with the Liquibase CLI
+
+Installing ddl_utils means applying the bundled Liquibase changelog to your
+database. There is nothing to compile or package: clone the repository and point
+the Liquibase CLI at `db.changelog-master.xml`.
+
+### Prerequisites
+
+- PostgreSQL 16, 17 or 18 (CI builds and tests all three; 17 is the default).
+- Liquibase 5.0.x on your `PATH` (it needs Java 17+). Liquibase 5 ships without
+  database drivers, so add the PostgreSQL driver once:
+
+  ```sh
+  liquibase lpm add postgresql --global
+  ```
+
+- A login role that owns the objects (`ddl_utils_owner` below) with `CREATE` on
+  the target database and schema.
+- A role the routines and settings are granted to (`ddl_utils_caller` below).
+  The last changeset grants to it, so it must exist **before** you run the
+  changelog. Applications connect as this role (or a role granted it).
+
+### 1. Create the roles
+
+Connect to the target database as a superuser (or a role that can `CREATE ROLE`)
+and create the owner and caller roles:
+
+```sql
+CREATE ROLE ddl_utils_owner LOGIN PASSWORD 'change-me';
+CREATE ROLE ddl_utils_caller; -- no login; the routines are granted to it
+
+GRANT CREATE ON DATABASE mydb TO ddl_utils_owner;
+\connect mydb
+GRANT CREATE ON SCHEMA public TO ddl_utils_owner;
+```
+
+`ddl_utils_owner` needs `CREATE` on the database and schema so Liquibase can
+create its tracking tables and the `ddl_utils` / `ddl_utils_lib` schemas. Never
+run the migration as `postgres`.
+
+### 2. Run the changelog
+
+From the repository root, connect as the owner:
+
+```sh
+git clone https://github.com/eyupmiduck/ddl_utils.git
+cd ddl_utils
+
+liquibase \
+  --url=jdbc:postgresql://localhost:5432/mydb \
+  --username=ddl_utils_owner \
+  --password=change-me \
+  --changelog-file=ddl_utils/src/main/resources/db/changelog/db.changelog-master.xml \
+  update
+```
+
+`liquibase status` reports pending changesets; re-running `update` is safe (Liquibase skips changesets it has already
+applied).
+
+### 3. Verify
+
+```sql
+SELECT ddl_utils.get_database_lock_settings();
+SELECT ddl_utils.get_lock_settings('public', 'orders');
+```
+
+### Rolling back
+
+Every changeset ships a rollback. Pass the same connection flags as above and
+replace `update` with `rollback-count --count=<n>` to undo the last `n`
+changesets (the routines and schemas are dropped; the roles from step 1 are left
+in place):
+
+```sh
+liquibase \
+  --url=jdbc:postgresql://localhost:5432/mydb \
+  --username=ddl_utils_owner \
+  --password=change-me \
+  --changelog-file=ddl_utils/src/main/resources/db/changelog/db.changelog-master.xml \
+  rollback-count --count=1
+```
+
+### Docker instead of a local CLI
+
+The repository's `compose.yaml` runs the same changelog in the official
+Liquibase image, which already has `lpm` on `PATH`. Use it as a template, or run
+the CLI container directly (mounting the changelog read-only):
+
+```sh
+docker run --rm -it \
+  --network host \
+  -v "$PWD/ddl_utils/src/main/resources/db/changelog:/liquibase/changelog:ro" \
+  liquibase/liquibase:5.0.4 \
+  sh -c "lpm add postgresql --global && \
+         liquibase --url=jdbc:postgresql://localhost:5432/mydb \
+                   --username=ddl_utils_owner --password=change-me \
+                   --changelog-file=changelog/db.changelog-master.xml update"
+```
+
+`--network host` reaches a database on the Docker host on Linux; on Docker
+Desktop use `host.docker.internal` in the JDBC URL instead.
+
+### Building it into your own changelog
+
+If your application already uses Liquibase, vendor the changelog instead of
+running a second process. Copy the
+`ddl_utils/src/main/resources/db/changelog/` tree into your changelog directory (keeping the internal relative paths
+intact) and include the master changelog
+from yours:
+
+```xml
+
+<include file="db/changelog/db.changelog-master.xml"/>
+```
+
+Alternatively, keep the changelog in a jar on the Liquibase classpath:
+
+```sh
+liquibase --classpath=ddl_utils.jar \
+  --changelog-file=db/changelog/db.changelog-master.xml update
+```
 
 ## Usage
 
