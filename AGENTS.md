@@ -147,8 +147,8 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   `function-<schema>.<name>` or `procedure-<schema>.<name>` (one
   `createProcedure` plus its rollback); both are included from
   `changes/changes.xml`. The schema is part of the id because the same routine
-  name exists in both `ddl_utils` and `ddl_utils_lib`. Overloads of one routine
-  (same schema and name, different signature) share a single changeset.
+  name exists in both `ddl_utils` and `ddl_utils_lib`. Overloads of one routine (same schema and name, different
+  signature) share a single changeset.
 - Load a routine with the `createProcedure` change type and an external body:
   `<createProcedure path="functions/<schema>/<name>.sql" relativeToChangelogFile="true"/>`.
   Liquibase has no `createFunction` change type, so functions use

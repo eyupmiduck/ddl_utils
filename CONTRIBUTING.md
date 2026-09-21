@@ -46,14 +46,15 @@ scripts/refresh-local-db.sh   # drop the volume and re-apply migrations
 
 ### PostgreSQL version
 
-The PostgreSQL image is a single source of truth controlled by the
-`postgres.image` Maven property (default `ddl-utils-postgres:17-alpine`). CI
-builds and tests against PostgreSQL 16, 17, and 18. Build the custom image for
-the version you need, then pass it through:
+The PostgreSQL version the build runs against is a single source of truth
+controlled by the `postgres.version` Maven property (default `17-alpine`); the
+custom image tag is derived from it. CI builds and tests against PostgreSQL 16,
+17, and 18. Build the custom image for the version you need, then pass the
+version through:
 
 ```sh
 scripts/build-postgres-image.sh postgres:16-alpine
-./mvnw verify -Dpostgres.image=ddl-utils-postgres:16-alpine
+./mvnw verify -Dpostgres.version=16-alpine
 ```
 
 ## Database changes

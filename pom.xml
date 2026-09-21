@@ -29,37 +29,20 @@
         <liquibase-validation.version>0.12.0</liquibase-validation.version>
         <skip.sqlfluff>false</skip.sqlfluff>
         <sqlfluff.executable>sqlfluff</sqlfluff.executable>
-    </properties>
 
-    <!-- The PostgreSQL image used for jOOQ codegen and integration tests is a
-         single source of truth: the `postgres.image` property. It is set by
-         exactly one of the two profiles below (the default, or from the
-         POSTGRES_IMAGE environment variable) and can always be overridden on
-         the command line with -Dpostgres.image=postgres:16-alpine. -->
-    <profiles>
-        <profile>
-            <id>postgres-image-from-env</id>
-            <activation>
-                <property>
-                    <name>env.POSTGRES_IMAGE</name>
-                </property>
-            </activation>
-            <properties>
-                <postgres.image>${env.POSTGRES_IMAGE}</postgres.image>
-            </properties>
-        </profile>
-        <profile>
-            <id>default-postgres-image</id>
-            <activation>
-                <property>
-                    <name>!env.POSTGRES_IMAGE</name>
-                </property>
-            </activation>
-            <properties>
-                <postgres.image>ddl-utils-postgres:17-alpine</postgres.image>
-            </properties>
-        </profile>
-    </profiles>
+        <!-- The PostgreSQL version the build runs against. It is the single
+             knob for choosing that version: the jOOQ codegen container and the
+             integration tests both use the custom image built on top of it.
+             Override with -Dpostgres.version=16-alpine (or 18-alpine). -->
+        <postgres.version>17-alpine</postgres.version>
+        <!-- The image jOOQ codegen and the integration tests run against. It
+             must be the custom image built by scripts/build-postgres-image.sh
+             (the stock postgres image has neither the application roles nor
+             plpgsql_check), so it is derived from postgres.version instead of
+             being set directly. CI may still override it with
+             -Dpostgres.image=ddl-utils-postgres:<version>. -->
+        <postgres.image>ddl-utils-postgres:${postgres.version}</postgres.image>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -177,6 +160,21 @@
                                 <requireJavaVersion>
                                     <version>[25,)</version>
                                 </requireJavaVersion>
+                                <!-- Fail fast when the build is pointed at
+                                     anything but the custom image. A stock
+                                     postgres image lacks the application roles
+                                     and plpgsql_check, and the failure surfaces
+                                     much later as a confusing Liquibase error. -->
+                                <requireProperty>
+                                    <property>postgres.image</property>
+                                    <regex>ddl-utils-postgres:.+</regex>
+                                    <message>postgres.image is not set</message>
+                                    <regexMessage>postgres.image must be the custom image built by
+                                        scripts/build-postgres-image.sh (a ddl-utils-postgres: tag); the stock postgres
+                                        image lacks the application roles and plpgsql_check. Set -Dpostgres.version
+                                        instead of pointing the build at another image.
+                                    </regexMessage>
+                                </requireProperty>
                                 <dependencyConvergence/>
                             </rules>
                         </configuration>

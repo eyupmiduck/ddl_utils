@@ -390,26 +390,25 @@ a new image.
 
 ## Running against a different PostgreSQL version
 
-The PostgreSQL image is a single source of truth controlled by the
-`postgres.image` Maven property. It is used for jOOQ code generation, the
-integration tests, and the local dev database. It must be a custom image tag,
-so build it first. Override it in any of these ways (highest precedence first):
+The PostgreSQL version the build runs against is a single source of truth
+controlled by the `postgres.version` Maven property (`17-alpine` by default). It
+is used for jOOQ code generation and the integration tests, and it drives the
+custom image tag:
 
 ```sh
-# Build the custom image, then run the build/tests
+# Build the custom image for that version, then run the build/tests
 scripts/build-postgres-image.sh postgres:16-alpine
-./mvnw verify -Dpostgres.image=ddl-utils-postgres:16-alpine
+./mvnw verify -Dpostgres.version=16-alpine
 
-# Environment variable (tests + jOOQ codegen)
-POSTGRES_IMAGE=ddl-utils-postgres:16-alpine ./mvnw verify
-
-# Local dev database (Docker Compose)
+# Local dev database (Docker Compose) takes the image tag directly
 POSTGRES_IMAGE=ddl-utils-postgres:16-alpine docker compose up -d
 ```
 
-The default is `ddl-utils-postgres:17-alpine`. CI builds the custom image and
-runs the full build against PostgreSQL 16, 17 and 18 (see
-`.github/workflows/maven.yml`).
+The `postgres.image` property is derived as
+`ddl-utils-postgres:${postgres.version}` and must be the custom image; the build
+rejects a stock `postgres` image at `validate` (it lacks the application roles
+and `plpgsql_check`). CI builds the custom image and runs the full build against
+PostgreSQL 16, 17 and 18 (see `.github/workflows/maven.yml`).
 
 ## Changelog validation dependency
 
