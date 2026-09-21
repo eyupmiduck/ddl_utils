@@ -169,7 +169,11 @@
                                     <property>postgres.image</property>
                                     <regex>ddl-utils-postgres:.+</regex>
                                     <message>postgres.image is not set</message>
-                                    <regexMessage>postgres.image must be the custom image built by scripts/build-postgres-image.sh (a ddl-utils-postgres: tag); the stock postgres image lacks the application roles and plpgsql_check. Set -Dpostgres.version instead of pointing the build at another image.</regexMessage>
+                                    <regexMessage>postgres.image must be the custom image built by
+                                        scripts/build-postgres-image.sh (a ddl-utils-postgres: tag); the stock postgres
+                                        image lacks the application roles and plpgsql_check. Set -Dpostgres.version
+                                        instead of pointing the build at another image.
+                                    </regexMessage>
                                 </requireProperty>
                                 <dependencyConvergence/>
                             </rules>

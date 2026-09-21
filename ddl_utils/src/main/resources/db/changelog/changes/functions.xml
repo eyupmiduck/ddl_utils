@@ -19,7 +19,8 @@
          The order of the changesets is not significant (PL/pgSQL resolves called
          routines at first execution), but the add pair is listed helper before
          convenience wrapper as a convention. -->
-    <changeSet id="function-ddl_utils.get_database_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.get_database_lock_settings" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/get_database_lock_settings-rollback.sql"
@@ -27,7 +28,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_database_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_database_lock_settings" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_database_lock_settings-rollback.sql"
@@ -51,7 +53,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.clear_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.clear_schema_lock_settings" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/clear_schema_lock_settings-rollback.sql"
@@ -75,7 +78,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.clear_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.clear_table_lock_settings" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/clear_table_lock_settings-rollback.sql"
@@ -239,7 +243,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.set_column_compression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.set_column_compression" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_column_compression.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/set_column_compression-rollback.sql"
@@ -375,7 +380,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_primary_key_using_index" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_primary_key_using_index" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_primary_key_using_index.sql"
                          relativeToChangelogFile="true"/>
         <rollback>
@@ -384,7 +390,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_primary_key_using_index" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_primary_key_using_index" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_primary_key_using_index.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_primary_key_using_index-rollback.sql"
@@ -392,7 +399,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_unique_constraint_using_index.sql"
                          relativeToChangelogFile="true"/>
         <rollback>
@@ -401,7 +409,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_unique_constraint_using_index.sql"
                          relativeToChangelogFile="true"/>
         <rollback>
