@@ -339,8 +339,8 @@ SQLFluff lints the changelog `.sql` files during `verify` (create the repo
 `.venv`, or point it at one with
 `-Dsqlfluff.executable=$PWD/.venv/bin/sqlfluff`); skip it with `-Dskip.sqlfluff`.
 The Liquibase changelog linter from `liquibase-validation` also runs during
-`verify`: it applies rules that need both the SQL and the changeset attributes
-(for example a statement PostgreSQL forbids in a transaction must be in a
+`verify`: it applies rules that need both the SQL and the changeset attributes (for example a statement PostgreSQL
+forbids in a transaction must be in a
 `runInTransaction="false"` changeset), configured in
 `ddl_utils/.liquibase-linter.yml`, with accepted findings listed in
 `ddl_utils/.liquibase-linter-whitelist.yml` (an unaccepted finding and a stale

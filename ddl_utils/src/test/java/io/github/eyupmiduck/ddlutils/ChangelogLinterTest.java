@@ -19,10 +19,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Runs the Liquibase changelog linter (bead ddl-w8y) over the module changelog,
@@ -34,6 +31,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * cannot see.
  */
 class ChangelogLinterTest {
+
+    private static Whitelist whitelist(String yaml) throws IOException {
+        return Whitelist.load(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static ChangeSet deliberatelyBadChangeSet() {
+        SqlSource forward = new SqlSource(
+                SqlSource.Kind.INLINE_SQL,
+                null,
+                "CREATE INDEX CONCURRENTLY example_name_idx ON ddl_utils.example (name);",
+                true,
+                ";",
+                false,
+                null);
+        return new ChangeSet(
+                "999-deliberate",
+                "test",
+                Path.of("deliberate-changelog.xml"),
+                true,
+                false,
+                "postgresql",
+                null,
+                null,
+                List.of(forward),
+                false,
+                List.of());
+    }
 
     /**
      * The changelog lints clean with the default configuration and the default
@@ -109,32 +133,5 @@ class ChangelogLinterTest {
 
         assertEquals(1, report.unmatched().size(), "the real finding is not accepted");
         assertEquals(1, report.stale().size(), "the entry matches nothing and is stale");
-    }
-
-    private static Whitelist whitelist(String yaml) throws IOException {
-        return Whitelist.load(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    private static ChangeSet deliberatelyBadChangeSet() {
-        SqlSource forward = new SqlSource(
-                SqlSource.Kind.INLINE_SQL,
-                null,
-                "CREATE INDEX CONCURRENTLY example_name_idx ON ddl_utils.example (name);",
-                true,
-                ";",
-                false,
-                null);
-        return new ChangeSet(
-                "999-deliberate",
-                "test",
-                Path.of("deliberate-changelog.xml"),
-                true,
-                false,
-                "postgresql",
-                null,
-                null,
-                List.of(forward),
-                false,
-                List.of());
     }
 }
