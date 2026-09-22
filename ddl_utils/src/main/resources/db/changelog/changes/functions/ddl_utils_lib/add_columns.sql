@@ -31,17 +31,29 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- The array domains constrain cardinality but not the lower bound, so a
+    -- caller could pass '[0:1]={a,b}'. The loop below is 1-based, so reject any
+    -- array that does not start at 1 rather than reading NULL out of range.
+    IF pg_catalog.array_lower(i_column_names, 1) <> 1
+        OR pg_catalog.array_lower(i_column_types, 1) <> 1
+        OR pg_catalog.array_lower(i_default_values, 1) <> 1
+        OR pg_catalog.array_lower(i_nullable, 1) <> 1 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_columns: column arrays must be 1-based'
+            USING ERRCODE = '22023';
+    END IF;
+
     FOR l_index IN 1..l_count
         LOOP
         -- The array domains allow blank elements; reject them here so a blank
         -- name or type cannot produce an empty identifier or malformed SQL. The
         -- trim set must stay in step with the ddl_utils.non_null_text domain
         -- (004-create-domains.sql).
-            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
+            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\013') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_columns: column name at position % is blank', l_index
                     USING ERRCODE = '22023';
             END IF;
-            IF pg_catalog.btrim(i_column_types[l_index], E' \t\n\r\f\v') = '' THEN
+            IF pg_catalog.btrim(i_column_types[l_index], E' \t\n\r\f\013') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_columns: the type for column % is blank',
                     i_column_names[l_index]
                     USING ERRCODE = '22023';
@@ -86,7 +98,7 @@ BEGIN
             -- A NULL default means no DEFAULT clause; a non-null default is raw SQL
             -- (for example now()), so quoted literals must include their quotes.
             IF i_default_values[l_index] IS NOT NULL THEN
-                IF pg_catalog.btrim(i_default_values[l_index], E' \t\n\r\f\v') = '' THEN
+                IF pg_catalog.btrim(i_default_values[l_index], E' \t\n\r\f\013') = '' THEN
                     RAISE EXCEPTION
                         'ddl_utils_lib.add_columns: default value for column % is blank',
                         i_column_names[l_index]

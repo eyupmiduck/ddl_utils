@@ -59,6 +59,34 @@ class AlterTableTest extends PostgresTestBase {
     }
 
     /**
+     * Accepts fragments whose quoted text contains characters that would only
+     * be unsafe outside quotes: a default literal with a semicolon and a quoted
+     * identifier with comment markers.
+     */
+    @Test
+    void acceptsQuotedSeparatorsAndComments() {
+        alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN note text DEFAULT 'a;b'", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "note"));
+
+        alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN \"x--y\" int", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "x--y"));
+    }
+
+    /**
+     * Accepts an unquoted identifier containing a dollar sign (legal in
+     * PostgreSQL) while still rejecting a comment written outside quotes.
+     */
+    @Test
+    void acceptsDollarIdentifierAndRejectsUnquotedComment() {
+        alterTable(PUBLIC_SCHEMA, TARGET, "ADD COLUMN a$b int", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "a$b"));
+
+        assertSqlState("22023", () -> alterTable(
+                PUBLIC_SCHEMA, TARGET, "ADD COLUMN commented int -- trailing", 1000, 10, 5000));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "commented"));
+    }
+
+    /**
      * Retries after a lock timeout and succeeds once a competing session
      * releases its lock. The lock is held before the call and released after
      * it, so success proves at least one retry happened.

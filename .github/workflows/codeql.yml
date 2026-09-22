@@ -16,7 +16,7 @@ on:
 # starts; push and scheduled runs are left to finish so main always gets a
 # complete analysis.
 concurrency:
-  group: codeql-${{ github.ref }}
+  group: codeql-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

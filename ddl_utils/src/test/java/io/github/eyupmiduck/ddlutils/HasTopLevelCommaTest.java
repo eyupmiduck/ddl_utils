@@ -37,6 +37,7 @@ class HasTopLevelCommaTest extends PostgresTestBase {
         assertFalse(hasTopLevelComma("numeric(10,2)"));
         assertFalse(hasTopLevelComma("coalesce(1, 2)"));
         assertFalse(hasTopLevelComma("ARRAY[1,2]"));
+        assertFalse(hasTopLevelComma("{a,b}"));
         assertFalse(hasTopLevelComma("f(g(1,2), 3)"));
     }
 
@@ -62,6 +63,64 @@ class HasTopLevelCommaTest extends PostgresTestBase {
     @Test
     void returnsFalseForNull() {
         assertFalse(hasTopLevelComma(null));
+    }
+
+    /**
+     * Commas inside comments, dollar-quoted literals and quoted identifiers are
+     * opaque text, not separators.
+     */
+    @Test
+    void returnsFalseForCommasInsideCommentsDollarQuotesAndIdentifiers() {
+        assertFalse(hasTopLevelComma("$$a,b$$"));
+        assertFalse(hasTopLevelComma("$q$a,b$q$"));
+        assertFalse(hasTopLevelComma("\"a,b\""));
+        assertFalse(hasTopLevelComma("coalesce(1, 2) /* a, b */"));
+        assertFalse(hasTopLevelComma("1 -- a, b\n"));
+    }
+
+    /**
+     * PostgreSQL block comments nest, so a comma inside an outer comment is not
+     * top-level even when an inner comment has already closed. A bare CR also
+     * ends a line comment.
+     */
+    @Test
+    void handlesNestedBlockCommentsAndCarriageReturns() {
+        assertFalse(hasTopLevelComma("/* a /* b */, x */"));
+        assertTrue(hasTopLevelComma("/* a /* b */ c */, x"));
+        assertTrue(hasTopLevelComma("1 -- a, b\r, x"));
+    }
+
+    /**
+     * A comma after a closed comment, dollar quote or quoted identifier is
+     * still top-level.
+     */
+    @Test
+    void returnsTrueForCommaAfterCommentOrDollarQuote() {
+        assertTrue(hasTopLevelComma("$$a$$, x"));
+        assertTrue(hasTopLevelComma("1 /* c */, x"));
+        assertTrue(hasTopLevelComma("1 -- c\n, x"));
+        assertTrue(hasTopLevelComma("\"a\", x"));
+    }
+
+    /**
+     * Escaped quotes inside string literals do not end the literal early.
+     */
+    @Test
+    void handlesEscapedQuotes() {
+        assertFalse(hasTopLevelComma("'a''b,c'"));
+        assertFalse(hasTopLevelComma("E'a\\'b,c'"));
+    }
+
+    /**
+     * An unbalanced group keeps its commas nested (conservative), while a
+     * comma before the group is still top-level. A lone dollar sign (for
+     * example a parameter) is not mistaken for a dollar quote.
+     */
+    @Test
+    void treatsUnbalancedDelimitersConservatively() {
+        assertFalse(hasTopLevelComma("f(a,b"));
+        assertTrue(hasTopLevelComma("x, f(a,b"));
+        assertTrue(hasTopLevelComma("$1, x"));
     }
 
     private Boolean hasTopLevelComma(String value) {
