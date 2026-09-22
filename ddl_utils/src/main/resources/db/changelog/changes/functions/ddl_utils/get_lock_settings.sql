@@ -15,14 +15,13 @@ AS
 $$
 BEGIN
     -- Each RETURN QUERY sets FOUND based on whether it returned rows, so the
-    -- chain falls through table -> schema -> database. The projections
-    -- deliberately repeat the accessor lookups: keeping the cascade in one
-    -- routine is clearer than composing three set-returning functions.
+    -- chain falls through table -> schema -> database. The table and schema
+    -- lookups delegate to their accessors so the column projection is defined
+    -- once; the database fallback is kept inline so the final error can still
+    -- name the schema and table.
     RETURN QUERY
         SELECT tls.ddl_lock_timeout, tls.sleep_time, tls.statement_duration
-        FROM ddl_utils.table_lock_settings AS tls
-        WHERE tls.schema_name = i_schema_name
-          AND tls.table_name = i_table_name;
+        FROM ddl_utils.get_table_lock_settings(i_schema_name, i_table_name) AS tls;
 
     IF FOUND THEN
         RETURN;
@@ -30,8 +29,7 @@ BEGIN
 
     RETURN QUERY
         SELECT sls.ddl_lock_timeout, sls.sleep_time, sls.statement_duration
-        FROM ddl_utils.schema_lock_settings AS sls
-        WHERE sls.schema_name = i_schema_name;
+        FROM ddl_utils.get_schema_lock_settings(i_schema_name) AS sls;
 
     IF FOUND THEN
         RETURN;
