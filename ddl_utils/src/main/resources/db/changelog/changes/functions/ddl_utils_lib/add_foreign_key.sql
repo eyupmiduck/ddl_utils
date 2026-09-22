@@ -16,8 +16,8 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_foreign_key(
 AS
 $$
 DECLARE
-    l_columns            text := '';
-    l_referenced_columns text := '';
+    l_columns            text;
+    l_referenced_columns text;
     l_count              integer;
 BEGIN
     l_count := pg_catalog.cardinality(i_column_names);
@@ -29,29 +29,26 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    FOR l_index IN 1..l_count
-        LOOP
-        -- The array domains allow blank elements; reject them here. The trim
-        -- set must stay in step with the ddl_utils.non_null_text domain
-        -- (004-create-domains.sql).
-            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\013') = '' THEN
-                RAISE EXCEPTION 'ddl_utils_lib.add_foreign_key: column name at position % is blank', l_index
-                    USING ERRCODE = '22023';
-            END IF;
-            IF pg_catalog.btrim(i_referenced_column_names[l_index], E' \t\n\r\f\013') = '' THEN
-                RAISE EXCEPTION 'ddl_utils_lib.add_foreign_key: referenced column name at position % is blank', l_index
-                    USING ERRCODE = '22023';
-            END IF;
+    -- The array domains allow blank elements and a non-1 lower bound; reject
+    -- both before building the identifier lists.
+    PERFORM ddl_utils_lib.assert_one_based(
+            i_values => i_column_names,
+            i_context => 'ddl_utils_lib.add_foreign_key');
+    PERFORM ddl_utils_lib.assert_one_based(
+            i_values => i_referenced_column_names,
+            i_context => 'ddl_utils_lib.add_foreign_key');
+    PERFORM ddl_utils_lib.assert_non_blank_elements(
+            i_values => i_column_names,
+            i_context => 'ddl_utils_lib.add_foreign_key',
+            i_label => 'column name');
+    PERFORM ddl_utils_lib.assert_non_blank_elements(
+            i_values => i_referenced_column_names,
+            i_context => 'ddl_utils_lib.add_foreign_key',
+            i_label => 'referenced column name');
 
-            IF l_index > 1 THEN
-                l_columns := l_columns || ', ';
-                l_referenced_columns := l_referenced_columns || ', ';
-            END IF;
-
-            l_columns := l_columns || pg_catalog.format('%I', i_column_names[l_index]);
-            l_referenced_columns := l_referenced_columns
-                || pg_catalog.format('%I', i_referenced_column_names[l_index]);
-        END LOOP;
+    l_columns := ddl_utils_lib.quote_identifiers(i_values => i_column_names);
+    l_referenced_columns := ddl_utils_lib.quote_identifiers(
+            i_values => i_referenced_column_names);
 
     -- NOT VALID makes the constraint metadata-only (no scan of either table);
     -- call validate_constraint separately to enforce it. Referencing a foreign

@@ -78,6 +78,32 @@ REVOKE EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
 GRANT EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
     text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_one_based(
+    anyarray,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_one_based(
+    anyarray,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_non_blank_elements(
+    ddl_utils.non_empty_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_non_blank_elements(
+    ddl_utils.non_empty_text_array,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
+    ddl_utils.non_empty_non_null_text_array,
+    text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
+    ddl_utils.non_empty_non_null_text_array,
+    text
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM public;
 GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO ddl_utils_caller;
 

@@ -12,18 +12,14 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_columns(
 AS
 $$
 DECLARE
-    l_fragment text    := '';
+    l_fragment text;
     l_count    integer := pg_catalog.cardinality(i_column_names);
 BEGIN
     -- The array domain constrains cardinality but not the lower bound, so a
-    -- caller could pass '[0:1]={a,b}'. The loop below is 1-based, so reject any
-    -- array that does not start at 1 rather than skipping element 0 and reading
-    -- NULL out of range.
-    IF pg_catalog.array_lower(i_column_names, 1) <> 1 THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.drop_columns: column names must be a 1-based array'
-            USING ERRCODE = '22023';
-    END IF;
+    -- caller could pass '[0:1]={a,b}'; reject any array that does not start at 1.
+    PERFORM ddl_utils_lib.assert_one_based(
+            i_values => i_column_names,
+            i_context => 'ddl_utils_lib.drop_columns');
 
     -- Duplicates would emit the same DROP COLUMN twice and fail with a raw
     -- 42703 from PostgreSQL; reject them with this function's own error.
@@ -34,26 +30,17 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    FOR l_index IN 1..l_count
-        LOOP
-        -- The array domain allows blank elements; reject them here so a
-        -- blank name cannot produce an empty identifier. The trim set must
-        -- stay in step with the ddl_utils.non_null_text domain
-        -- (004-create-domains.sql), which scalar names are checked against.
-            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\013') = '' THEN
-                RAISE EXCEPTION 'ddl_utils_lib.drop_columns: column name at position % is blank', l_index
-                    USING ERRCODE = '22023';
-            END IF;
+    -- A blank name cannot produce a valid identifier.
+    PERFORM ddl_utils_lib.assert_non_blank_elements(
+            i_values => i_column_names,
+            i_context => 'ddl_utils_lib.drop_columns',
+            i_label => 'column name');
 
-            IF l_index > 1 THEN
-                l_fragment := l_fragment || ', ';
-            END IF;
-
-            -- The column names are identifiers, so they are quoted with %I and
-            -- the fragment contains no caller-supplied SQL.
-            l_fragment :=
-                    l_fragment || pg_catalog.format('DROP COLUMN %I', i_column_names[l_index]);
-        END LOOP;
+    -- The column names are identifiers, quoted with %I; the fragment contains
+    -- no caller-supplied SQL.
+    l_fragment := ddl_utils_lib.quote_identifiers(
+            i_values => i_column_names,
+            i_prefix => 'DROP COLUMN ');
 
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,

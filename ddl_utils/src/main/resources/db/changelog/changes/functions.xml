@@ -123,6 +123,31 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="function-ddl_utils_lib.assert_one_based" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/assert_one_based.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/assert_one_based-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.assert_non_blank_elements" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/assert_non_blank_elements.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/assert_non_blank_elements-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.quote_identifiers" author="ddl_utils" dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/quote_identifiers.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/quote_identifiers-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="function-ddl_utils_lib.add_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
