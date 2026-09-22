@@ -33,22 +33,25 @@ The template every procedure follows:
 
 ```sql
 DECLARE
-    l_lock integer;
-l_sleep integer;
-l_dur integer;
+    l_settings ddl_utils.lock_settings;
 BEGIN
     -- Read the settings once for the whole call.
-SELECT ddl_lock_timeout, sleep_time, statement_duration
-INTO l_lock, l_sleep, l_dur
-FROM ddl_utils.get_lock_settings(i_schema_name, i_table_name);
+    SELECT *
+    INTO l_settings
+    FROM ddl_utils.get_lock_settings(
+            i_schema_name => i_schema_name,
+            i_table_name => i_table_name);
 
--- Step: skip when the catalog shows the work is already done.
-IF <step not yet done> THEN
-PERFORM ddl_utils_lib.<helper>(..., l_lock, l_sleep, l_dur);
-COMMIT; -- release the lock before the next step
-END IF;
+    -- Step: skip when the catalog shows the work is already done.
+    IF <step not yet done> THEN
+        PERFORM ddl_utils_lib.<helper>(...,
+                i_ddl_lock_timeout => l_settings.ddl_lock_timeout,
+                i_sleep_time => l_settings.sleep_time,
+                i_statement_duration => l_settings.statement_duration);
+        COMMIT; -- release the lock before the next step
+    END IF;
 
--- ... further steps, each its own IF/PERFORM/COMMIT ...
+    -- ... further steps, each its own IF/PERFORM/COMMIT ...
 END;
 ```
 

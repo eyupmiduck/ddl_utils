@@ -12,12 +12,12 @@ CREATE OR REPLACE FUNCTION ddl_utils.add_columns(
 AS
 $$
 DECLARE
-    l_ddl_lock_timeout   integer;
-    l_sleep_time         integer;
-    l_statement_duration integer;
+    l_settings ddl_utils.lock_settings;
 BEGIN
-    SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
-    INTO l_ddl_lock_timeout, l_sleep_time, l_statement_duration
+    -- Lock-aware wrapper: resolves the settings for the table and delegates to
+    -- the generic helper.
+    SELECT *
+    INTO l_settings
     FROM ddl_utils.get_lock_settings(
                  i_schema_name => i_schema_name,
                  i_table_name => i_table_name
@@ -30,9 +30,9 @@ BEGIN
             i_column_types => i_column_types,
             i_default_values => i_default_values,
             i_nullable => i_nullable,
-            i_ddl_lock_timeout => l_ddl_lock_timeout,
-            i_sleep_time => l_sleep_time,
-            i_statement_duration => l_statement_duration
+            i_ddl_lock_timeout => l_settings.ddl_lock_timeout,
+            i_sleep_time => l_settings.sleep_time,
+            i_statement_duration => l_settings.statement_duration
             );
 END;
 $$;

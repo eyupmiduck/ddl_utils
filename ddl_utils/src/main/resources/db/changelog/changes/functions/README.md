@@ -22,7 +22,8 @@ comment targets the right overload.
 
 The three lock settings are `ddl_lock_timeout` (ms before a lock attempt gives
 up), `sleep_time` (ms between retries) and `statement_duration` (ms budget for
-acquiring the lock).
+acquiring the lock). The `ddl_utils.lock_settings` composite type holds the same
+three fields; the lock-aware wrappers read `get_lock_settings` into it.
 
 ## `ddl_utils`
 
