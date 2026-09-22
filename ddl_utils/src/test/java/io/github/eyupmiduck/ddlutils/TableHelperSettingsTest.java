@@ -115,14 +115,4 @@ class TableHelperSettingsTest extends PostgresTestBase {
                 name, PUBLIC_SCHEMA).get(0, Boolean.class);
     }
 
-    private boolean tableExists(String table) {
-        return dsl.fetchOne(
-                """
-                        SELECT EXISTS (
-                            SELECT 1 FROM information_schema.tables
-                            WHERE table_schema = ? AND table_name = ?
-                        )
-                        """,
-                PUBLIC_SCHEMA, table).get(0, Boolean.class);
-    }
 }

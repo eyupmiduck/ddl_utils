@@ -42,23 +42,21 @@ class ProcedureCoverageTest extends PostgresTestBase {
      */
     @Test
     void plpgsqlCheckReportsBrokenProcedure() throws Exception {
-        dsl.execute("""
-                CREATE OR REPLACE PROCEDURE public.broken_procedure_probe()
-                LANGUAGE plpgsql AS $$
-                DECLARE l_x int;
-                BEGIN
-                    SELECT nonexistent_col INTO l_x FROM pg_class;
-                END;
-                $$
-                """);
+        dsl.execute("CREATE OR REPLACE PROCEDURE " + PUBLIC_SCHEMA + ".broken_procedure_probe()"
+                + " LANGUAGE plpgsql AS $$\n"
+                + "DECLARE l_x int;\n"
+                + "BEGIN\n"
+                + "    SELECT nonexistent_col INTO l_x FROM pg_class;\n"
+                + "END;\n"
+                + "$$");
         try (Connection owner = openOwnerConnection()) {
             List<PlpgsqlCheck.Finding> findings =
-                    PlpgsqlCheck.findFindings(owner, List.of("public"));
+                    PlpgsqlCheck.findFindings(owner, List.of(PUBLIC_SCHEMA));
 
             assertFalse(findings.isEmpty(),
                     "plpgsql_check found nothing wrong with a deliberately broken procedure");
         } finally {
-            dsl.execute("DROP PROCEDURE IF EXISTS public.broken_procedure_probe()");
+            dsl.execute("DROP PROCEDURE IF EXISTS " + PUBLIC_SCHEMA + ".broken_procedure_probe()");
         }
     }
 }

@@ -56,17 +56,6 @@ class RenameTableTest extends PostgresTestBase {
         assertDomainViolation(() -> renameTable(TARGET, null));
     }
 
-    private boolean tableExists(String table) {
-        return dsl.fetchOne(
-                """
-                        SELECT EXISTS (
-                            SELECT 1 FROM information_schema.tables
-                            WHERE table_schema = ? AND table_name = ?
-                        )
-                        """,
-                PUBLIC_SCHEMA, table).get(0, Boolean.class);
-    }
-
     private void renameTable(String table, String newName) {
         Routines.renameTable(dsl.configuration(), PUBLIC_SCHEMA, table, newName,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
