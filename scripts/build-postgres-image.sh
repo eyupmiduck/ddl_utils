@@ -27,7 +27,21 @@ case "$base_name" in
         version="latest"
         ;;
 esac
+
+# Docker repository names must be lowercase.
+name="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')"
+
+if [ -z "$name" ] || [ -z "$version" ]; then
+    echo "could not derive a tag from base image: $base" >&2
+    exit 1
+fi
 tag="ddl-utils-${name}:${version}"
 
-docker build -t "$tag" --build-arg BASE_IMAGE="$base" "$repo_root/docker/postgres"
+context="$repo_root/docker/postgres"
+if [ ! -d "$context" ]; then
+    echo "build context not found: $context" >&2
+    exit 1
+fi
+
+docker build -t "$tag" --build-arg BASE_IMAGE="$base" "$context"
 echo "Built $tag"

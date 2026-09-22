@@ -17,6 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DropRenameColumnSettingsTest extends PostgresTestBase {
 
     private static final String TARGET = "drop_rename_column_settings_target";
+    private static final int TABLE_LOCK_TIMEOUT = 100;
+    private static final int TABLE_SLEEP_TIME = 100;
+    private static final int TABLE_STATEMENT_DURATION = 300;
+    private static final long GIVE_UP_MILLIS = 2000;
 
     @BeforeEach
     void createTargetTable() {
@@ -74,9 +78,9 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
+        assertGivesUpWhileTableLocked(TARGET, GIVE_UP_MILLIS,
                 () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
     }
 
@@ -86,9 +90,9 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropColumnsUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
+        assertGivesUpWhileTableLocked(TARGET, GIVE_UP_MILLIS,
                 () -> Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
                         new String[]{"old_name", "keep"}));
     }
@@ -99,9 +103,9 @@ class DropRenameColumnSettingsTest extends PostgresTestBase {
      */
     @Test
     void renameColumnUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
+        assertGivesUpWhileTableLocked(TARGET, GIVE_UP_MILLIS,
                 () -> Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name"));
     }
 }

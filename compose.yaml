@@ -20,8 +20,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Retry once if the driver download or the migration hits a transient
+    # failure; the update itself is idempotent.
+    restart: on-failure
     volumes:
       - ./ddl_utils/src/main/resources/db/changelog:/liquibase/changelog
+    # `lpm add postgresql` downloads the JDBC driver on each run; the dev-only
+    # credentials match the postgres service above.
     command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=ddl_utils_owner --password=ddl_utils_owner --changelog-file=changelog/db.changelog-master.xml update"
 
 volumes:

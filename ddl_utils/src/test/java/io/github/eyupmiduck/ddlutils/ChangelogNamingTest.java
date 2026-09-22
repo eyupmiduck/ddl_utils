@@ -40,6 +40,8 @@ class ChangelogNamingTest {
     void sqlFilesHaveThreeDigitPrefix() throws IOException, URISyntaxException {
         URL changesUrl = getClass().getClassLoader().getResource("db/changelog/changes");
         assertNotNull(changesUrl, "changelog directory must be on the test classpath");
+        // Resolved from the exploded test classes on the file system; the tests
+        // are not run from a packaged jar.
         Path changesRoot = Path.of(changesUrl.toURI());
 
         List<Path> invalid = ChangelogValidator.findInvalidlyNamedSqlFiles(changesRoot);

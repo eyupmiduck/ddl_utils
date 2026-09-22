@@ -32,7 +32,7 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void addsNullableColumnWithoutDefault() {
-        addColumn("note", "text", null, true, 1000, 10, 5000);
+        addColumn("note", "text", true, null, 1000, 10, 5000);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "note"));
         assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
@@ -45,7 +45,7 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void addsColumnWithDefaultExpression() {
-        addColumn("created", "timestamptz", "now()", true, 1000, 10, 5000);
+        addColumn("created", "timestamptz", true, "now()", 1000, 10, 5000);
 
         assertTrue(columnAttribute(PUBLIC_SCHEMA, TARGET, "created", "column_default").contains("now()"));
     }
@@ -55,7 +55,7 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void addsNotNullColumnWithDefault() {
-        addColumn("count", "int", "0", false, 1000, 10, 5000);
+        addColumn("count", "int", false, "0", 1000, 10, 5000);
 
         assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "is_nullable"));
         String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "column_default");
@@ -71,7 +71,7 @@ class AddColumnTest extends PostgresTestBase {
     void rejectsNotNullColumnWithoutDefaultOnPopulatedTable() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id) VALUES (1)");
 
-        assertSqlState("23502", () -> addColumn("required", "int", null, false, 1000, 10, 5000));
+        assertSqlState("23502", () -> addColumn("required", "int", false, null, 1000, 10, 5000));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "required"));
     }
@@ -82,7 +82,7 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void rejectsBlankDefault() {
-        assertSqlState("22023", () -> addColumn("note", "text", "   ", true, 100, 100, 1000));
+        assertSqlState("22023", () -> addColumn("note", "text", true, "   ", 100, 100, 1000));
     }
 
     /**
@@ -90,8 +90,8 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void rejectsNullTextArguments() {
-        assertDomainViolation(() -> addColumn(null, "text", null, true, 100, 100, 1000));
-        assertDomainViolation(() -> addColumn("note", null, null, true, 100, 100, 1000));
+        assertDomainViolation(() -> addColumn(null, "text", true, null, 100, 100, 1000));
+        assertDomainViolation(() -> addColumn("note", null, true, null, 100, 100, 1000));
     }
 
     /**
@@ -102,18 +102,19 @@ class AddColumnTest extends PostgresTestBase {
     void rejectsNullAndNegativeArguments() {
         // nullable is null
         assertDomainViolation(() -> addColumn("note", "text", null, null, 100, 100, 1000));
+        // nullable then default, matching ddl_utils_lib.add_column
         // ddl_lock_timeout is null / negative
-        assertDomainViolation(() -> addColumn("note", "text", null, true, null, 100, 1000));
-        assertDomainViolation(() -> addColumn("note", "text", null, true, -1, 100, 1000));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, null, 100, 1000));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, -1, 100, 1000));
         // sleep_time is null / negative
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, null, 1000));
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, -1, 1000));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, 100, null, 1000));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, 100, -1, 1000));
         // statement_duration is null / negative
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, 100, null));
-        assertDomainViolation(() -> addColumn("note", "text", null, true, 100, 100, -1));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, 100, 100, null));
+        assertDomainViolation(() -> addColumn("note", "text", true, null, 100, 100, -1));
     }
 
-    private void addColumn(String column, String type, String defaultValue, Boolean nullable,
+    private void addColumn(String column, String type, Boolean nullable, String defaultValue,
                            Integer lockTimeout, Integer sleepTime, Integer duration) {
         Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, nullable,
                 defaultValue, lockTimeout, sleepTime, duration);

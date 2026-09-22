@@ -14,6 +14,7 @@ on:
 # Matching events share a per-PR group so a new review cancels any stale one.
 # Non-matching comments land in a unique noop group so they are skipped
 # instantly without cancelling a running review.
+# Keep the predicate below in sync with the job's `if:` (and vice versa).
 concurrency:
   group: >-
     ${{
@@ -44,6 +45,7 @@ jobs:
   code-review:
     # Only run for opened PRs and authorized /open-code-review comments; a
     # matching concurrency group alone does not stop non-matching events.
+    # Keep this in sync with concurrency.group above (and vice versa).
     if: >-
       github.event_name == 'pull_request_target'
       || (
