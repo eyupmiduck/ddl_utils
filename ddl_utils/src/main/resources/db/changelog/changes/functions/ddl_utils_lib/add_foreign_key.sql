@@ -34,11 +34,11 @@ BEGIN
         -- The array domains allow blank elements; reject them here. The trim
         -- set must stay in step with the ddl_utils.non_null_text domain
         -- (004-create-domains.sql).
-            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\v') = '' THEN
+            IF pg_catalog.btrim(i_column_names[l_index], E' \t\n\r\f\013') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_foreign_key: column name at position % is blank', l_index
                     USING ERRCODE = '22023';
             END IF;
-            IF pg_catalog.btrim(i_referenced_column_names[l_index], E' \t\n\r\f\v') = '' THEN
+            IF pg_catalog.btrim(i_referenced_column_names[l_index], E' \t\n\r\f\013') = '' THEN
                 RAISE EXCEPTION 'ddl_utils_lib.add_foreign_key: referenced column name at position % is blank', l_index
                     USING ERRCODE = '22023';
             END IF;
