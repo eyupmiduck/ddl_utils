@@ -342,7 +342,10 @@ The Liquibase changelog linter from `liquibase-validation` also runs during
 `verify`: it applies rules that need both the SQL and the changeset attributes
 (for example a statement PostgreSQL forbids in a transaction must be in a
 `runInTransaction="false"` changeset), configured in
-`ddl_utils/.liquibase-linter.yml`; skip it with `-Dskip.liquibase-linter`.
+`ddl_utils/.liquibase-linter.yml`, with accepted findings listed in
+`ddl_utils/.liquibase-linter-whitelist.yml` (an unaccepted finding and a stale
+whitelist entry both fail the build); skip it with
+`-Dskip.liquibase-linter`.
 `PlpgsqlCheckTest` also runs `plpgsql_check` over every routine and fails on any
 finding not accepted in `plpgsql-check-whitelist.yml`, using the shared
 `PlpgsqlCheck` helper from `liquibase-validation`. See

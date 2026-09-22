@@ -206,12 +206,13 @@
                     </execution>
                     <!-- Runs the Liquibase changelog linter (rules that need both
                          the SQL and the changeset attributes, which SQLFluff cannot
-                         see). It reads the changelog directory and the per-module
-                         .liquibase-linter.yml. Runs on the test classpath because
-                         liquibase-validation is a test-scope dependency; the
-                         plugin blocks the CLI's System.exit so a finding fails the
-                         build instead of killing Maven. Skip with
-                         -Dskip.liquibase-linter. -->
+                         see). It reads the changelog directory, the per-module
+                         .liquibase-linter.yml and the accepted findings in
+                         .liquibase-linter-whitelist.yml. Runs on the test
+                         classpath because liquibase-validation is a test-scope
+                         dependency; the plugin blocks the CLI's System.exit so a
+                         finding fails the build instead of killing Maven. Skip
+                         with -Dskip.liquibase-linter. -->
                     <execution>
                         <id>liquibase-linter</id>
                         <phase>verify</phase>
@@ -227,6 +228,8 @@
                                 <argument>${project.basedir}/src/main/resources/db/changelog</argument>
                                 <argument>--config</argument>
                                 <argument>${project.basedir}/.liquibase-linter.yml</argument>
+                                <argument>--whitelist</argument>
+                                <argument>${project.basedir}/.liquibase-linter-whitelist.yml</argument>
                                 <argument>--fail-on</argument>
                                 <argument>error</argument>
                             </arguments>

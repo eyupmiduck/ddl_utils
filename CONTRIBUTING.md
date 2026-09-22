@@ -94,8 +94,10 @@ Rules:
 - The changelog linter (`liquibase-validation`, bead epic `ddl-w8y`) also runs
   during `verify`. It applies rules that combine the SQL with the changeset
   attributes (for example `runInTransaction`), configured in
-  `ddl_utils/.liquibase-linter.yml`; skip it with `-Dskip.liquibase-linter`
-  when iterating.
+  `ddl_utils/.liquibase-linter.yml`; accept known findings in
+  `ddl_utils/.liquibase-linter-whitelist.yml` (an unaccepted finding and a stale
+  whitelist entry both fail the build); skip it with
+  `-Dskip.liquibase-linter` when iterating.
 
 ## Java conventions
 
