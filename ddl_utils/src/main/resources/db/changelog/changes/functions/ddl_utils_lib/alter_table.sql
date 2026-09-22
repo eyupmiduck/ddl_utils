@@ -15,6 +15,8 @@ DECLARE
     l_statement             text;
     l_started_at            timestamptz;
     l_previous_lock_timeout text;
+    l_scrubbed              text;
+    l_next                  text;
 BEGIN
     -- The EXECUTE below is intentionally not sanitised: the fragment is
     -- caller-provided DDL and the function is SECURITY INVOKER (see the guard
@@ -24,15 +26,25 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    -- The fragment is arbitrary DDL, so it cannot be parameterised. Reject
-    -- anything that could terminate the statement or inject a comment; real
-    -- fragments (for example ADD COLUMN x int DEFAULT 'a') contain none of
-    -- these. This is a best-effort guard: the function is SECURITY INVOKER, so
-    -- the caller already holds the privileges the fragment would use.
-    IF i_alter_table_fragment ~ '[;$]'
-        OR i_alter_table_fragment LIKE '%--%'
-        OR i_alter_table_fragment LIKE '%/*%'
-        OR i_alter_table_fragment LIKE '%*/%' THEN
+    -- The fragment is arbitrary DDL, so it cannot be parameterised. Reject a
+    -- statement separator or comment that appears *outside* quoted text, where
+    -- it could terminate the statement or swallow the rest of it. Quoted
+    -- literals (DEFAULT 'a;b') and quoted identifiers ("x--y") are data and
+    -- must pass, so scrub them first. EXECUTE runs a single command, and the
+    -- function is SECURITY INVOKER, so this is a best-effort guard: the caller
+    -- already holds the privileges the fragment would use.
+    l_scrubbed := i_alter_table_fragment;
+    LOOP
+        l_next := pg_catalog.regexp_replace(l_scrubbed, $re$'([^']|'')*'$re$, '', 'g');
+        l_next := pg_catalog.regexp_replace(l_next, $re$"([^"]|"")*"$re$, '', 'g');
+        EXIT WHEN l_next = l_scrubbed;
+        l_scrubbed := l_next;
+    END LOOP;
+
+    IF pg_catalog.strpos(l_scrubbed, ';') > 0
+        OR l_scrubbed LIKE '%--%'
+        OR l_scrubbed LIKE '%/*%'
+        OR l_scrubbed LIKE '%*/%' THEN
         RAISE EXCEPTION 'ddl_utils_lib.alter_table: the alter table fragment contains a statement separator or comment'
             USING ERRCODE = '22023';
     END IF;
