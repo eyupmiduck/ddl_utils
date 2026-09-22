@@ -272,6 +272,46 @@ RETURNS boolean
 parentheses, brackets or a string literal. Used to reject defaults that could
 append DDL clauses.
 
+### `ddl_utils_lib.assert_one_based(i_values, i_context)`
+
+```sql
+i_values  anyarray
+i_context ddl_utils.non_null_text
+RETURNS void
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the array does not start at
+subscript 1; the array domains constrain cardinality but not the lower bound.
+Used by the helpers whose loops assume a 1-based array.
+
+### `ddl_utils_lib.assert_non_blank_elements(i_values, i_context, i_label)`
+
+```sql
+i_values  ddl_utils.non_empty_text_array
+i_context ddl_utils.non_null_text
+i_label   ddl_utils.non_null_text
+RETURNS void
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the array is not 1-based or
+a non-null element is blank (whitespace-only, using the same trim set as the
+`non_null_text` domain). NULL elements are allowed and skipped (a NULL default
+means no `DEFAULT` clause). Used to validate the array arguments of
+`add_columns`, `add_foreign_key` and `drop_columns`.
+
+### `ddl_utils_lib.quote_identifiers(i_values [, i_prefix])`
+
+```sql
+i_values ddl_utils.non_empty_non_null_text_array
+i_prefix text DEFAULT ''
+RETURNS text
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Joins the identifiers into a comma-separated
+list, each quoted with `%I` and optionally prefixed with a literal SQL clause
+(for example `'DROP COLUMN '`). Used to build the identifier lists in
+`add_foreign_key` and `drop_columns`.
+
 ###
 
 `ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
