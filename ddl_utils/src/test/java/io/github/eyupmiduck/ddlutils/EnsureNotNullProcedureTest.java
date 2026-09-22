@@ -156,6 +156,15 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
                 "INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)"));
     }
 
+    /**
+     * An unknown column is rejected with undefined_column; the procedure never
+     * silently succeeds with a NULL state flag.
+     */
+    @Test
+    void rejectsUnknownColumn() {
+        assertSqlState("42703", () -> callEnsureNotNull("missing"));
+    }
+
     private void callEnsureNotNull() {
         callEnsureNotNull("note");
     }
