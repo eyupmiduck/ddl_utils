@@ -64,6 +64,52 @@ class HasTopLevelCommaTest extends PostgresTestBase {
         assertFalse(hasTopLevelComma(null));
     }
 
+    /**
+     * Commas inside comments, dollar-quoted literals and quoted identifiers are
+     * opaque text, not separators.
+     */
+    @Test
+    void returnsFalseForCommasInsideCommentsDollarQuotesAndIdentifiers() {
+        assertFalse(hasTopLevelComma("$$a,b$$"));
+        assertFalse(hasTopLevelComma("$q$a,b$q$"));
+        assertFalse(hasTopLevelComma("\"a,b\""));
+        assertFalse(hasTopLevelComma("coalesce(1, 2) /* a, b */"));
+        assertFalse(hasTopLevelComma("1 -- a, b\n"));
+    }
+
+    /**
+     * A comma after a closed comment, dollar quote or quoted identifier is
+     * still top-level.
+     */
+    @Test
+    void returnsTrueForCommaAfterCommentOrDollarQuote() {
+        assertTrue(hasTopLevelComma("$$a$$, x"));
+        assertTrue(hasTopLevelComma("1 /* c */, x"));
+        assertTrue(hasTopLevelComma("1 -- c\n, x"));
+        assertTrue(hasTopLevelComma("\"a\", x"));
+    }
+
+    /**
+     * Escaped quotes inside string literals do not end the literal early.
+     */
+    @Test
+    void handlesEscapedQuotes() {
+        assertFalse(hasTopLevelComma("'a''b,c'"));
+        assertFalse(hasTopLevelComma("E'a\\'b,c'"));
+    }
+
+    /**
+     * An unbalanced group keeps its commas nested (conservative), while a
+     * comma before the group is still top-level. A lone dollar sign (for
+     * example a parameter) is not mistaken for a dollar quote.
+     */
+    @Test
+    void treatsUnbalancedDelimitersConservatively() {
+        assertFalse(hasTopLevelComma("f(a,b"));
+        assertTrue(hasTopLevelComma("x, f(a,b"));
+        assertTrue(hasTopLevelComma("$1, x"));
+    }
+
     private Boolean hasTopLevelComma(String value) {
         return dsl.fetchOne("SELECT ddl_utils_lib.has_top_level_comma(?)", (Object) value)
                 .get(0, Boolean.class);
