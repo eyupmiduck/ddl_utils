@@ -10,10 +10,14 @@
 pgVersion: '17'
 
 # Opt-in rules this module runs. They are off unless listed here.
+# changeset-rollback-parity is deliberately not enabled: its statement-count
+# heuristic warns on legitimate many-to-few inversions (for example the
+# grant-privileges changeset), so it would be noise here.
 include:
   - changeset-prefer-single-statement
   - require-concurrent-index-creation
   - require-concurrent-index-deletion
+  - changeset-rollback-required
 
 # A finding is accepted by listing its rule under `exclude`, or by downgrading
 # it under `rules`. The verify gate fails on `error` findings (see the
