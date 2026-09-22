@@ -13,11 +13,14 @@ pgVersion: '17'
 # changeset-rollback-parity is deliberately not enabled: its statement-count
 # heuristic warns on legitimate many-to-few inversions (for example the
 # grant-privileges changeset), so it would be noise here.
+# routine-dynamic-sql is informational (ddl_utils_lib.alter_table builds SQL
+# dynamically); it does not fail the gate, which is --fail-on error.
 include:
   - changeset-prefer-single-statement
   - require-concurrent-index-creation
   - require-concurrent-index-deletion
   - changeset-rollback-required
+  - routine-dynamic-sql
 
 # A finding is accepted by listing its rule under `exclude`, or by downgrading
 # it under `rules`. The verify gate fails on `error` findings (see the
