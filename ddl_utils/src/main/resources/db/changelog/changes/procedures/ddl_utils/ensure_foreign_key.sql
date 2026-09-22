@@ -12,10 +12,11 @@ CREATE OR REPLACE PROCEDURE ddl_utils.ensure_foreign_key(
 AS
 $$
 DECLARE
-    l_lock_timeout       integer;
-    l_sleep_time         integer;
-    l_statement_duration integer;
-    l_relation           regclass;
+    l_lock_timeout        integer;
+    l_sleep_time          integer;
+    l_statement_duration  integer;
+    l_relation            regclass;
+    l_referenced_relation regclass;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
@@ -26,6 +27,43 @@ BEGIN
          ) AS ls;
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
+
+    l_referenced_relation := pg_catalog.to_regclass(
+            pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
+    IF l_referenced_relation IS NULL THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: referenced table %.% does not exist',
+            i_referenced_schema_name, i_referenced_table_name
+            USING ERRCODE = '42P01';
+    END IF;
+
+    -- A named column that does not resolve must fail loudly. Otherwise the
+    -- pg_attribute join in the definition check silently drops it and reports a
+    -- misleading "already exists with a different definition".
+    IF (SELECT pg_catalog.count(*)
+        FROM pg_catalog.unnest(i_column_names) AS t(name)
+                 JOIN pg_catalog.pg_attribute AS a
+                      ON a.attrelid = l_relation
+                          AND a.attname = t.name
+                          AND a.attnum > 0
+                          AND NOT a.attisdropped)
+        <> pg_catalog.cardinality(i_column_names) THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: a column of %.% does not exist',
+            i_schema_name, i_table_name
+            USING ERRCODE = '42703';
+    END IF;
+
+    IF (SELECT pg_catalog.count(*)
+        FROM pg_catalog.unnest(i_referenced_column_names) AS t(name)
+                 JOIN pg_catalog.pg_attribute AS a
+                      ON a.attrelid = l_referenced_relation
+                          AND a.attname = t.name
+                          AND a.attnum > 0
+                          AND NOT a.attisdropped)
+        <> pg_catalog.cardinality(i_referenced_column_names) THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: a column of %.% does not exist',
+            i_referenced_schema_name, i_referenced_table_name
+            USING ERRCODE = '42703';
+    END IF;
 
     -- A foreign key can be compared exactly, so a same-named key that references
     -- different columns or a different table is a mismatch rather than the
