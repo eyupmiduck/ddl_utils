@@ -230,6 +230,21 @@ class AddColumnsTest extends PostgresTestBase {
     }
 
     /**
+     * Rejects arrays that do not start at index 1 with an invalid-parameter
+     * error (the fragment builder is 1-based), leaving the table unchanged.
+     */
+    @Test
+    void rejectsNonOneBasedArrays() {
+        assertSqlState("22023", () -> dsl.execute(
+                "SELECT ddl_utils_lib.add_columns(?, ?, '[0:1]={first,second}'::text[], "
+                        + "ARRAY['int', 'text'], ARRAY[NULL::text, NULL::text], ARRAY[true, true], ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
+    }
+
+    /**
      * Rejects a null element in the non-null column name, type, and nullable
      * arrays through the array domains before the body runs.
      */

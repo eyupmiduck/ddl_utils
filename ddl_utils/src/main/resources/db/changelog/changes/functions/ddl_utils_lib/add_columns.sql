@@ -31,6 +31,18 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- The array domains constrain cardinality but not the lower bound, so a
+    -- caller could pass '[0:1]={a,b}'. The loop below is 1-based, so reject any
+    -- array that does not start at 1 rather than reading NULL out of range.
+    IF pg_catalog.array_lower(i_column_names, 1) <> 1
+        OR pg_catalog.array_lower(i_column_types, 1) <> 1
+        OR pg_catalog.array_lower(i_default_values, 1) <> 1
+        OR pg_catalog.array_lower(i_nullable, 1) <> 1 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_columns: column arrays must be 1-based'
+            USING ERRCODE = '22023';
+    END IF;
+
     FOR l_index IN 1..l_count
         LOOP
         -- The array domains allow blank elements; reject them here so a blank
