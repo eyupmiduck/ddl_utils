@@ -47,15 +47,6 @@
         </rollback>
     </changeSet>
 
-    <!-- Fixes the non_null_text trim set: the original E'\v' escape was the
-         literal letter 'v', not vertical tab. -->
-    <changeSet id="006-fix-non-null-text-trim" author="ddl_utils" dbms="postgresql">
-        <sqlFile path="sql_changes/006-fix-non-null-text-trim.sql" relativeToChangelogFile="true"/>
-        <rollback>
-            <sqlFile path="rollback/006-fix-non-null-text-trim-rollback.sql" relativeToChangelogFile="true"/>
-        </rollback>
-    </changeSet>
-
     <!-- A single, re-runnable changeset for all caller grants. runOnChange
          makes Liquibase re-apply it whenever this SQL changes, so new grants
          reach existing databases. Keep the statements idempotent. -->
