@@ -32,17 +32,9 @@ BEGIN
     END IF;
 
     -- The array domains constrain cardinality but not the lower bound, so a
-    -- caller could pass '[0:1]={a,b}'; reject any array that does not start at 1
-    -- before the 1-based loop below reads it.
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_column_names,
-            i_context => 'ddl_utils_lib.add_columns');
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_column_types,
-            i_context => 'ddl_utils_lib.add_columns');
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_default_values,
-            i_context => 'ddl_utils_lib.add_columns');
+    -- caller could pass '[0:1]={a,b}'; the nullable flag is not passed to
+    -- assert_non_blank_elements, so reject it here. That helper enforces the
+    -- 1-based precondition for the other three arrays.
     PERFORM ddl_utils_lib.assert_one_based(
             i_values => i_nullable,
             i_context => 'ddl_utils_lib.add_columns');

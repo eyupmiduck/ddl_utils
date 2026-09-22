@@ -293,11 +293,11 @@ i_label   ddl_utils.non_null_text
 RETURNS void
 ```
 
-`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when a non-null element is blank
-(whitespace-only, using the same trim set as the `non_null_text` domain). NULL
-elements are allowed and skipped (a NULL default means no `DEFAULT` clause).
-Used to validate the array arguments of `add_columns`, `add_foreign_key` and
-`drop_columns`.
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the array is not 1-based or
+a non-null element is blank (whitespace-only, using the same trim set as the
+`non_null_text` domain). NULL elements are allowed and skipped (a NULL default
+means no `DEFAULT` clause). Used to validate the array arguments of
+`add_columns`, `add_foreign_key` and `drop_columns`.
 
 ### `ddl_utils_lib.quote_identifiers(i_values [, i_prefix])`
 

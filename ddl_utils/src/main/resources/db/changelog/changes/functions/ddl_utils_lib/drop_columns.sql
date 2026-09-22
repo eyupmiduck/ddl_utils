@@ -15,12 +15,6 @@ DECLARE
     l_fragment text;
     l_count    integer := pg_catalog.cardinality(i_column_names);
 BEGIN
-    -- The array domain constrains cardinality but not the lower bound, so a
-    -- caller could pass '[0:1]={a,b}'; reject any array that does not start at 1.
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_column_names,
-            i_context => 'ddl_utils_lib.drop_columns');
-
     -- Duplicates would emit the same DROP COLUMN twice and fail with a raw
     -- 42703 from PostgreSQL; reject them with this function's own error.
     IF l_count <> (SELECT pg_catalog.count(DISTINCT name)
@@ -30,7 +24,8 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    -- A blank name cannot produce a valid identifier.
+    -- A blank name cannot produce a valid identifier; the helper also enforces
+    -- the 1-based precondition.
     PERFORM ddl_utils_lib.assert_non_blank_elements(
             i_values => i_column_names,
             i_context => 'ddl_utils_lib.drop_columns',

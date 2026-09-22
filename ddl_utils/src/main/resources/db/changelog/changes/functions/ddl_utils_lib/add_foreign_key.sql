@@ -29,14 +29,8 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
-    -- The array domains allow blank elements and a non-1 lower bound; reject
-    -- both before building the identifier lists.
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_column_names,
-            i_context => 'ddl_utils_lib.add_foreign_key');
-    PERFORM ddl_utils_lib.assert_one_based(
-            i_values => i_referenced_column_names,
-            i_context => 'ddl_utils_lib.add_foreign_key');
+    -- The array domains allow blank elements and a non-1 lower bound;
+    -- assert_non_blank_elements rejects both before the identifier lists.
     PERFORM ddl_utils_lib.assert_non_blank_elements(
             i_values => i_column_names,
             i_context => 'ddl_utils_lib.add_foreign_key',

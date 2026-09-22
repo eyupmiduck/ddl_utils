@@ -10,6 +10,12 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.assert_non_blank_elements(
 AS
 $$
 BEGIN
+    -- The loop below assumes subscript 1; enforce it here so a non-1-based
+    -- array cannot skip element 0 or report a misleading position.
+    PERFORM ddl_utils_lib.assert_one_based(
+            i_values => i_values,
+            i_context => i_context);
+
     -- The array domains allow blank elements; reject them so a blank name, type
     -- or default cannot produce an empty identifier or malformed SQL. The trim
     -- set must stay in step with the ddl_utils.non_null_text domain
@@ -28,4 +34,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.assert_non_blank_elements IS
-    'Raises 22023 when a text array has a blank element (NULL elements are skipped).';
+    'Raises 22023 when a text array is not 1-based or has a blank element '
+        '(NULL elements are skipped).';
