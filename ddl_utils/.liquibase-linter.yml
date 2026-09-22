@@ -9,6 +9,11 @@
 # the parent POM.
 pgVersion: '17'
 
+# Opt-in rules this module runs. They are off unless listed here.
+include:
+  - changeset-prefer-single-statement
+
 # A finding is accepted by listing its rule under `exclude`, or by downgrading
-# it under `rules` (for example `changeset-single-statement: warning`). There
-# are no accepted findings yet, so everything a rule reports fails the build.
+# it under `rules`. The verify gate fails on `error` findings (see the
+# --fail-on argument in pom.xml), so an included warning rule is reported but
+# does not by itself fail the build.
