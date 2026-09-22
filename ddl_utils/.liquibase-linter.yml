@@ -1,0 +1,14 @@
+# Configuration for the Liquibase changelog linter (bead ddl-w8y.19).
+#
+# The linter runs during `verify` via the `liquibase-linter` execution in
+# pom.xml; this file is passed with --config. See the linter epic ddl-w8y for
+# the rule model, and the liquibase-validation README for every key.
+
+# PostgreSQL major version used by version-gated rules (for example
+# ALTER TYPE ... ADD VALUE). Keep in step with the postgres.version property in
+# the parent POM.
+pgVersion: '17'
+
+# A finding is accepted by listing its rule under `exclude`, or by downgrading
+# it under `rules` (for example `changeset-single-statement: warning`). There
+# are no accepted findings yet, so everything a rule reports fails the build.
