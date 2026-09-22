@@ -25,12 +25,5 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION ddl_utils_lib.rename_table(
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_null_text,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer,
-    ddl_utils.non_negative_integer
-    ) IS
+COMMENT ON FUNCTION ddl_utils_lib.rename_table IS
     'Renames a table, taking the lock settings explicitly.';
