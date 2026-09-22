@@ -69,6 +69,8 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - One test: `./mvnw -pl ddl_utils -am test -Dtest=TableLockSettingsTest`
 - Lint SQL only: `.venv/bin/sqlfluff lint ddl_utils/src/main/resources/db/changelog`
 - Auto-fix SQL style: `scripts/sqlfluff-fix.sh` (uses the repo's `.venv`)
+- Lint the changelog semantics only (skip SQLFluff): `./mvnw -pl ddl_utils -am verify -Dskip.sqlfluff`
+- Skip the changelog linter only: `./mvnw verify -Dskip.liquibase-linter`
 
 ## Development principles
 
@@ -194,6 +196,13 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - SQLFluff (`.sqlfluff`, dialect `postgres`) lints the changelog `.sql` files
   during `verify` via `exec-maven-plugin`. Requires `sqlfluff` on PATH (use
   the repo's `.venv`); skip with `-Dskip.sqlfluff`.
+- The Liquibase changelog linter (`liquibase-validation`, bead epic `ddl-w8y`)
+  also runs during `verify` over the changelog directory. It applies rules that
+  need both the SQL and the changeset attributes (for example a statement
+  PostgreSQL forbids in a transaction must be in a `runInTransaction="false"`
+  changeset and be that changeset's only statement), which SQLFluff and
+  plpgsql_check cannot see. Configure it in `ddl_utils/.liquibase-linter.yml`;
+  skip with `-Dskip.liquibase-linter`.
 
 ## jOOQ
 

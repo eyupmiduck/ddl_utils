@@ -338,6 +338,11 @@ One module, or a single test:
 SQLFluff lints the changelog `.sql` files during `verify` (create the repo
 `.venv`, or point it at one with
 `-Dsqlfluff.executable=$PWD/.venv/bin/sqlfluff`); skip it with `-Dskip.sqlfluff`.
+The Liquibase changelog linter from `liquibase-validation` also runs during
+`verify`: it applies rules that need both the SQL and the changeset attributes
+(for example a statement PostgreSQL forbids in a transaction must be in a
+`runInTransaction="false"` changeset), configured in
+`ddl_utils/.liquibase-linter.yml`; skip it with `-Dskip.liquibase-linter`.
 `PlpgsqlCheckTest` also runs `plpgsql_check` over every routine and fails on any
 finding not accepted in `plpgsql-check-whitelist.yml`, using the shared
 `PlpgsqlCheck` helper from `liquibase-validation`. See
@@ -437,6 +442,8 @@ ddl_utils is built on and maintained with these open source projects:
 - [plpgsql_check](https://github.com/okbob/plpgsql_check) — statically analyses
   the PL/pgSQL routines.
 - [SQLFluff](https://sqlfluff.com/) — lints the changelog SQL files.
+- [liquibase-validation](https://github.com/eyupmiduck/liquibase_validation) —
+  the changelog linter and the `plpgsql_check`/audit-column test helpers.
 - [CodeQL](https://codeql.github.com/) — static analysis of the Java code in CI.
 - [Dependabot](https://github.com/dependabot) — keeps the Maven and GitHub
   Actions dependencies up to date.

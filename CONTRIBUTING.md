@@ -91,6 +91,11 @@ Rules:
   SQLFluff runs automatically during `verify`; skip it locally with
   `-Dskip.sqlfluff` when iterating, but make sure it passes before you open a
   PR.
+- The changelog linter (`liquibase-validation`, bead epic `ddl-w8y`) also runs
+  during `verify`. It applies rules that combine the SQL with the changeset
+  attributes (for example `runInTransaction`), configured in
+  `ddl_utils/.liquibase-linter.yml`; skip it with `-Dskip.liquibase-linter`
+  when iterating.
 
 ## Java conventions
 
