@@ -17,10 +17,16 @@ if [ ! -d "$sql_dir" ]; then
     exit 1
 fi
 
+if [ ! -f "$repo_root/.sqlfluff" ]; then
+    echo "SQLFluff config not found: $repo_root/.sqlfluff" >&2
+    exit 1
+fi
+
 if [ -x "$repo_root/.venv/bin/sqlfluff" ]; then
     sqlfluff="$repo_root/.venv/bin/sqlfluff"
 elif command -v sqlfluff >/dev/null 2>&1; then
     sqlfluff="sqlfluff"
+    echo "warning: .venv sqlfluff not found; using '$sqlfluff' from PATH" >&2
 else
     echo "sqlfluff not found: create the repo .venv or install sqlfluff on PATH" >&2
     exit 1

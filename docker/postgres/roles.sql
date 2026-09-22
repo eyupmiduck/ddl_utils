@@ -2,6 +2,10 @@
 -- Runs as the container superuser on first init, before Liquibase.
 -- Roles are cluster-wide, so this runs once per container, not per database.
 
+-- Abort on the first error so a failed \connect cannot silently apply the
+-- following grants to the wrong database.
+\set ON_ERROR_STOP on
+
 DO
 $$
     BEGIN

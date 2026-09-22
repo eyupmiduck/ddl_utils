@@ -16,6 +16,8 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    reviewers:
+      - eyupmiduck
     commit-message:
       prefix: deps
     groups:
@@ -27,6 +29,9 @@ updates:
         exclude-patterns:
           - "org.testcontainers:*"
           - "org.jooq:*"
+          # docker-java arrives transitively via Testcontainers; the
+          # docker-java.properties API pin in docker_java_config is deliberate,
+          # so keep its updates out of the bulk group too.
           - "com.github.docker-java:*"
         update-types:
           - minor
@@ -40,6 +45,8 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    reviewers:
+      - eyupmiduck
     commit-message:
       prefix: deps
     groups:
