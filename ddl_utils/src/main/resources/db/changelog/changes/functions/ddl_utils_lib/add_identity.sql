@@ -23,7 +23,9 @@ BEGIN
     END IF;
 
     -- Adding an identity is metadata-only (like SET DEFAULT) and affects future
-    -- rows only.
+    -- rows only. PostgreSQL requires the column to be NOT NULL (it raises 42P16
+    -- otherwise), and the new sequence starts at 1, so adding it to a populated
+    -- column can hand out duplicate values to later inserts.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -40,4 +42,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.add_identity IS
-    'Adds an identity to a column, taking the lock settings explicitly.';
+    'Adds an identity to a column, taking the lock settings explicitly. The '
+        'column must already be NOT NULL; the sequence starts at 1.';

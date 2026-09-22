@@ -9,9 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verifies the lock-aware wrappers {@code ddl_utils.drop_column} and
- * {@code ddl_utils.rename_column}: they resolve the table's lock settings via
- * {@code get_lock_settings} and delegate to the {@code ddl_utils_lib} helpers.
+ * Verifies the lock-aware wrappers {@code ddl_utils.drop_column},
+ * {@code ddl_utils.drop_columns} and {@code ddl_utils.rename_column}: they
+ * resolve the table's lock settings via {@code get_lock_settings} and delegate
+ * to the {@code ddl_utils_lib} helpers.
  */
 class DropRenameColumnSettingsTest extends PostgresTestBase {
 

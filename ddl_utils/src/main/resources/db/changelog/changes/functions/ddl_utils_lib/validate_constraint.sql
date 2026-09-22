@@ -13,10 +13,11 @@ AS
 $$
 BEGIN
     -- This is NOT metadata-only: it scans existing rows to enforce the
-    -- constraint, but runs under SHARE UPDATE EXCLUSIVE so concurrent DML is
-    -- not blocked. Pair it with add_check_constraint/add_foreign_key ... NOT
-    -- VALID to enforce a constraint without holding ACCESS EXCLUSIVE for the
-    -- scan.
+    -- constraint, under SHARE UPDATE EXCLUSIVE on the table (which does not
+    -- block DML there). Validating a FOREIGN KEY also takes SHARE ROW EXCLUSIVE
+    -- on the referenced table, which does block DML on it. Pair it with
+    -- add_check_constraint/add_foreign_key ... NOT VALID to enforce a
+    -- constraint without holding ACCESS EXCLUSIVE for the scan.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -29,4 +30,6 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.validate_constraint IS
-    'Validates a constraint; takes only SHARE UPDATE EXCLUSIVE and never blocks DML.';
+    'Validates a constraint. Takes SHARE UPDATE EXCLUSIVE on the table (does '
+        'not block DML there); validating a foreign key also takes SHARE ROW '
+        'EXCLUSIVE on the referenced table, which does block DML on it.';

@@ -36,4 +36,4 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.drop_identity IS
-    'Lock-aware wrapper: drops a column identity.';
+    'Lock-aware wrapper: drops the identity from a column.';

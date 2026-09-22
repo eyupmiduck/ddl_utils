@@ -88,8 +88,9 @@ class AlterTableTest extends PostgresTestBase {
 
     /**
      * Retries after a lock timeout and succeeds once a competing session
-     * releases its lock. The lock is held before the call and released after
-     * it, so success proves at least one retry happened.
+     * releases its lock. The lock is held when the call starts and released on
+     * a background thread after a delay, so at least one attempt must have timed
+     * out and been retried before the call succeeds.
      */
     @Test
     void retriesUntilTheLockIsAvailable() {

@@ -13,7 +13,9 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.rename_constraint(
 AS
 $$
 BEGIN
-    -- Metadata-only. Both names are identifiers, so they are quoted with %I.
+    -- Metadata-only for the data, but it still requires an ACCESS EXCLUSIVE
+    -- lock on the table (hence the alter_table retry). Both names are
+    -- identifiers, so they are quoted with %I.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
