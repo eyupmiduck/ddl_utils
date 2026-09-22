@@ -15,10 +15,12 @@ DECLARE
     l_pos             integer := 1;
     l_scan            integer;
     l_depth           integer := 0;
+    l_block_depth     integer := 0;
     l_state           text    := 'code';
     l_dollar_tag      text;
     l_char            text;
     l_next            text;
+    l_prev            text;
 BEGIN
     IF i_value IS NULL THEN
         RETURN false;
@@ -35,6 +37,7 @@ BEGIN
     WHILE l_pos <= l_length LOOP
         l_char := pg_catalog.substr(i_value, l_pos, 1);
         l_next := pg_catalog.substr(i_value, l_pos + 1, 1);
+        l_prev := pg_catalog.substr(i_value, l_pos - 1, 1);
 
         IF l_state = 'code' THEN
             IF l_char = '-' AND l_next = '-' THEN
@@ -42,8 +45,13 @@ BEGIN
                 l_pos := l_pos + 2;
             ELSIF l_char = '/' AND l_next = '*' THEN
                 l_state := 'block_comment';
+                l_block_depth := 1;
                 l_pos := l_pos + 2;
-            ELSIF (l_char = 'e' OR l_char = 'E') AND l_next = '''' THEN
+            -- Only treat e/E as the E-string prefix when it does not continue an
+            -- identifier (for example a name ending in e).
+            ELSIF (l_char = 'e' OR l_char = 'E')
+                AND l_next = ''''
+                AND (l_pos = 1 OR pg_catalog.strpos(l_tag_chars, l_prev) = 0) THEN
                 l_state := 'estring';
                 l_pos := l_pos + 2;
             ELSIF l_char = '''' THEN
@@ -114,14 +122,23 @@ BEGIN
                 l_pos := l_pos + 1;
             END IF;
         ELSIF l_state = 'line_comment' THEN
-            IF l_char = chr(10) THEN
+            -- A line comment ends at LF or CR (bare CR is a line ending on some
+            -- platforms and would otherwise swallow the rest of the value).
+            IF l_char = chr(10) OR l_char = chr(13) THEN
                 l_state := 'code';
             END IF;
             l_pos := l_pos + 1;
         ELSIF l_state = 'block_comment' THEN
-            IF l_char = '*' AND l_next = '/' THEN
-                l_state := 'code';
+            -- PostgreSQL block comments nest, so track the depth.
+            IF l_char = '/' AND l_next = '*' THEN
+                l_block_depth := l_block_depth + 1;
                 l_pos := l_pos + 2;
+            ELSIF l_char = '*' AND l_next = '/' THEN
+                l_block_depth := l_block_depth - 1;
+                l_pos := l_pos + 2;
+                IF l_block_depth = 0 THEN
+                    l_state := 'code';
+                END IF;
             ELSE
                 l_pos := l_pos + 1;
             END IF;

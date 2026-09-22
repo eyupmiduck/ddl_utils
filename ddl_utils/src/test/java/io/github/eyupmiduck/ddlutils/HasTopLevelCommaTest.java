@@ -37,6 +37,7 @@ class HasTopLevelCommaTest extends PostgresTestBase {
         assertFalse(hasTopLevelComma("numeric(10,2)"));
         assertFalse(hasTopLevelComma("coalesce(1, 2)"));
         assertFalse(hasTopLevelComma("ARRAY[1,2]"));
+        assertFalse(hasTopLevelComma("{a,b}"));
         assertFalse(hasTopLevelComma("f(g(1,2), 3)"));
     }
 
@@ -75,6 +76,18 @@ class HasTopLevelCommaTest extends PostgresTestBase {
         assertFalse(hasTopLevelComma("\"a,b\""));
         assertFalse(hasTopLevelComma("coalesce(1, 2) /* a, b */"));
         assertFalse(hasTopLevelComma("1 -- a, b\n"));
+    }
+
+    /**
+     * PostgreSQL block comments nest, so a comma inside an outer comment is not
+     * top-level even when an inner comment has already closed. A bare CR also
+     * ends a line comment.
+     */
+    @Test
+    void handlesNestedBlockCommentsAndCarriageReturns() {
+        assertFalse(hasTopLevelComma("/* a /* b */, x */"));
+        assertTrue(hasTopLevelComma("/* a /* b */ c */, x"));
+        assertTrue(hasTopLevelComma("1 -- a, b\r, x"));
     }
 
     /**
