@@ -70,6 +70,19 @@ class DropRenameColumnTest extends PostgresTestBase {
     }
 
     /**
+     * drop_columns rejects duplicate column names with an invalid-parameter
+     * error, leaving the table unchanged.
+     */
+    @Test
+    void dropColumnsRejectsDuplicateNames() {
+        assertSqlState("22023",
+                () -> dropColumns(new String[]{"old_name", "old_name"},
+                        DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+    }
+
+    /**
      * drop_columns rejects a null array and a null element through the array
      * domain.
      */

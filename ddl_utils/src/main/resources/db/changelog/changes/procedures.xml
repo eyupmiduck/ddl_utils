@@ -11,6 +11,12 @@
          body that changed, and each routine carries its own rollback under
          procedures-rollback/<schema>/.
 
+         CREATE OR REPLACE only replaces a procedure with an identical
+         signature: changing a parameter name or type aborts the deploy or
+         silently leaves the old overload behind. When a signature changes, add
+         an explicit DROP PROCEDURE IF EXISTS <old signature>; in that
+         procedure's changeset.
+
          A procedure commits between its ALTER TABLE steps, so a CALL must run
          in autocommit (inside a client transaction block PostgreSQL raises
          "invalid transaction termination"); see procedures/README.md. The

@@ -66,7 +66,7 @@ BEGIN
             BEGIN
                 l_regtype := pg_catalog.to_regtype(i_column_types[l_index]);
             EXCEPTION
-                WHEN OTHERS THEN
+                WHEN syntax_error THEN
                     l_regtype := NULL;
             END;
             IF l_regtype IS NULL THEN

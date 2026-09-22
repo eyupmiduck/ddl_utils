@@ -28,4 +28,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.set_schema_lock_settings IS
-    'Upserts the lock settings for a schema.';
+    'Upserts the lock settings for a schema. The name is stored verbatim, so '
+        'settings may be provisioned before the schema exists.';

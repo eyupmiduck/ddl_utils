@@ -25,6 +25,15 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- Duplicates would emit the same DROP COLUMN twice and fail with a raw
+    -- 42703 from PostgreSQL; reject them with this function's own error.
+    IF l_count <> (SELECT pg_catalog.count(DISTINCT name)
+                   FROM pg_catalog.unnest(i_column_names) AS t(name)) THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.drop_columns: duplicate column names are not allowed'
+            USING ERRCODE = '22023';
+    END IF;
+
     FOR l_index IN 1..l_count
         LOOP
         -- The array domain allows blank elements; reject them here so a
