@@ -66,7 +66,13 @@ BEGIN
         -- (Setting it inside the block would be rolled back with the
         -- subtransaction.) A ddl_lock_timeout of 0 waits with no timeout (and
         -- a sleep_time of 0 busy-waits); the statement budget then cannot
-        -- apply. The loop gives up once the elapsed time reaches the budget.
+        -- apply.
+        --
+        -- i_statement_duration is a retry budget, not a bound on a single
+        -- wait: it is compared after each failed attempt and the loop raises
+        -- 55P03 once the elapsed time reaches it. One attempt can therefore
+        -- block for up to i_ddl_lock_timeout, and a retry can overshoot the
+        -- budget by that plus one i_sleep_time.
         PERFORM pg_catalog.set_config(
                 'lock_timeout',
                 pg_catalog.format('%sms', i_ddl_lock_timeout),
