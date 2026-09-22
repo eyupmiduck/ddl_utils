@@ -15,6 +15,8 @@ DECLARE
     l_base               text;
     l_constraint_name    text;
     l_relation           regclass;
+    l_lock_class         integer;
+    l_lock_key           integer;
 BEGIN
     -- Read the lock settings once; they are reused across every step.
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
@@ -25,6 +27,14 @@ BEGIN
          ) AS ls;
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
+
+    -- A transaction-scoped advisory lock on this table and column serializes
+    -- concurrent runs. The read-then-act guards are separated by COMMIT, so the
+    -- lock is taken again before each step; it is released by that step's
+    -- COMMIT and on error, so a failed run cannot leak it.
+    l_lock_class := pg_catalog.hashtext('ddl_utils.ensure_not_null');
+    l_lock_key := pg_catalog.hashtext(
+            pg_catalog.format('%I.%I.%I', i_schema_name, i_table_name, i_column_name));
 
     -- Fail with a clear error rather than an opaque undefined_column from the
     -- generated CHECK when the column does not exist.
@@ -72,6 +82,7 @@ BEGIN
             USING ERRCODE = '42703';
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS EXCLUSIVE
     -- lock). Skipped when the column is already NOT NULL or the constraint
     -- already exists, which is how a re-run recovers.
@@ -93,6 +104,7 @@ BEGIN
         COMMIT;
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 2: validate the constraint, scanning under SHARE UPDATE EXCLUSIVE.
     -- A NOT VALID constraint with existing NULLs fails here with 23514, leaving
     -- the constraint in place so the caller can fix the data and re-run.
@@ -114,6 +126,7 @@ BEGIN
         COMMIT;
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 3: SET NOT NULL. The valid CHECK lets PostgreSQL skip its own scan.
     IF NOT l_already_not_null THEN
         PERFORM ddl_utils_lib.set_not_null(
@@ -127,6 +140,7 @@ BEGIN
         COMMIT;
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 4: remove the temporary proof constraint.
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint

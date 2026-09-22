@@ -4,6 +4,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,6 +102,39 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + TARGET + " SET value = 1 WHERE value < 0");
         callEnsureCheckConstraint("positive", "value > 0");
+
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+    }
+
+    /**
+     * Two concurrent calls for the same constraint are serialized by the
+     * procedure's transaction-scoped advisory lock, so both succeed instead of
+     * one failing with duplicate_object.
+     */
+    @Test
+    void concurrentCallsAreSerialized() throws Exception {
+        int callers = 2;
+        CyclicBarrier barrier = new CyclicBarrier(callers);
+        ExecutorService pool = Executors.newFixedThreadPool(callers);
+        try {
+            List<Future<Void>> futures = new ArrayList<>();
+            for (int i = 0; i < callers; i++) {
+                futures.add(pool.submit(() -> {
+                    barrier.await(10, TimeUnit.SECONDS);
+                    try (Connection connection = openTestConnection();
+                         var statement = connection.createStatement()) {
+                        statement.execute("CALL ddl_utils.ensure_check_constraint('"
+                                + PUBLIC_SCHEMA + "', '" + TARGET + "', 'positive', 'value > 0')");
+                    }
+                    return null;
+                }));
+            }
+            for (Future<Void> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
 
         assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
     }
