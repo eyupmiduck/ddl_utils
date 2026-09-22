@@ -3,8 +3,8 @@
 #
 # Usage: scripts/start-local-db.sh
 #
-# This only starts the containers and waits for the database to be healthy; it
-# does not apply the Liquibase changelog (the compose `liquibase` service does).
+# This starts the PostgreSQL container plus the one-shot `liquibase` service
+# that applies the changelog, and waits for the services to be healthy.
 
 set -eu
 
