@@ -204,7 +204,9 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   plpgsql_check cannot see. Configure it in `ddl_utils/.liquibase-linter.yml`;
   accept known findings in `ddl_utils/.liquibase-linter-whitelist.yml`
   (fail-closed: an unaccepted finding and a stale whitelist entry both fail the
-  build); skip with `-Dskip.liquibase-linter`.
+  build); skip with `-Dskip.liquibase-linter`. A separate `Changelog linter`
+  workflow uploads the same run as SARIF to GitHub code scanning; `verify`
+  remains the gate.
 
 ## jOOQ
 
