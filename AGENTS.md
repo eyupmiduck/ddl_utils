@@ -202,7 +202,9 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   PostgreSQL forbids in a transaction must be in a `runInTransaction="false"`
   changeset and be that changeset's only statement), which SQLFluff and
   plpgsql_check cannot see. Configure it in `ddl_utils/.liquibase-linter.yml`;
-  skip with `-Dskip.liquibase-linter`.
+  accept known findings in `ddl_utils/.liquibase-linter-whitelist.yml`
+  (fail-closed: an unaccepted finding and a stale whitelist entry both fail the
+  build); skip with `-Dskip.liquibase-linter`.
 
 ## jOOQ
 

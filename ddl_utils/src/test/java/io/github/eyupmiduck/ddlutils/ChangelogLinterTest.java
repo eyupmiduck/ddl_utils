@@ -3,15 +3,18 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.changelogvalidator.linter.Finding;
 import io.github.eyupmiduck.changelogvalidator.linter.Linter;
 import io.github.eyupmiduck.changelogvalidator.linter.config.LinterConfig;
+import io.github.eyupmiduck.changelogvalidator.linter.config.Whitelist;
 import io.github.eyupmiduck.changelogvalidator.linter.model.ChangeSet;
 import io.github.eyupmiduck.changelogvalidator.linter.model.ChangelogModel;
 import io.github.eyupmiduck.changelogvalidator.linter.model.SqlSource;
 import io.github.eyupmiduck.changelogvalidator.linter.rules.Rules;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +64,58 @@ class ChangelogLinterTest {
      */
     @Test
     void transactionForbiddenStatementInATransactionalChangesetFails() throws IOException {
+        Linter linter = new Linter(Rules.all(17), LinterConfig.defaults());
+        List<Finding> findings = linter.lint(List.of(deliberatelyBadChangeSet()));
+
+        assertEquals(
+                List.of("changeset-run-in-transaction-required"),
+                findings.stream().map(Finding::ruleId).toList());
+        assertTrue(linter.fails(findings), "an error finding must fail the run");
+    }
+
+    /**
+     * A finding accepted by a whitelist entry is suppressed, so an intentional
+     * violation can be carried without failing the gate.
+     */
+    @Test
+    void whitelistedFindingPasses() throws IOException {
+        Linter linter = new Linter(Rules.all(17), LinterConfig.defaults());
+        List<Finding> findings = linter.lint(List.of(deliberatelyBadChangeSet()));
+
+        Whitelist.Report report = whitelist("""
+                - rule: changeset-run-in-transaction-required
+                  changeset: 999-deliberate
+                  statement: CREATE INDEX CONCURRENTLY
+                  reason: deliberate change in a test
+                """).apply(findings);
+
+        assertTrue(report.isEmpty(), () -> "unexpected report: " + report);
+    }
+
+    /**
+     * A whitelist entry that matches no finding is stale and fails the run, so
+     * the whitelist cannot rot.
+     */
+    @Test
+    void staleWhitelistEntryIsReported() throws IOException {
+        Linter linter = new Linter(Rules.all(17), LinterConfig.defaults());
+        List<Finding> findings = linter.lint(List.of(deliberatelyBadChangeSet()));
+
+        Whitelist.Report report = whitelist("""
+                - rule: changeset-run-in-transaction-required
+                  changeset: 999-gone
+                  reason: the changeset was removed
+                """).apply(findings);
+
+        assertEquals(1, report.unmatched().size(), "the real finding is not accepted");
+        assertEquals(1, report.stale().size(), "the entry matches nothing and is stale");
+    }
+
+    private static Whitelist whitelist(String yaml) throws IOException {
+        return Whitelist.load(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static ChangeSet deliberatelyBadChangeSet() {
         SqlSource forward = new SqlSource(
                 SqlSource.Kind.INLINE_SQL,
                 null,
@@ -69,7 +124,7 @@ class ChangelogLinterTest {
                 ";",
                 false,
                 null);
-        ChangeSet changeSet = new ChangeSet(
+        return new ChangeSet(
                 "999-deliberate",
                 "test",
                 Path.of("deliberate-changelog.xml"),
@@ -81,13 +136,5 @@ class ChangelogLinterTest {
                 List.of(forward),
                 false,
                 List.of());
-
-        Linter linter = new Linter(Rules.all(17), LinterConfig.defaults());
-        List<Finding> findings = linter.lint(List.of(changeSet));
-
-        assertEquals(
-                List.of("changeset-run-in-transaction-required"),
-                findings.stream().map(Finding::ruleId).toList());
-        assertTrue(linter.fails(findings), "an error finding must fail the run");
     }
 }
