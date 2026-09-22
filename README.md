@@ -345,7 +345,9 @@ The Liquibase changelog linter from `liquibase-validation` also runs during
 `ddl_utils/.liquibase-linter.yml`, with accepted findings listed in
 `ddl_utils/.liquibase-linter-whitelist.yml` (an unaccepted finding and a stale
 whitelist entry both fail the build); skip it with
-`-Dskip.liquibase-linter`.
+`-Dskip.liquibase-linter`. The `Changelog linter` CI workflow additionally
+uploads the linter's SARIF output to GitHub code scanning, so findings show
+inline on pull requests.
 `PlpgsqlCheckTest` also runs `plpgsql_check` over every routine and fails on any
 finding not accepted in `plpgsql-check-whitelist.yml`, using the shared
 `PlpgsqlCheck` helper from `liquibase-validation`. See
