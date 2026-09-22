@@ -107,7 +107,8 @@ BEGIN
                         i_column_names[l_index]
                         USING ERRCODE = '22023';
                 END IF;
-                l_fragment := l_fragment || pg_catalog.format(' DEFAULT %s', i_default_values[l_index]);
+                l_fragment :=
+                        l_fragment || pg_catalog.format(' DEFAULT %s', i_default_values[l_index]);
             END IF;
 
             IF NOT i_nullable[l_index] THEN

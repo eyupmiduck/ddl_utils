@@ -59,8 +59,11 @@ BEGIN
             '[^A-Za-z0-9_]', '_', 'g');
     l_constraint_name := pg_catalog.left(l_base, 45)
                              || '_' || pg_catalog.substr(pg_catalog.md5(
-                                                                 pg_catalog.format('%s.%s.%s', i_schema_name,
-                                                                                   i_table_name, i_column_name)), 1, 8);
+                                                                 pg_catalog.format('%s.%s.%s',
+                                                                                   i_schema_name,
+                                                                                   i_table_name,
+                                                                                   i_column_name)),
+                                                         1, 8);
 
     -- An already-NOT-NULL column needs no proof, so skip the add/validate/set
     -- steps and do not take a fresh ACCESS EXCLUSIVE lock or re-scan the table.

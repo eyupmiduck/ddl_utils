@@ -18,7 +18,8 @@ BEGIN
     -- Concurrent upserts for the same schema can block on the primary-key
     -- conflict and can surface a serialization failure at REPEATABLE READ or
     -- SERIALIZABLE; callers that must survive that retry.
-    INSERT INTO ddl_utils.schema_lock_settings (schema_name, ddl_lock_timeout, sleep_time, statement_duration)
+    INSERT INTO ddl_utils.schema_lock_settings (schema_name, ddl_lock_timeout, sleep_time,
+                                                statement_duration)
     VALUES (i_schema_name, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)
     ON CONFLICT (schema_name) DO UPDATE
         SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,

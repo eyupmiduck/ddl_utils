@@ -37,7 +37,7 @@ BEGIN
         <> pg_catalog.cardinality(i_referenced_column_names) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: the referencing and referenced '
-            'column lists must have the same length (columns=%, referenced=%)',
+                'column lists must have the same length (columns=%, referenced=%)',
             pg_catalog.cardinality(i_column_names),
             pg_catalog.cardinality(i_referenced_column_names)
             USING ERRCODE = '22023';
@@ -113,37 +113,37 @@ BEGIN
                           AND c.confmatchtype = 's'
                           AND NOT c.condeferrable
                           AND NOT c.condeferred
-                          AND NOT EXISTS (
-                              WITH stored AS (SELECT sa.attname AS source_name,
-                                                     ra.attname AS referenced_name
-                                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
-                                                       JOIN pg_catalog.pg_attribute AS sa
-                                                           ON sa.attrelid = c.conrelid
-                                                               AND sa.attnum = c.conkey[s.i]
-                                                       JOIN pg_catalog.pg_attribute AS ra
-                                                           ON ra.attrelid = c.confrelid
-                                                               AND ra.attnum = c.confkey[s.i]),
-                                   requested AS (SELECT s.name AS source_name,
-                                                        r.name AS referenced_name
-                                                 FROM pg_catalog.unnest(
-                                                     i_column_names::text[]
-                                                 ) WITH ORDINALITY AS s(name, ord)
-                                                 JOIN pg_catalog.unnest(
-                                                     i_referenced_column_names::text[]
-                                                 ) WITH ORDINALITY AS r(name, ord)
-                                                     ON s.ord = r.ord)
-                              SELECT 1
-                              WHERE EXISTS (SELECT source_name, referenced_name
-                                            FROM requested
-                                            EXCEPT ALL
-                                            SELECT source_name, referenced_name
-                                            FROM stored)
-                                 OR EXISTS (SELECT source_name, referenced_name
-                                            FROM stored
-                                            EXCEPT ALL
-                                            SELECT source_name, referenced_name
-                                            FROM requested)
-                          )) THEN
+                          AND NOT EXISTS (WITH stored AS (SELECT sa.attname AS source_name,
+                                                                 ra.attname AS referenced_name
+                                                          FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
+                                                                   JOIN pg_catalog.pg_attribute AS sa
+                                                                        ON sa.attrelid = c.conrelid
+                                                                            AND
+                                                                           sa.attnum = c.conkey[s.i]
+                                                                   JOIN pg_catalog.pg_attribute AS ra
+                                                                        ON ra.attrelid = c.confrelid
+                                                                            AND ra.attnum =
+                                                                                c.confkey[s.i]),
+                                               requested AS (SELECT s.name AS source_name,
+                                                                    r.name AS referenced_name
+                                                             FROM pg_catalog.unnest(
+                                                                          i_column_names::text[]
+                                                                  ) WITH ORDINALITY AS s(name, ord)
+                                                                      JOIN pg_catalog.unnest(
+                                                                     i_referenced_column_names::text[]
+                                                                           ) WITH ORDINALITY AS r(name, ord)
+                                                                           ON s.ord = r.ord)
+                                          SELECT 1
+                                          WHERE EXISTS (SELECT source_name, referenced_name
+                                                        FROM requested
+                                                        EXCEPT ALL
+                                                        SELECT source_name, referenced_name
+                                                        FROM stored)
+                                             OR EXISTS (SELECT source_name, referenced_name
+                                                        FROM stored
+                                                        EXCEPT ALL
+                                                        SELECT source_name, referenced_name
+                                                        FROM requested))) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: constraint % already exists on %.% with a different definition',
             i_constraint_name, i_schema_name, i_table_name

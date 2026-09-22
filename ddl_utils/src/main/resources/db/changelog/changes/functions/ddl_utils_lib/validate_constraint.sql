@@ -21,7 +21,8 @@ BEGIN
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
-            i_alter_table_fragment => pg_catalog.format('VALIDATE CONSTRAINT %I', i_constraint_name),
+            i_alter_table_fragment => pg_catalog.format('VALIDATE CONSTRAINT %I',
+                                                        i_constraint_name),
             i_ddl_lock_timeout => i_ddl_lock_timeout,
             i_sleep_time => i_sleep_time,
             i_statement_duration => i_statement_duration

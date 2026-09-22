@@ -51,7 +51,8 @@ BEGIN
 
             -- The column names are identifiers, so they are quoted with %I and
             -- the fragment contains no caller-supplied SQL.
-            l_fragment := l_fragment || pg_catalog.format('DROP COLUMN %I', i_column_names[l_index]);
+            l_fragment :=
+                    l_fragment || pg_catalog.format('DROP COLUMN %I', i_column_names[l_index]);
         END LOOP;
 
     PERFORM ddl_utils_lib.alter_table(
