@@ -114,6 +114,47 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
         assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
     }
 
+    /**
+     * An unknown source column is reported as undefined_column even when a
+     * same-named foreign key exists, instead of being dropped from the
+     * definition check and reported as a mismatch.
+     */
+    @Test
+    void rejectsUnknownSourceColumn() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id)");
+
+        assertSqlState("42703", () -> dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "fk_parent", new String[]{"missing"}, PUBLIC_SCHEMA, REFERENCED,
+                new String[]{"id"}));
+    }
+
+    /**
+     * An unknown referenced column is reported as undefined_column even when a
+     * same-named foreign key exists, instead of being reported as a mismatch.
+     */
+    @Test
+    void rejectsUnknownReferencedColumn() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id)");
+
+        assertSqlState("42703", () -> dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "fk_parent", new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED,
+                new String[]{"missing"}));
+    }
+
+    /**
+     * A referenced table that does not exist is rejected with undefined_table.
+     */
+    @Test
+    void rejectsUnknownReferencedTable() {
+        assertSqlState("42P01", () -> dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "fk_parent", new String[]{"parent_id"}, PUBLIC_SCHEMA, "no_such_table",
+                new String[]{"id"}));
+    }
+
     private void callEnsureForeignKey(String name) {
         dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
                 PUBLIC_SCHEMA, TARGET, name,
