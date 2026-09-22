@@ -130,7 +130,7 @@ class ChangelogLinterTest {
                 Path.of("deliberate-changelog.xml"),
                 true,
                 false,
-                null,
+                "postgresql",
                 null,
                 null,
                 List.of(forward),
