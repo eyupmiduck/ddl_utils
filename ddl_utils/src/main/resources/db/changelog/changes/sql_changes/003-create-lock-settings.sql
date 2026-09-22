@@ -22,7 +22,9 @@ COMMENT ON COLUMN ddl_utils.database_lock_settings.ddl_lock_timeout IS
 COMMENT ON COLUMN ddl_utils.database_lock_settings.sleep_time IS
     'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
 COMMENT ON COLUMN ddl_utils.database_lock_settings.statement_duration IS
-    'Total millisecond budget for acquiring the lock.';
+    'Retry budget: after each failed lock attempt, alter_table gives up once '
+        'the elapsed time reaches this value; a single attempt may first wait '
+        'up to ddl_lock_timeout.';
 COMMENT ON COLUMN ddl_utils.database_lock_settings.created_at IS
     'Row creation time.';
 COMMENT ON COLUMN ddl_utils.database_lock_settings.updated_at IS
@@ -54,7 +56,9 @@ COMMENT ON COLUMN ddl_utils.schema_lock_settings.ddl_lock_timeout IS
 COMMENT ON COLUMN ddl_utils.schema_lock_settings.sleep_time IS
     'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
 COMMENT ON COLUMN ddl_utils.schema_lock_settings.statement_duration IS
-    'Total millisecond budget for acquiring the lock.';
+    'Retry budget: after each failed lock attempt, alter_table gives up once '
+        'the elapsed time reaches this value; a single attempt may first wait '
+        'up to ddl_lock_timeout.';
 COMMENT ON COLUMN ddl_utils.schema_lock_settings.created_at IS
     'Row creation time.';
 COMMENT ON COLUMN ddl_utils.schema_lock_settings.updated_at IS
@@ -87,7 +91,9 @@ COMMENT ON COLUMN ddl_utils.table_lock_settings.ddl_lock_timeout IS
 COMMENT ON COLUMN ddl_utils.table_lock_settings.sleep_time IS
     'Milliseconds to sleep between lock acquisition attempts; 0 busy-waits.';
 COMMENT ON COLUMN ddl_utils.table_lock_settings.statement_duration IS
-    'Total millisecond budget for acquiring the lock.';
+    'Retry budget: after each failed lock attempt, alter_table gives up once '
+        'the elapsed time reaches this value; a single attempt may first wait '
+        'up to ddl_lock_timeout.';
 COMMENT ON COLUMN ddl_utils.table_lock_settings.created_at IS
     'Row creation time.';
 COMMENT ON COLUMN ddl_utils.table_lock_settings.updated_at IS
