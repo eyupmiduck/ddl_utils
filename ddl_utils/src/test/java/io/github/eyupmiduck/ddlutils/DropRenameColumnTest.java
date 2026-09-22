@@ -80,6 +80,21 @@ class DropRenameColumnTest extends PostgresTestBase {
     }
 
     /**
+     * drop_columns rejects an array that does not start at index 1 with an
+     * invalid-parameter error (the fragment builder is 1-based), leaving the
+     * table unchanged.
+     */
+    @Test
+    void dropColumnsRejectsNonOneBasedArray() {
+        assertSqlState("22023", () -> dsl.execute(
+                "SELECT ddl_utils_lib.drop_columns(?, ?, '[0:1]={old_name,keep}'::text[], ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "keep"));
+    }
+
+    /**
      * rename_column renames a column without touching the others.
      */
     @Test

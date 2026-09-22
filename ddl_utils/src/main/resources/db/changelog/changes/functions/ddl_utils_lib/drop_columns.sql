@@ -15,6 +15,16 @@ DECLARE
     l_fragment text    := '';
     l_count    integer := pg_catalog.cardinality(i_column_names);
 BEGIN
+    -- The array domain constrains cardinality but not the lower bound, so a
+    -- caller could pass '[0:1]={a,b}'. The loop below is 1-based, so reject any
+    -- array that does not start at 1 rather than skipping element 0 and reading
+    -- NULL out of range.
+    IF pg_catalog.array_lower(i_column_names, 1) <> 1 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.drop_columns: column names must be a 1-based array'
+            USING ERRCODE = '22023';
+    END IF;
+
     FOR l_index IN 1..l_count
         LOOP
         -- The array domain allows blank elements; reject them here so a
