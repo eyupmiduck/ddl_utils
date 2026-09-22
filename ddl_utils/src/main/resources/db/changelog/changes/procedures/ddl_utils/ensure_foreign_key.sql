@@ -28,6 +28,19 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- The definitions are compared as a column mapping, which only makes sense
+    -- for equal-length lists; reject mismatched lengths up front instead of
+    -- silently dropping the surplus when they are zipped.
+    IF pg_catalog.cardinality(i_column_names)
+        <> pg_catalog.cardinality(i_referenced_column_names) THEN
+        RAISE EXCEPTION
+            'ddl_utils.ensure_foreign_key: the referencing and referenced '
+            'column lists must have the same length (columns=%, referenced=%)',
+            pg_catalog.cardinality(i_column_names),
+            pg_catalog.cardinality(i_referenced_column_names)
+            USING ERRCODE = '22023';
+    END IF;
+
     l_referenced_relation := pg_catalog.to_regclass(
             pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
     IF l_referenced_relation IS NULL THEN
@@ -85,43 +98,42 @@ BEGIN
                         WHERE c.conname = i_constraint_name
                           AND c.conrelid = l_relation
                           AND c.contype = 'f'
-                          AND c.confrelid = pg_catalog.format(
-                                '%I.%I', i_referenced_schema_name, i_referenced_table_name)::regclass
+                          AND c.confrelid = l_referenced_relation
                           AND c.confupdtype = 'a'
                           AND c.confdeltype = 'a'
                           AND c.confmatchtype = 's'
                           AND NOT c.condeferrable
                           AND NOT c.condeferred
                           AND NOT EXISTS (
-                              SELECT s.name, r.name
-                              FROM pg_catalog.unnest(i_column_names::text[]) WITH ORDINALITY AS s(name, ord)
-                                       JOIN pg_catalog.unnest(
-                                               i_referenced_column_names::text[]) WITH ORDINALITY AS r(name, ord)
-                                            ON s.ord = r.ord
-                              EXCEPT ALL
-                              SELECT sa.attname, ra.attname
-                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
-                                       JOIN pg_catalog.pg_attribute AS sa
-                                            ON sa.attrelid = c.conrelid
-                                                AND sa.attnum = c.conkey[s.i]
-                                       JOIN pg_catalog.pg_attribute AS ra
-                                            ON ra.attrelid = c.confrelid
-                                                AND ra.attnum = c.confkey[s.i])
-                          AND NOT EXISTS (
-                              SELECT sa.attname, ra.attname
-                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
-                                       JOIN pg_catalog.pg_attribute AS sa
-                                            ON sa.attrelid = c.conrelid
-                                                AND sa.attnum = c.conkey[s.i]
-                                       JOIN pg_catalog.pg_attribute AS ra
-                                            ON ra.attrelid = c.confrelid
-                                                AND ra.attnum = c.confkey[s.i]
-                              EXCEPT ALL
-                              SELECT s.name, r.name
-                              FROM pg_catalog.unnest(i_column_names::text[]) WITH ORDINALITY AS s(name, ord)
-                                       JOIN pg_catalog.unnest(
-                                               i_referenced_column_names::text[]) WITH ORDINALITY AS r(name, ord)
-                                            ON s.ord = r.ord
+                              WITH stored AS (SELECT sa.attname AS source_name,
+                                                     ra.attname AS referenced_name
+                                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
+                                                       JOIN pg_catalog.pg_attribute AS sa
+                                                           ON sa.attrelid = c.conrelid
+                                                               AND sa.attnum = c.conkey[s.i]
+                                                       JOIN pg_catalog.pg_attribute AS ra
+                                                           ON ra.attrelid = c.confrelid
+                                                               AND ra.attnum = c.confkey[s.i]),
+                                   requested AS (SELECT s.name AS source_name,
+                                                        r.name AS referenced_name
+                                                 FROM pg_catalog.unnest(
+                                                     i_column_names::text[]
+                                                 ) WITH ORDINALITY AS s(name, ord)
+                                                 JOIN pg_catalog.unnest(
+                                                     i_referenced_column_names::text[]
+                                                 ) WITH ORDINALITY AS r(name, ord)
+                                                     ON s.ord = r.ord)
+                              SELECT 1
+                              WHERE EXISTS (SELECT source_name, referenced_name
+                                            FROM requested
+                                            EXCEPT ALL
+                                            SELECT source_name, referenced_name
+                                            FROM stored)
+                                 OR EXISTS (SELECT source_name, referenced_name
+                                            FROM stored
+                                            EXCEPT ALL
+                                            SELECT source_name, referenced_name
+                                            FROM requested)
                           )) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: constraint % already exists on %.% with a different definition',

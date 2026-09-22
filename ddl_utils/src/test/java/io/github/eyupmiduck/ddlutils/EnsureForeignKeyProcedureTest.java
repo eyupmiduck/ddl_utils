@@ -92,6 +92,9 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
      * An equivalent foreign key whose columns were declared in a different order
      * than the stored conkey/confkey is recognised as the same definition rather
      * than reported as a mismatch.
+     *
+     * <p>The stored key is asserted to be stored as (confkey = {2,1}) so the test
+     * really exercises the reordering case.
      */
     @Test
     void acceptsSameNamedForeignKeyDeclaredInDifferentColumnOrder() {
@@ -102,11 +105,50 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 + " ADD CONSTRAINT fk_parent FOREIGN KEY (id, parent_id) REFERENCES "
                 + PUBLIC_SCHEMA + "." + REFERENCED + " (code, id)");
 
+        assertEquals("{2,1}", dsl.fetchOne(
+                "SELECT confkey::text FROM pg_constraint WHERE conname = 'fk_parent'"
+                        + " AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)",
+                PUBLIC_SCHEMA).get(0, String.class));
+
         dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
                 PUBLIC_SCHEMA, TARGET, "fk_parent",
                 new String[]{"parent_id", "id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id", "code"});
 
         assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
+    }
+
+    /**
+     * Referencing and referenced column lists of different lengths are rejected
+     * up front rather than silently zipped (which would drop the surplus element
+     * and could accept an under-specified definition).
+     */
+    @Test
+    void rejectsMismatchedColumnListLengths() {
+        assertSqlState("22023", () -> dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "fk_parent", new String[]{"parent_id", "id"},
+                PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+    }
+
+    /**
+     * A same-named foreign key is a mismatch when its match type, update action
+     * or deferrability differs from the PostgreSQL defaults.
+     */
+    @Test
+    void rejectsSameNamedForeignKeyWithDifferentMatchUpdateOrDeferrability() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_match FOREIGN KEY (parent_id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id) MATCH FULL");
+        assertSqlState("42710", () -> callEnsureForeignKey("fk_match"));
+
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_update FOREIGN KEY (parent_id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id) ON UPDATE CASCADE");
+        assertSqlState("42710", () -> callEnsureForeignKey("fk_update"));
+
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+                + " ADD CONSTRAINT fk_defer FOREIGN KEY (parent_id) REFERENCES "
+                + PUBLIC_SCHEMA + "." + REFERENCED + " (id) DEFERRABLE INITIALLY DEFERRED");
+        assertSqlState("42710", () -> callEnsureForeignKey("fk_defer"));
     }
 
     /**
