@@ -12,9 +12,9 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_not_null(
 AS
 $$
 BEGIN
-    -- Dropping NOT NULL is metadata-only. The inverse, SET NOT NULL, scans the
-    -- table unless a valid CHECK proves the column non-null; this helper does
-    -- not attempt that.
+    -- Dropping NOT NULL is metadata-only and performs no table scan; it does
+    -- take an ACCESS EXCLUSIVE lock, which alter_table bounds with its retry
+    -- loop.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,

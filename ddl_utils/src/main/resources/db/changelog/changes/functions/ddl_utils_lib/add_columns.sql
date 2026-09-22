@@ -77,7 +77,10 @@ BEGIN
             END IF;
 
             -- A default is an arbitrary expression (now(), coalesce(a, b), ...), so
-            -- reject only a top-level comma that could append more DDL.
+            -- reject a top-level comma that could append a second ALTER TABLE
+            -- action. This is best-effort: a comma-free suffix such as
+            -- "0 CHECK (false)" still appends a column constraint and is not
+            -- rejected here.
             IF ddl_utils_lib.has_top_level_comma(i_default_values[l_index]) THEN
                 RAISE EXCEPTION
                     'ddl_utils_lib.add_columns: the default for column % contains a top-level comma',

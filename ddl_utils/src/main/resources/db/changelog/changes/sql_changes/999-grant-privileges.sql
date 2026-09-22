@@ -84,6 +84,9 @@ GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO ddl_utils_ca
 -- Trigger functions are invoked by the trigger machinery, not by callers, so
 -- revoke PUBLIC EXECUTE and grant it to no one.
 REVOKE EXECUTE ON FUNCTION ddl_utils.set_updated_at() FROM public;
+
+-- Not a trigger function: a caller-invoked SECURITY DEFINER setter, so it is
+-- revoked from PUBLIC and granted to the caller role below.
 REVOKE EXECUTE ON FUNCTION ddl_utils.set_database_lock_settings(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer,

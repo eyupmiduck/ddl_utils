@@ -1,6 +1,7 @@
 #!/bin/sh
-# Reset the local development database: drop the data volume and re-apply
-# the Liquibase changelog from scratch.
+# Reset the local development database: drop the data volume and bring the stack
+# back up, so the one-shot Liquibase service re-applies the changelog to the
+# fresh volume.
 #
 # Usage: scripts/refresh-local-db.sh
 
