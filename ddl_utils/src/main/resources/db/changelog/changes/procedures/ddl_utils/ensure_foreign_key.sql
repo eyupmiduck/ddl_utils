@@ -66,10 +66,15 @@ BEGIN
     END IF;
 
     -- A foreign key can be compared exactly, so a same-named key that references
-    -- different columns or a different table is a mismatch rather than the
-    -- target. Compare the referenced relation (confrelid) and both ordered
-    -- column lists (conkey/confkey, attnum order); fail loudly on a mismatch so
+    -- a different table, maps different columns, or has different referential
+    -- actions/deferrability is a mismatch rather than the target; fail loudly so
     -- the wrong constraint is never silently accepted.
+    --
+    -- conkey/confkey are not guaranteed to be stored in the caller's declaration
+    -- order (PostgreSQL may align them with the referenced unique index), so
+    -- compare the source/referenced column *mapping* as a multiset of pairs
+    -- rather than as ordered arrays. add_foreign_key creates the key with the
+    -- PostgreSQL defaults (NO ACTION, MATCH SIMPLE, not deferrable).
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
                WHERE conname = i_constraint_name
@@ -82,16 +87,42 @@ BEGIN
                           AND c.contype = 'f'
                           AND c.confrelid = pg_catalog.format(
                                 '%I.%I', i_referenced_schema_name, i_referenced_table_name)::regclass
-                          AND c.conkey = (SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
-                                          FROM pg_catalog.unnest(i_column_names) WITH ORDINALITY AS t(name, ord)
-                                                   JOIN pg_catalog.pg_attribute AS a
-                                                        ON a.attrelid = c.conrelid
-                                                            AND a.attname = t.name)
-                          AND c.confkey = (SELECT pg_catalog.array_agg(a.attnum ORDER BY t.ord)
-                                           FROM pg_catalog.unnest(i_referenced_column_names) WITH ORDINALITY AS t(name, ord)
-                                                    JOIN pg_catalog.pg_attribute AS a
-                                                         ON a.attrelid = c.confrelid
-                                                             AND a.attname = t.name)) THEN
+                          AND c.confupdtype = 'a'
+                          AND c.confdeltype = 'a'
+                          AND c.confmatchtype = 's'
+                          AND NOT c.condeferrable
+                          AND NOT c.condeferred
+                          AND NOT EXISTS (
+                              SELECT s.name, r.name
+                              FROM pg_catalog.unnest(i_column_names::text[]) WITH ORDINALITY AS s(name, ord)
+                                       JOIN pg_catalog.unnest(
+                                               i_referenced_column_names::text[]) WITH ORDINALITY AS r(name, ord)
+                                            ON s.ord = r.ord
+                              EXCEPT ALL
+                              SELECT sa.attname, ra.attname
+                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
+                                       JOIN pg_catalog.pg_attribute AS sa
+                                            ON sa.attrelid = c.conrelid
+                                                AND sa.attnum = c.conkey[s.i]
+                                       JOIN pg_catalog.pg_attribute AS ra
+                                            ON ra.attrelid = c.confrelid
+                                                AND ra.attnum = c.confkey[s.i])
+                          AND NOT EXISTS (
+                              SELECT sa.attname, ra.attname
+                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
+                                       JOIN pg_catalog.pg_attribute AS sa
+                                            ON sa.attrelid = c.conrelid
+                                                AND sa.attnum = c.conkey[s.i]
+                                       JOIN pg_catalog.pg_attribute AS ra
+                                            ON ra.attrelid = c.confrelid
+                                                AND ra.attnum = c.confkey[s.i]
+                              EXCEPT ALL
+                              SELECT s.name, r.name
+                              FROM pg_catalog.unnest(i_column_names::text[]) WITH ORDINALITY AS s(name, ord)
+                                       JOIN pg_catalog.unnest(
+                                               i_referenced_column_names::text[]) WITH ORDINALITY AS r(name, ord)
+                                            ON s.ord = r.ord
+                          )) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: constraint % already exists on %.% with a different definition',
             i_constraint_name, i_schema_name, i_table_name
