@@ -17,6 +17,8 @@ DECLARE
     l_statement_duration  integer;
     l_relation            regclass;
     l_referenced_relation regclass;
+    l_lock_class          integer;
+    l_lock_key            integer;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
@@ -40,6 +42,13 @@ BEGIN
             pg_catalog.cardinality(i_referenced_column_names)
             USING ERRCODE = '22023';
     END IF;
+
+    -- A transaction-scoped advisory lock on this table serializes concurrent
+    -- runs. The read-then-act guards are separated by COMMIT, so the lock is
+    -- taken again before each step; it is released by that step's COMMIT and on
+    -- error, so a failed run cannot leak it.
+    l_lock_class := pg_catalog.hashtext('ddl_utils.ensure_foreign_key');
+    l_lock_key := pg_catalog.hashtext(pg_catalog.format('%I.%I', i_schema_name, i_table_name));
 
     l_referenced_relation := pg_catalog.to_regclass(
             pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
@@ -141,6 +150,7 @@ BEGIN
             USING ERRCODE = '42710';
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 1: add the foreign key as NOT VALID (no scan; SHARE ROW EXCLUSIVE on
     -- both tables, released at the commit). Skipped when it already exists, so a
     -- re-run recovers after a partial failure.
@@ -164,6 +174,7 @@ BEGIN
         COMMIT;
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 2: validate the constraint, scanning under SHARE UPDATE EXCLUSIVE.
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint

@@ -13,6 +13,8 @@ DECLARE
     l_sleep_time         integer;
     l_statement_duration integer;
     l_relation           regclass;
+    l_lock_class         integer;
+    l_lock_key           integer;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
     SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
@@ -24,6 +26,13 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- A transaction-scoped advisory lock on this table serializes concurrent
+    -- runs. The read-then-act guards are separated by COMMIT, so the lock is
+    -- taken again before each step; it is released by that step's COMMIT and on
+    -- error, so a failed run cannot leak it.
+    l_lock_class := pg_catalog.hashtext('ddl_utils.ensure_check_constraint');
+    l_lock_key := pg_catalog.hashtext(pg_catalog.format('%I.%I', i_schema_name, i_table_name));
+
     -- The name is the identity: a same-named CHECK is treated as the target and
     -- its expression is not re-checked. Unlike a foreign key, the definition
     -- cannot be compared exactly -- pg_get_constraintdef returns a normalized,
@@ -31,6 +40,7 @@ BEGIN
     -- with a different expression is not detected. Use a distinct name per
     -- expression.
     --
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 1: add the constraint as NOT VALID (instant; brief ACCESS
     -- EXCLUSIVE). Skipped when it already exists, which is how a re-run
     -- recovers after the add committed but validation did not.
@@ -51,6 +61,7 @@ BEGIN
         COMMIT;
     END IF;
 
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 2: validate the constraint, scanning under SHARE UPDATE EXCLUSIVE.
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
