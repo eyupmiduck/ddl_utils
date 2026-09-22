@@ -64,8 +64,12 @@ abstract class PostgresTestBase {
                     .withDatabaseName("ddl_utils");
 
     static {
-        POSTGRES.start();
-        prepareTemplateDatabase();
+        try {
+            POSTGRES.start();
+            prepareTemplateDatabase();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to start the PostgreSQL test container", e);
+        }
     }
 
     /**
@@ -431,6 +435,34 @@ abstract class PostgresTestBase {
      */
     protected boolean hasColumn(String schema, String table, String column) {
         return column(schema, table, column) != null;
+    }
+
+    /**
+     * Returns whether a table exists.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @return {@code true} when the table exists
+     */
+    protected boolean tableExists(String schema, String table) {
+        return dsl.fetchOne(
+                """
+                        SELECT EXISTS (
+                            SELECT 1 FROM information_schema.tables
+                            WHERE table_schema = ? AND table_name = ?
+                        )
+                        """,
+                schema, table).get(0, Boolean.class);
+    }
+
+    /**
+     * Returns whether a table exists in the public schema.
+     *
+     * @param table the table name
+     * @return {@code true} when the table exists
+     */
+    protected boolean tableExists(String table) {
+        return tableExists(PUBLIC_SCHEMA, table);
     }
 
     /**

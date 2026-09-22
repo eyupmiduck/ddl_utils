@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -121,17 +122,20 @@ class GetLockSettingsTest extends PostgresTestBase {
 
     private void restoreDatabaseDefaults() {
         try (Connection connection = openOwnerConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("""
-                    INSERT INTO ddl_utils.database_lock_settings (
-                        id, ddl_lock_timeout, sleep_time, statement_duration
-                    )
-                    VALUES (1, %d, %d, %d)
-                    ON CONFLICT (id) DO UPDATE
-                        SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,
-                            sleep_time         = EXCLUDED.sleep_time,
-                            statement_duration = EXCLUDED.statement_duration
-                    """.formatted(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION));
+             PreparedStatement statement = connection.prepareStatement("""
+                     INSERT INTO ddl_utils.database_lock_settings (
+                         id, ddl_lock_timeout, sleep_time, statement_duration
+                     )
+                     VALUES (1, ?, ?, ?)
+                     ON CONFLICT (id) DO UPDATE
+                         SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,
+                             sleep_time         = EXCLUDED.sleep_time,
+                             statement_duration = EXCLUDED.statement_duration
+                     """)) {
+            statement.setInt(1, DEFAULT_DDL_LOCK_TIMEOUT);
+            statement.setInt(2, DEFAULT_SLEEP_TIME);
+            statement.setInt(3, DEFAULT_STATEMENT_DURATION);
+            statement.execute();
         } catch (SQLException e) {
             throw new IllegalStateException("failed to restore the database defaults", e);
         }

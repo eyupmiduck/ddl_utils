@@ -183,8 +183,10 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
                         WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
                                             AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
                             AND contype = 'c'
+                            AND conname = ?
                         """,
-                TARGET, PUBLIC_SCHEMA).get(0, Integer.class);
+                TARGET, PUBLIC_SCHEMA,
+                notNullCheckConstraintName(PUBLIC_SCHEMA, TARGET, "note")).get(0, Integer.class);
         return count != null ? count : -1;
     }
 }

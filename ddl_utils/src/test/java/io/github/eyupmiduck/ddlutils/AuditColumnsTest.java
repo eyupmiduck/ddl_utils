@@ -53,6 +53,11 @@ class AuditColumnsTest extends PostgresTestBase {
 
                 assertTrue(probe.passed(), probe::describe);
             }
+        } finally {
+            // The seeded rows above are committed and shared with the other test
+            // in this class, so remove them.
+            clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
+            clearSchemaLockSettings("audit_columns_test_schema");
         }
     }
 }

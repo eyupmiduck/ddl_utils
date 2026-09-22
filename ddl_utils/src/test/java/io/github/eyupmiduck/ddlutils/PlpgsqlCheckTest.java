@@ -3,8 +3,10 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.changelogvalidator.PlpgsqlCheck;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +31,7 @@ class PlpgsqlCheckTest extends PostgresTestBase {
      * whitelist entry matches a finding (so the whitelist cannot go stale).
      */
     @Test
-    void routinesPassPlpgsqlCheck() throws Exception {
+    void routinesPassPlpgsqlCheck() throws SQLException, IOException {
         List<PlpgsqlCheck.AllowedFinding> allowed;
         try (InputStream whitelist = getClass().getClassLoader().getResourceAsStream(WHITELIST)) {
             assertNotNull(whitelist, WHITELIST + " not found on the test classpath");
