@@ -81,6 +81,27 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The text domain does not treat the literal letter 'v' as whitespace: a
+     * value made up of v's is accepted.
+     *
+     * <p>Regression test for the {@code E'\v'} escape, which PostgreSQL reads
+     * as the letter 'v' rather than vertical tab.
+     */
+    @Test
+    void nonNullTextAcceptsLetterV() {
+        assertEquals("vvv", evaluate("'vvv'::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
+     * The text domain rejects a string made up only of vertical tabs, the
+     * character the buggy {@code E'\v'} literal was meant to represent.
+     */
+    @Test
+    void nonNullTextRejectsVerticalTab() {
+        assertDomainViolation(() -> evaluate("E'\\013'::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
      * The boolean domain accepts true and false.
      */
     @Test
