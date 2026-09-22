@@ -81,6 +81,9 @@ BEGIN
 
         BEGIN
             EXECUTE l_statement;
+            -- Only the success path needs to restore: set_config(..., true) is
+            -- transaction-local and a raised error rolls back the enclosing
+            -- (sub)transaction, which reverts the GUC anyway.
             PERFORM pg_catalog.set_config('lock_timeout', l_previous_lock_timeout, true);
             RETURN;
         EXCEPTION
@@ -100,4 +103,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.alter_table IS
-    'Internal runner: runs a caller-provided ALTER TABLE fragment with a bounded lock_timeout.';
+    'Internal runner: runs a caller-provided ALTER TABLE fragment with a bounded '
+        'lock_timeout and a retry budget (i_statement_duration).';

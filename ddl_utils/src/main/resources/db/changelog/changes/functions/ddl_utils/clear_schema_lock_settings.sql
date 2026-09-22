@@ -13,6 +13,12 @@ BEGIN
     DELETE
     FROM ddl_utils.schema_lock_settings
     WHERE schema_name = i_schema_name;
+
+    -- The name is matched verbatim; report a miss so a typo is observable.
+    IF NOT FOUND THEN
+        RAISE NOTICE 'ddl_utils.clear_schema_lock_settings: no lock settings found for schema %',
+            i_schema_name;
+    END IF;
 END;
 $$;
 

@@ -159,4 +159,5 @@ $func$;
 
 COMMENT ON FUNCTION ddl_utils_lib.has_top_level_comma IS
     'Returns whether a value contains a comma outside parentheses, brackets, '
-        'braces, string/dollar-quoted literals, quoted identifiers or comments.';
+        'braces, string/dollar-quoted literals, quoted identifiers or comments. '
+        'A NULL value returns false.';

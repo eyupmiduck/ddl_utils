@@ -58,6 +58,8 @@ BEGIN
                 i_sleep_time => l_sleep_time,
                 i_statement_duration => l_statement_duration
                 );
+        -- The embedded COMMIT requires the procedure to be CALLed outside a
+        -- transaction block (autocommit); see procedures/README.md.
         COMMIT;
     END IF;
 
@@ -83,4 +85,5 @@ END;
 $$;
 
 COMMENT ON PROCEDURE ddl_utils.ensure_check_constraint IS
-    'Adds a CHECK constraint as NOT VALID and then validates it, committing between steps.';
+    'Adds a CHECK constraint as NOT VALID and then validates it, committing '
+        'between steps. Call it outside a transaction block (autocommit).';
