@@ -79,7 +79,8 @@ Liquibase loads two schemas:
       `table_lock_settings` tables, with `get_*`, `set_*`, and `clear_*`
       accessors;
     - `get_lock_settings(schema, table)`, which resolves the effective settings
-      with the table → schema → database fallback;
+      with the table → schema → database fallback, and the `lock_settings`
+      composite type the wrappers read it into;
     - lock-aware wrappers that read the settings for you (see the list below);
     - the shared `non_null_text`, `non_negative_integer`, `non_null_boolean`, and
       array domains used to validate inputs.

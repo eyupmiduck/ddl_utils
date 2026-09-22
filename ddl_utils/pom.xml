@@ -146,8 +146,14 @@
                                              backed by SQLDataType.OTHER, which does
                                              not compile. Exclude the array domains;
                                              routines that take them fall back to
-                                             Object parameters. -->
-                                        <excludes>.*non_empty.*array.*</excludes>
+                                             Object parameters. Also exclude the
+                                             ddl_utils.lock_settings composite type:
+                                             its generated UDT calls a static method
+                                             on an instance, which fails the -Werror
+                                             build under JDK 25, and no routine
+                                             returns it (get_lock_settings returns a
+                                             TABLE). -->
+                                        <excludes>.*non_empty.*array.*|ddl_utils\.lock_settings</excludes>
                                         <!-- jOOQ cannot combine several
                                              schemata in one <inputSchema>;
                                              each schema maps to its own

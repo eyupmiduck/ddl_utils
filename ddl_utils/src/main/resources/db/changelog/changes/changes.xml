@@ -32,6 +32,16 @@
         </rollback>
     </changeSet>
 
+    <!-- The composite the lock-aware wrappers read get_lock_settings into; it
+         must exist before the routines that declare a variable of it, so it is
+         created here rather than after the routine includes. -->
+    <changeSet id="006-create-lock-settings-type" author="ddl_utils" dbms="postgresql">
+        <sqlFile path="sql_changes/006-create-lock-settings-type.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/006-create-lock-settings-type-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- Stored routines: one changeset each, one file per routine. -->
     <include file="functions.xml" relativeToChangelogFile="true"/>
     <include file="procedures.xml" relativeToChangelogFile="true"/>

@@ -9,16 +9,14 @@ CREATE OR REPLACE PROCEDURE ddl_utils.ensure_check_constraint(
 AS
 $$
 DECLARE
-    l_lock_timeout       integer;
-    l_sleep_time         integer;
-    l_statement_duration integer;
+    l_settings           ddl_utils.lock_settings;
     l_relation           regclass;
     l_lock_class         integer;
     l_lock_key           integer;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
-    SELECT ls.ddl_lock_timeout, ls.sleep_time, ls.statement_duration
-    INTO l_lock_timeout, l_sleep_time, l_statement_duration
+    SELECT *
+    INTO l_settings
     FROM ddl_utils.get_lock_settings(
                  i_schema_name => i_schema_name,
                  i_table_name => i_table_name
@@ -54,9 +52,9 @@ BEGIN
                 i_table_name => i_table_name,
                 i_constraint_name => i_constraint_name,
                 i_check_expression => i_check_expression,
-                i_ddl_lock_timeout => l_lock_timeout,
-                i_sleep_time => l_sleep_time,
-                i_statement_duration => l_statement_duration
+                i_ddl_lock_timeout => l_settings.ddl_lock_timeout,
+                i_sleep_time => l_settings.sleep_time,
+                i_statement_duration => l_settings.statement_duration
                 );
         -- The embedded COMMIT requires the procedure to be CALLed outside a
         -- transaction block (autocommit); see procedures/README.md.
@@ -75,9 +73,9 @@ BEGIN
                 i_schema_name => i_schema_name,
                 i_table_name => i_table_name,
                 i_constraint_name => i_constraint_name,
-                i_ddl_lock_timeout => l_lock_timeout,
-                i_sleep_time => l_sleep_time,
-                i_statement_duration => l_statement_duration
+                i_ddl_lock_timeout => l_settings.ddl_lock_timeout,
+                i_sleep_time => l_settings.sleep_time,
+                i_statement_duration => l_settings.statement_duration
                 );
         COMMIT;
     END IF;
