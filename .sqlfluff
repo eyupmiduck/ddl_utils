@@ -12,6 +12,9 @@ large_file_skip_byte_limit = 0
 # LT02 (layout.indent) is excluded because IntelliJ formats continuation
 # lines such as a CREATE DOMAIN CONSTRAINT clause with an indent that the
 # SQLFluff parser does not expect.
+#
+# Both are project-wide relaxations. Prefer an inline `-- noqa: <rule>` for a
+# single construct over widening these globals.
 exclude_rules = RF04, LT02
 
 # IntelliJ aligns column types and constraints with multiple spaces. Allow

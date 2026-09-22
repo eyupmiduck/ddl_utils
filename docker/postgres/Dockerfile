@@ -6,8 +6,10 @@
 # database created from this image.
 #
 # Build with: scripts/build-postgres-image.sh postgres:17-alpine
-
-ARG BASE_IMAGE=postgres:17-alpine
+#
+# BASE_IMAGE has no default so a missing --build-arg fails fast instead of
+# silently building against a different PostgreSQL version than the build uses.
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # plpgsql_check is not packaged for the PostgreSQL build the official image
