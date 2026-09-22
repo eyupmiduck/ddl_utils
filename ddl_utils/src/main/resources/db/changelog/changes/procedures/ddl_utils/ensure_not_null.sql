@@ -60,7 +60,17 @@ BEGIN
     INTO l_already_not_null
     FROM pg_catalog.pg_attribute AS a
     WHERE a.attrelid = l_relation
-      AND a.attname = i_column_name;
+      AND a.attname = i_column_name
+      AND a.attnum > 0
+      AND NOT a.attisdropped;
+
+    -- The existence check above already rejects a missing column; guard the
+    -- flag anyway so a NULL can never make every step below a silent no-op.
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_not_null: column %.% does not exist',
+            i_table_name, i_column_name
+            USING ERRCODE = '42703';
+    END IF;
 
     -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS EXCLUSIVE
     -- lock). Skipped when the column is already NOT NULL or the constraint
