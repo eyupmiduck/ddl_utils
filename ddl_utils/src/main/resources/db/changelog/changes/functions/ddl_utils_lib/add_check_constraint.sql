@@ -17,11 +17,9 @@ BEGIN
     -- could append another ALTER TABLE action. NOT VALID makes the constraint
     -- metadata-only (no scan); call validate_constraint separately to enforce
     -- it against existing rows.
-    IF ddl_utils_lib.has_top_level_comma(i_check_expression) THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.add_check_constraint: the check expression contains a top-level comma'
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_no_top_level_comma(
+            i_value => i_check_expression,
+            i_context => 'ddl_utils_lib.add_check_constraint: the check expression');
 
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,

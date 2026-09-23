@@ -16,11 +16,10 @@ BEGIN
     -- The generated mode is a two-value keyword set; validate it so a caller
     -- cannot splice arbitrary SQL. It is emitted verbatim (not as an
     -- identifier) because these are unquoted PostgreSQL keywords.
-    IF upper(i_generated) NOT IN ('ALWAYS', 'BY DEFAULT') THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.add_identity: generated must be ALWAYS or BY DEFAULT'
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_allowed_keyword(
+            i_value => i_generated,
+            i_allowed => ARRAY['always', 'by default'],
+            i_context => 'ddl_utils_lib.add_identity: generated');
 
     -- Adding an identity is metadata-only (like SET DEFAULT) and affects future
     -- rows only. PostgreSQL requires the column to be NOT NULL (it raises 42P16

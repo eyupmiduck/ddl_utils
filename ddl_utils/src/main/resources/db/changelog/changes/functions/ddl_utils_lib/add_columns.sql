@@ -77,12 +77,11 @@ BEGIN
             -- action. This is best-effort: a comma-free suffix such as
             -- "0 CHECK (false)" still appends a column constraint and is not
             -- rejected here.
-            IF ddl_utils_lib.has_top_level_comma(i_default_values[l_index]) THEN
-                RAISE EXCEPTION
-                    'ddl_utils_lib.add_columns: the default for column % contains a top-level comma',
-                    i_column_names[l_index]
-                    USING ERRCODE = '22023';
-            END IF;
+            PERFORM ddl_utils_lib.assert_no_top_level_comma(
+                    i_value => i_default_values[l_index],
+                    i_context => pg_catalog.format(
+                            'ddl_utils_lib.add_columns: the default for column %I',
+                            i_column_names[l_index]));
 
             IF l_index > 1 THEN
                 l_fragment := l_fragment || ', ';

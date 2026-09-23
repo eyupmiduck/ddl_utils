@@ -104,6 +104,34 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
     text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_no_top_level_comma(
+    text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_no_top_level_comma(
+    text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_allowed_keyword(
+    ddl_utils.non_null_text,
+    text[],
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_allowed_keyword(
+    ddl_utils.non_null_text,
+    text[],
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_equal_cardinality(
+    anyarray,
+    anyarray,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_equal_cardinality(
+    anyarray,
+    anyarray,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() FROM public;
 GRANT EXECUTE ON FUNCTION ddl_utils.get_database_lock_settings() TO ddl_utils_caller;
 

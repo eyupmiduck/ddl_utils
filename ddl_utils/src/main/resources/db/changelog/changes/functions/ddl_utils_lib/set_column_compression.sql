@@ -17,11 +17,10 @@ BEGIN
     -- splice arbitrary SQL. The keyword is emitted verbatim (not as an
     -- identifier) because these are unquoted PostgreSQL keywords. Affects
     -- future writes only; existing values are not rewritten.
-    IF lower(i_compression) NOT IN ('pglz', 'lz4', 'default') THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.set_column_compression: compression must be one of pglz, lz4, default'
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_allowed_keyword(
+            i_value => i_compression,
+            i_allowed => ARRAY['pglz', 'lz4', 'default'],
+            i_context => 'ddl_utils_lib.set_column_compression: compression');
 
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,

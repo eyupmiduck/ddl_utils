@@ -17,11 +17,10 @@ BEGIN
     -- matching set_column_compression) so a caller cannot splice arbitrary SQL.
     -- The keyword is emitted verbatim (not as an identifier) because these are
     -- unquoted PostgreSQL keywords.
-    IF lower(i_storage) NOT IN ('plain', 'external', 'extended', 'main') THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.set_column_storage: storage must be one of PLAIN, EXTERNAL, EXTENDED, MAIN'
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_allowed_keyword(
+            i_value => i_storage,
+            i_allowed => ARRAY['plain', 'external', 'extended', 'main'],
+            i_context => 'ddl_utils_lib.set_column_storage: storage');
 
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,

@@ -18,16 +18,11 @@ $$
 DECLARE
     l_columns            text;
     l_referenced_columns text;
-    l_count              integer;
 BEGIN
-    l_count := pg_catalog.cardinality(i_column_names);
-    IF pg_catalog.cardinality(i_referenced_column_names) <> l_count THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.add_foreign_key: the referencing and referenced column lists must have the same length (columns=%, referenced=%)',
-            l_count,
-            pg_catalog.cardinality(i_referenced_column_names)
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_equal_cardinality(
+            i_a => i_column_names,
+            i_b => i_referenced_column_names,
+            i_context => 'ddl_utils_lib.add_foreign_key: column lists');
 
     -- The array domains allow blank elements and a non-1 lower bound;
     -- assert_non_blank_elements rejects both before the identifier lists.

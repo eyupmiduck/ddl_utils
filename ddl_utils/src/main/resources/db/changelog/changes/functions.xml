@@ -148,6 +148,33 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="function-ddl_utils_lib.assert_no_top_level_comma" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/assert_no_top_level_comma.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/assert_no_top_level_comma-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.assert_allowed_keyword" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/assert_allowed_keyword.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/assert_allowed_keyword-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.assert_equal_cardinality" author="ddl_utils" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/assert_equal_cardinality.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/assert_equal_cardinality-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="function-ddl_utils_lib.add_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
