@@ -46,7 +46,6 @@ abstract class PostgresTestBase {
      * it.
      */
     protected static final String PUBLIC_SCHEMA = "public";
-    private static final String CHANGELOG = "db/changelog/db.changelog-master.xml";
     private static final String TEMPLATE_DATABASE = "ddl_utils_template";
     private static final String OWNER_USER = "ddl_utils_owner";
     private static final String OWNER_PASSWORD = "ddl_utils_owner";
@@ -106,7 +105,7 @@ abstract class PostgresTestBase {
             }
             try (Connection connection = openConnection(TEMPLATE_DATABASE, OWNER_USER, OWNER_PASSWORD)) {
                 Liquibase liquibase = new Liquibase(
-                        CHANGELOG,
+                        ChangelogTestSupport.MASTER_RESOURCE,
                         new ClassLoaderResourceAccessor(),
                         DatabaseFactory.getInstance()
                                 .findCorrectDatabaseImplementation(new JdbcConnection(connection)));

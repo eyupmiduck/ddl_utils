@@ -12,8 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
@@ -64,11 +62,9 @@ class ChangelogLinterTest {
      * rule set for the build's PostgreSQL version.
      */
     @Test
-    void changelogPassesTheLinter() throws IOException, URISyntaxException {
-        URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
-        assertNotNull(changelogUrl, "changelog directory must be on the test classpath");
-        Path changelogRoot = Path.of(changelogUrl.toURI());
-        Path master = changelogRoot.resolve("db.changelog-master.xml");
+    void changelogPassesTheLinter() throws IOException {
+        Path changelogRoot = ChangelogTestSupport.changelogRoot();
+        Path master = ChangelogTestSupport.master();
 
         List<ChangeSet> changeSets = ChangelogModel.changesets(changelogRoot, master);
         Linter linter = new Linter(Rules.all(17), LinterConfig.defaults());
