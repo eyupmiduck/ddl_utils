@@ -86,7 +86,8 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   (`-Drevision=${tag#v}`), runs the full `verify` gate, deploys to GitHub
   Packages, then creates the GitHub Release. Do not tag a commit that CI has
   not built green. Cut one with `scripts/cut-release.sh <version>`, which
-  refuses anything but a clean, up-to-date `main`.
+  refuses anything but a clean, up-to-date `main` and a version newer than the
+  greatest existing tag.
 - The parent POM and `ddl_utils` are published. `docker_java_config` is a build
   shim, so it sets `maven.deploy.skip` and is never deployed.
 

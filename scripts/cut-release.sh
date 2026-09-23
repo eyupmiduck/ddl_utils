@@ -7,9 +7,10 @@
 #
 # The tag (v<version>) is the single source of truth for the release version:
 # the Release workflow derives -Drevision from it, so the POM is not edited.
-# The script refuses to run unless the working tree is clean and HEAD is an
-# up-to-date main, which keeps a release on a commit CI has already built
-# green. Pass --yes to skip the confirmation prompt for non-interactive use.
+# The script refuses to run unless the working tree is clean, HEAD is an
+# up-to-date main (so the release lands on a commit CI has built green), and
+# the version is newer than the greatest existing tag. Pass --yes to skip the
+# confirmation prompt for non-interactive use.
 
 set -eu
 
@@ -25,6 +26,58 @@ Usage: scripts/cut-release.sh [--yes] <version>
 Tags the current commit v<version> and pushes the tag, which triggers the
 Release workflow. The version is the tag name without the leading "v".
 EOF
+}
+
+# Exit 0 when $1 (a v-prefixed version) is strictly greater than every existing
+# v* tag, and print the greatest existing tag. The comparison is semver, so a
+# release outranks its own prereleases (v0.2.0 > v0.2.0-rc1) and numbers are
+# compared numerically (v0.10.0 > v0.9.0).
+newest_tag() {
+    git tag --list 'v*' | awk -v candidate="$1" '
+        function parse(v,   n) {
+            sub(/^v/, "", v)
+            n = index(v, "-")
+            if (n > 0) { CORE = substr(v, 1, n - 1); PRE = substr(v, n + 1) }
+            else { CORE = v; PRE = "" }
+        }
+        function cmp_core(a, b,   x, y, i) {
+            split(a, x, "\\."); split(b, y, "\\.")
+            for (i = 1; i <= 3; i++)
+                if (x[i] + 0 != y[i] + 0) return (x[i] + 0 > y[i] + 0) ? 1 : -1
+            return 0
+        }
+        function cmp_pre(a, b,   x, y, n, m, i, xn, yn) {
+            if (a == "" || b == "") {
+                if (a == b) return 0
+                return (a == "") ? 1 : -1
+            }
+            n = split(a, x, "\\."); m = split(b, y, "\\.")
+            for (i = 1; i <= n && i <= m; i++) {
+                xn = (x[i] ~ /^[0-9]+$/); yn = (y[i] ~ /^[0-9]+$/)
+                if (xn && yn) {
+                    if (x[i] + 0 != y[i] + 0) return (x[i] + 0 > y[i] + 0) ? 1 : -1
+                } else if (xn != yn) {
+                    return xn ? -1 : 1
+                } else if (x[i] != y[i]) {
+                    return (x[i] > y[i]) ? 1 : -1
+                }
+            }
+            if (n != m) return (n > m) ? 1 : -1
+            return 0
+        }
+        function semver_cmp(a, b,   r) {
+            parse(a); ac = CORE; ap = PRE
+            parse(b); bc = CORE; bp = PRE
+            r = cmp_core(ac, bc)
+            return (r != 0) ? r : cmp_pre(ap, bp)
+        }
+        { if (max == "" || semver_cmp($0, max) > 0) max = $0 }
+        END {
+            if (max == "" || semver_cmp(candidate, max) > 0) { print max; exit 0 }
+            print max
+            exit 1
+        }
+    '
 }
 
 yes=
@@ -63,8 +116,8 @@ fi
 # Accept either 0.1.0 or v0.1.0.
 version="${version#v}"
 
-if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$'; then
-    echo "invalid version '$version': expected <major>.<minor>.<patch> (optionally with a suffix)" >&2
+if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+    echo "invalid version '$version': expected <major>.<minor>.<patch> (optionally with a -prerelease)" >&2
     exit 1
 fi
 
@@ -105,6 +158,12 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
 fi
 if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
     echo "tag $tag already exists on origin" >&2
+    exit 1
+fi
+
+latest=""
+if ! latest="$(newest_tag "$tag")"; then
+    echo "version $version is not newer than the latest tag ${latest:-<none>}" >&2
     exit 1
 fi
 
