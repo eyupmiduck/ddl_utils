@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,21 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code ALTER COLUMN ... SET DEFAULT} fragment and applies it through
  * {@code ddl_utils_lib.alter_table}.
  */
-class SetColumnDefaultTest extends PostgresTestBase {
+class SetColumnDefaultTest extends SingleTableTest {
 
-    private static final String TARGET = "set_column_default_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    SetColumnDefaultTest() {
+        super("set_column_default_target", "id int, note text");
     }
 
     /**
@@ -37,7 +28,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
     void setsLiteralDefault() {
         setColumnDefault("note", "'none'");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("'none'"));
     }
@@ -49,7 +40,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
     void setsExpressionDefault() {
         setColumnDefault("note", "upper('a')");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("upper"));
     }
@@ -62,7 +53,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
         setColumnDefault("note", "'first'");
         setColumnDefault("note", "'second'");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("'second'"));
     }
@@ -75,7 +66,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
     void rejectsTopLevelComma() {
         assertSqlState("22023", () -> setColumnDefault("note", "'a', DROP COLUMN id"));
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -85,7 +76,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
     void acceptsCommaInsideFunctionCall() {
         setColumnDefault("note", "concat('a', 'b')");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("concat"));
     }
@@ -110,7 +101,7 @@ class SetColumnDefaultTest extends PostgresTestBase {
 
     private void setColumnDefault(String column, String defaultValue, Integer lockTimeout,
                                   Integer sleepTime, Integer duration) {
-        Routines.setColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, defaultValue,
+        Routines.setColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), column, defaultValue,
                 lockTimeout, sleepTime, duration);
     }
 }

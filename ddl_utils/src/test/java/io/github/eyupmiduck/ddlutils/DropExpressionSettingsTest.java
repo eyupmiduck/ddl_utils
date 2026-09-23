@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,22 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the table's lock settings through {@code get_lock_settings} and delegates to
  * the {@code ddl_utils_lib} helper.
  */
-class DropExpressionSettingsTest extends PostgresTestBase {
+class DropExpressionSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_expression_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "a int, b int GENERATED ALWAYS AS (a * 2) STORED");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    DropExpressionSettingsTest() {
+        super("drop_expression_settings_target", "a int, b int GENERATED ALWAYS AS (a * 2) STORED", true);
     }
 
     /**
@@ -36,9 +22,9 @@ class DropExpressionSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropExpressionUsesDatabaseDefaults() {
-        Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "b");
+        Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), "b");
 
-        assertFalse(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
+        assertFalse(isGenerated(PUBLIC_SCHEMA, target(), "b"));
     }
 
     /**
@@ -48,12 +34,12 @@ class DropExpressionSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropExpressionUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "b"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), "b"));
 
-        assertTrue(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
+        assertTrue(isGenerated(PUBLIC_SCHEMA, target(), "b"));
     }
 
 }

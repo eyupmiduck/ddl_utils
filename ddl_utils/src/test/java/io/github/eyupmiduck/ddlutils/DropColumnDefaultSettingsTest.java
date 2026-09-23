@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,22 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * resolves the table's lock settings through {@code get_lock_settings} and
  * delegates to the {@code ddl_utils_lib} helper.
  */
-class DropColumnDefaultSettingsTest extends PostgresTestBase {
+class DropColumnDefaultSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_column_default_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text DEFAULT 'none'");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    DropColumnDefaultSettingsTest() {
+        super("drop_column_default_settings_target", "id int, note text DEFAULT 'none'", true);
     }
 
     /**
@@ -35,9 +21,9 @@ class DropColumnDefaultSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropColumnDefaultUsesDatabaseDefaults() {
-        Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note");
+        Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
     }
 
     /**
@@ -48,9 +34,9 @@ class DropColumnDefaultSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropColumnDefaultUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }

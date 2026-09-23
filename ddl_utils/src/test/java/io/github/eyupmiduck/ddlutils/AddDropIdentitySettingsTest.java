@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,24 +11,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * settings through {@code get_lock_settings} and delegate to the
  * {@code ddl_utils_lib} helpers.
  */
-class AddDropIdentitySettingsTest extends PostgresTestBase {
+class AddDropIdentitySettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "add_drop_identity_settings_target";
     private static final String IDENTITY_ALWAYS = "ALWAYS";
     private static final boolean DROP_IDENTITY_IF_EXISTS = true;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int NOT NULL, note text");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    AddDropIdentitySettingsTest() {
+        super("add_drop_identity_settings_target", "id int NOT NULL, note text", true);
     }
 
     /**
@@ -38,11 +25,11 @@ class AddDropIdentitySettingsTest extends PostgresTestBase {
      */
     @Test
     void usesDatabaseDefaults() {
-        Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", IDENTITY_ALWAYS);
-        assertEquals("a", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
+        Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", IDENTITY_ALWAYS);
+        assertEquals("a", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
 
-        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", DROP_IDENTITY_IF_EXISTS);
-        assertEquals("", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
+        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", DROP_IDENTITY_IF_EXISTS);
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -52,11 +39,11 @@ class AddDropIdentitySettingsTest extends PostgresTestBase {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", IDENTITY_ALWAYS));
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "id", DROP_IDENTITY_IF_EXISTS));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", IDENTITY_ALWAYS));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", DROP_IDENTITY_IF_EXISTS));
     }
 }

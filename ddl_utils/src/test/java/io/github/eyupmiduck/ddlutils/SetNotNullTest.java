@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,21 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * {@code ALTER COLUMN ... SET NOT NULL} fragment and applies it through
  * {@code ddl_utils_lib.alter_table}.
  */
-class SetNotNullTest extends PostgresTestBase {
+class SetNotNullTest extends SingleTableTest {
 
-    private static final String TARGET = "set_not_null_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    SetNotNullTest() {
+        super("set_not_null_target", "id int, note text");
     }
 
     /**
@@ -36,8 +27,8 @@ class SetNotNullTest extends PostgresTestBase {
     void setsNotNull() {
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "id", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "id", "is_nullable"));
     }
 
     /**
@@ -49,7 +40,7 @@ class SetNotNullTest extends PostgresTestBase {
         setNotNull("note");
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
     }
 
     /**
@@ -58,11 +49,11 @@ class SetNotNullTest extends PostgresTestBase {
      */
     @Test
     void rejectsColumnWithExistingNull() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, NULL)");
 
         assertSqlState("23502", () -> setNotNull("note"));
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
     }
 
     /**
@@ -72,14 +63,14 @@ class SetNotNullTest extends PostgresTestBase {
      */
     @Test
     void setsNotNullWithValidCheckConstraint() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
                 + " ADD CONSTRAINT note_nn CHECK (note IS NOT NULL) NOT VALID");
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET + " VALIDATE CONSTRAINT note_nn");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " VALIDATE CONSTRAINT note_nn");
 
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
     }
 
     /**
@@ -98,7 +89,7 @@ class SetNotNullTest extends PostgresTestBase {
     }
 
     private void setNotNull(String column, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column,
+        Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), column,
                 lockTimeout, sleepTime, duration);
     }
 }

@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,21 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code ddl_utils_lib.rename_column}: each builds an identifier-safe fragment
  * and runs it through {@code ddl_utils_lib.alter_table}.
  */
-class DropRenameColumnTest extends PostgresTestBase {
+class DropRenameColumnTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_rename_column_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, keep int, old_name int");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    DropRenameColumnTest() {
+        super("drop_rename_column_target", "id int, keep int, old_name int");
     }
 
     /**
@@ -37,9 +28,9 @@ class DropRenameColumnTest extends PostgresTestBase {
     void dropsColumn() {
         dropColumn("old_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "keep"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -50,9 +41,9 @@ class DropRenameColumnTest extends PostgresTestBase {
     void dropsMultipleColumns() {
         dropColumns(new String[]{"old_name", "keep"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "keep"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -66,7 +57,7 @@ class DropRenameColumnTest extends PostgresTestBase {
         assertSqlState("22023",
                 () -> dropColumns(new String[]{"\t\n"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
     }
 
     /**
@@ -79,7 +70,7 @@ class DropRenameColumnTest extends PostgresTestBase {
                 () -> dropColumns(new String[]{"old_name", "old_name"},
                         DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
     }
 
     /**
@@ -101,10 +92,10 @@ class DropRenameColumnTest extends PostgresTestBase {
     void dropColumnsRejectsNonOneBasedArray() {
         assertSqlState("22023", () -> dsl.execute(
                 "SELECT ddl_utils_lib.drop_columns(?, ?, '[0:1]={old_name,keep}'::text[], ?, ?, ?)",
-                PUBLIC_SCHEMA, TARGET, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+                PUBLIC_SCHEMA, target(), DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "keep"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -114,9 +105,9 @@ class DropRenameColumnTest extends PostgresTestBase {
     void renamesColumn() {
         renameColumn("old_name", "new_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "old_name"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "new_name"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "keep"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "new_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -130,15 +121,15 @@ class DropRenameColumnTest extends PostgresTestBase {
     }
 
     private void dropColumn(String column, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, lockTimeout, sleepTime, duration);
+        Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, lockTimeout, sleepTime, duration);
     }
 
     private void dropColumns(String[] columns, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET, columns, lockTimeout, sleepTime, duration);
+        Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, target(), columns, lockTimeout, sleepTime, duration);
     }
 
     private void renameColumn(String column, String newName, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, newName, lockTimeout, sleepTime,
+        Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, newName, lockTimeout, sleepTime,
                 duration);
     }
 }

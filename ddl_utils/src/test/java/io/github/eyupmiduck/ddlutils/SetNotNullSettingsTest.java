@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,22 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * the table's lock settings through {@code get_lock_settings} and delegates to
  * the {@code ddl_utils_lib} helper.
  */
-class SetNotNullSettingsTest extends PostgresTestBase {
+class SetNotNullSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "set_not_null_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    SetNotNullSettingsTest() {
+        super("set_not_null_settings_target", "id int, note text", true);
     }
 
     /**
@@ -35,9 +21,9 @@ class SetNotNullSettingsTest extends PostgresTestBase {
      */
     @Test
     void setNotNullUsesDatabaseDefaults() {
-        Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note");
+        Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
     }
 
     /**
@@ -47,9 +33,9 @@ class SetNotNullSettingsTest extends PostgresTestBase {
      */
     @Test
     void setNotNullUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }

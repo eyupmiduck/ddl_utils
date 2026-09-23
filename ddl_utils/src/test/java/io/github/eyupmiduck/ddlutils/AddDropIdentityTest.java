@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,21 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * build {@code ADD/DROP GENERATED ... AS IDENTITY} fragments and apply them
  * through {@code ddl_utils_lib.alter_table}.
  */
-class AddDropIdentityTest extends PostgresTestBase {
+class AddDropIdentityTest extends SingleTableTest {
 
-    private static final String TARGET = "add_drop_identity_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int NOT NULL, note text");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    AddDropIdentityTest() {
+        super("add_drop_identity_target", "id int NOT NULL, note text");
     }
 
     /**
@@ -37,9 +28,9 @@ class AddDropIdentityTest extends PostgresTestBase {
     void addsIdentity() {
         addIdentity("id", "BY DEFAULT");
 
-        assertEquals("d", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (note) VALUES ('a')");
-        Integer next = dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
+        assertEquals("d", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('a')");
+        Integer next = dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + target()).get(0, Integer.class);
         assertEquals(1, next);
     }
 
@@ -51,7 +42,7 @@ class AddDropIdentityTest extends PostgresTestBase {
         addIdentity("id", "ALWAYS");
         dropIdentity("id", true);
 
-        assertEquals("", columnIdentity(PUBLIC_SCHEMA, TARGET, "id"));
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -89,12 +80,12 @@ class AddDropIdentityTest extends PostgresTestBase {
     }
 
     private void addIdentity(String column, String generated) {
-        Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, generated,
+        Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), column, generated,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }
 
     private void dropIdentity(String column, Boolean ifExists) {
-        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, ifExists,
+        Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), column, ifExists,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }
 }

@@ -1,7 +1,5 @@
 package io.github.eyupmiduck.ddlutils;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -17,18 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * CHECK constraint as NOT VALID, commits, then validates it in a second
  * committed step, and recovers when called again after a partial failure.
  */
-class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
+class EnsureCheckConstraintProcedureTest extends SingleTableTest {
 
-    private static final String TARGET = "ensure_check_constraint_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, value int");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    EnsureCheckConstraintProcedureTest() {
+        super("ensure_check_constraint_target", "id int, value int");
     }
 
     /**
@@ -36,13 +26,13 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
      */
     @Test
     void addsAndValidatesConstraint() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (1)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (1)");
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
         assertSqlState("23514",
-                () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)"));
+                () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (-1)"));
     }
 
     /**
@@ -51,7 +41,7 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
      */
     @Test
     void rejectsSameNamedNonCheckConstraint() {
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
                 + " ADD CONSTRAINT positive UNIQUE (value)");
 
         assertSqlState("42710", () -> callEnsureCheckConstraint("positive", "value > 0"));
@@ -66,7 +56,7 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
     }
 
     /**
@@ -75,13 +65,13 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
      */
     @Test
     void recoversFromPartialFailureAfterAdd() {
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
                 + " ADD CONSTRAINT positive CHECK (value > 0) NOT VALID");
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
     }
 
     /**
@@ -91,15 +81,15 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
      */
     @Test
     void failsOnViolatingRowsThenSucceedsAfterFix() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (-1)");
 
         assertSqlState("23514", () -> callEnsureCheckConstraint("positive", "value > 0"));
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertFalse(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
 
-        dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + TARGET + " SET value = 1 WHERE value < 0");
+        dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET value = 1 WHERE value < 0");
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
     }
 
     /**
@@ -120,7 +110,7 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
                     try (Connection connection = openTestConnection();
                          var statement = connection.createStatement()) {
                         statement.execute("CALL ddl_utils.ensure_check_constraint('"
-                                + PUBLIC_SCHEMA + "', '" + TARGET + "', 'positive', 'value > 0')");
+                                + PUBLIC_SCHEMA + "', '" + target() + "', 'positive', 'value > 0')");
                     }
                     return null;
                 }));
@@ -132,12 +122,12 @@ class EnsureCheckConstraintProcedureTest extends PostgresTestBase {
             pool.shutdownNow();
         }
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "positive"));
+        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
     }
 
     private void callEnsureCheckConstraint(String name, String expression) {
         dsl.execute("CALL ddl_utils.ensure_check_constraint(?, ?, ?, ?)",
-                PUBLIC_SCHEMA, TARGET, name, expression);
+                PUBLIC_SCHEMA, target(), name, expression);
     }
 
 }
