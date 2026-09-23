@@ -12,10 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AddColumnsTest extends SingleTableTest {
 
-    private static final int DDL_LOCK_TIMEOUT = 1000;
-    private static final int SLEEP_TIME = 10;
-    private static final int STATEMENT_DURATION = 5000;
-
     AddColumnsTest() {
         super("add_columns_target", "id int");
     }

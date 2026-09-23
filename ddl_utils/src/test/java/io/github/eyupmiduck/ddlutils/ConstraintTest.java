@@ -19,9 +19,6 @@ class ConstraintTest extends PostgresTestBase {
 
     private static final String TARGET = "constraint_target";
     private static final String REFERENCED = "constraint_referenced";
-    private static final int DDL_LOCK_TIMEOUT = 1000;
-    private static final int SLEEP_TIME = 10;
-    private static final int STATEMENT_DURATION = 5000;
 
     @BeforeEach
     void createTargetTables() {

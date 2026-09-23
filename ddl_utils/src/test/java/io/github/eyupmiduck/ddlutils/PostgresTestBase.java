@@ -46,6 +46,25 @@ abstract class PostgresTestBase {
      * it.
      */
     protected static final String PUBLIC_SCHEMA = "public";
+
+    /**
+     * The per-attempt lock timeout in ms used by tests that call the
+     * explicit-settings {@code ddl_utils_lib} helpers.
+     */
+    protected static final int DDL_LOCK_TIMEOUT = 1000;
+
+    /**
+     * The retry sleep in ms used by tests that call the explicit-settings
+     * helpers.
+     */
+    protected static final int SLEEP_TIME = 10;
+
+    /**
+     * The statement budget in ms used by tests that call the explicit-settings
+     * helpers.
+     */
+    protected static final int STATEMENT_DURATION = 5000;
+
     private static final String TEMPLATE_DATABASE = "ddl_utils_template";
     private static final String OWNER_USER = "ddl_utils_owner";
     private static final String OWNER_PASSWORD = "ddl_utils_owner";
