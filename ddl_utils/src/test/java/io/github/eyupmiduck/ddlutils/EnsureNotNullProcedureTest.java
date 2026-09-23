@@ -1,7 +1,5 @@
 package io.github.eyupmiduck.ddlutils;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,18 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * validate it, set NOT NULL, drop the temporary constraint), committing between
  * steps, and recovers from a partial failure when called again.
  */
-class EnsureNotNullProcedureTest extends PostgresTestBase {
+class EnsureNotNullProcedureTest extends SingleTableTest {
 
-    private static final String TARGET = "ensure_not_null_procedure_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    EnsureNotNullProcedureTest() {
+        super("ensure_not_null_procedure_target", "id int, note text");
     }
 
     /**
@@ -31,11 +21,11 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void makesColumnNotNull() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -45,12 +35,12 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void isIdempotent() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
         callEnsureNotNull();
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -61,17 +51,17 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void isNoOpWhenAlreadyNotNull() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
         callEnsureNotNull();
 
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
         try {
-            runWhileTableLocked(TARGET, 5000, this::callEnsureNotNull);
+            runWhileTableLocked(target(), 5000, this::callEnsureNotNull);
         } finally {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
+            clearTableLockSettings(PUBLIC_SCHEMA, target());
         }
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -83,14 +73,14 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     @Test
     void isIdempotentWithMultibyteColumnName() {
         String column = "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9";
-        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
                 + " ADD COLUMN \"" + column + "\" text");
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, \"" + column + "\") VALUES (1, 'a')");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, \"" + column + "\") VALUES (1, 'a')");
 
         callEnsureNotNull(column);
         callEnsureNotNull(column);
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, column, "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), column, "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -100,12 +90,12 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void recoversFromPartialFailureAfterAdd() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
-        simulateNotNullCheckAdded(PUBLIC_SCHEMA, TARGET, "note");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
+        simulateNotNullCheckAdded(PUBLIC_SCHEMA, target(), "note");
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -115,12 +105,12 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void recoversFromPartialFailureAfterValidate() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, 'a')");
-        simulateNotNullCheckValidated(PUBLIC_SCHEMA, TARGET, "note");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
+        simulateNotNullCheckValidated(PUBLIC_SCHEMA, target(), "note");
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -131,17 +121,17 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
      */
     @Test
     void failsOnExistingNullThenSucceedsAfterFix() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, NULL)");
 
         assertSqlState("23514", this::callEnsureNotNull);
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(1, temporaryConstraints());
 
-        dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + TARGET + " SET note = 'fixed' WHERE note IS NULL");
+        dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET note = 'fixed' WHERE note IS NULL");
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
         assertEquals(0, temporaryConstraints());
     }
 
@@ -153,7 +143,7 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
         callEnsureNotNull();
 
         assertSqlState("23502", () -> dsl.execute(
-                "INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)"));
+                "INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, NULL)"));
     }
 
     /**
@@ -170,7 +160,7 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
     }
 
     private void callEnsureNotNull(String column) {
-        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, TARGET, column);
+        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, target(), column);
     }
 
     private int temporaryConstraints() {
@@ -185,8 +175,8 @@ class EnsureNotNullProcedureTest extends PostgresTestBase {
                             AND contype = 'c'
                             AND conname = ?
                         """,
-                TARGET, PUBLIC_SCHEMA,
-                notNullCheckConstraintName(PUBLIC_SCHEMA, TARGET, "note")).get(0, Integer.class);
+                target(), PUBLIC_SCHEMA,
+                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note")).get(0, Integer.class);
         return count != null ? count : -1;
     }
 }

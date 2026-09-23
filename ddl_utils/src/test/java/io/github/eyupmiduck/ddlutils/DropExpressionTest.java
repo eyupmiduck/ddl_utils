@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,21 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code ALTER COLUMN ... DROP EXPRESSION} fragment that turns a generated
  * column into a plain base column.
  */
-class DropExpressionTest extends PostgresTestBase {
+class DropExpressionTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_expression_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "a int, b int GENERATED ALWAYS AS (a * 2) STORED");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    DropExpressionTest() {
+        super("drop_expression_target", "a int, b int GENERATED ALWAYS AS (a * 2) STORED");
     }
 
     /**
@@ -35,13 +26,13 @@ class DropExpressionTest extends PostgresTestBase {
      */
     @Test
     void dropsExpression() {
-        assertTrue(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
+        assertTrue(isGenerated(PUBLIC_SCHEMA, target(), "b"));
 
         dropExpression("b");
 
-        assertFalse(isGenerated(PUBLIC_SCHEMA, TARGET, "b"));
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (a, b) VALUES (1, 99)");
-        Integer value = dsl.fetchOne("SELECT b FROM " + PUBLIC_SCHEMA + "." + TARGET).get(0, Integer.class);
+        assertFalse(isGenerated(PUBLIC_SCHEMA, target(), "b"));
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (a, b) VALUES (1, 99)");
+        Integer value = dsl.fetchOne("SELECT b FROM " + PUBLIC_SCHEMA + "." + target()).get(0, Integer.class);
         assertEquals(99, value);
     }
 
@@ -70,7 +61,7 @@ class DropExpressionTest extends PostgresTestBase {
     }
 
     private void dropExpression(String column, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column,
+        Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), column,
                 lockTimeout, sleepTime, duration);
     }
 }

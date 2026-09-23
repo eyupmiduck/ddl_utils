@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,22 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * the table's lock settings through {@code get_lock_settings} and delegates to
  * the {@code ddl_utils_lib} helper.
  */
-class DropNotNullSettingsTest extends PostgresTestBase {
+class DropNotNullSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_not_null_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int NOT NULL, note text NOT NULL");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    DropNotNullSettingsTest() {
+        super("drop_not_null_settings_target", "id int NOT NULL, note text NOT NULL", true);
     }
 
     /**
@@ -35,9 +21,9 @@ class DropNotNullSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropNotNullUsesDatabaseDefaults() {
-        Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note");
+        Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
     }
 
     /**
@@ -48,9 +34,9 @@ class DropNotNullSettingsTest extends PostgresTestBase {
      */
     @Test
     void dropNotNullUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }

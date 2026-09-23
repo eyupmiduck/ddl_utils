@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,21 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * fragment from parallel arrays and applies it through
  * {@code ddl_utils_lib.alter_table}, validating that the arrays have equal lengths.
  */
-class AddColumnsTest extends PostgresTestBase {
+class AddColumnsTest extends SingleTableTest {
 
-    private static final String TARGET = "add_columns_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    AddColumnsTest() {
+        super("add_columns_target", "id int");
     }
 
     /**
@@ -42,12 +33,12 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true, false},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "column_default"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "second", "is_nullable"));
-        assertTrue(columnAttribute(PUBLIC_SCHEMA, TARGET, "second", "column_default").contains("'x'"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "second"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "first", "is_nullable"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "first", "column_default"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "second", "is_nullable"));
+        assertTrue(columnAttribute(PUBLIC_SCHEMA, target(), "second", "column_default").contains("'x'"));
     }
 
     /**
@@ -92,8 +83,8 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true, true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "second"));
     }
 
     /**
@@ -115,7 +106,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
     }
 
     /**
@@ -149,7 +140,7 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
     }
 
     /**
@@ -181,8 +172,8 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "id"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -199,8 +190,8 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "backdoor"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "backdoor"));
     }
 
     /**
@@ -216,8 +207,8 @@ class AddColumnsTest extends PostgresTestBase {
                 new Boolean[]{true, true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "amount"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "label"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "amount"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "label"));
     }
 
     /**
@@ -238,10 +229,10 @@ class AddColumnsTest extends PostgresTestBase {
         assertSqlState("22023", () -> dsl.execute(
                 "SELECT ddl_utils_lib.add_columns(?, ?, '[0:1]={first,second}'::text[], "
                         + "ARRAY['int', 'text'], ARRAY[NULL::text, NULL::text], ARRAY[true, true], ?, ?, ?)",
-                PUBLIC_SCHEMA, TARGET, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+                PUBLIC_SCHEMA, target(), DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "second"));
     }
 
     /**
@@ -263,7 +254,7 @@ class AddColumnsTest extends PostgresTestBase {
 
     private void addColumns(String[] names, String[] types, String[] defaults, Boolean[] nullable,
                             Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET, names, types, defaults,
+        Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, target(), names, types, defaults,
                 nullable, lockTimeout, sleepTime, duration);
     }
 }

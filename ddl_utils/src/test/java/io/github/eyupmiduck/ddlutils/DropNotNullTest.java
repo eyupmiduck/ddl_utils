@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,21 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * {@code ALTER COLUMN ... DROP NOT NULL} fragment and applies it through
  * {@code ddl_utils_lib.alter_table}.
  */
-class DropNotNullTest extends PostgresTestBase {
+class DropNotNullTest extends SingleTableTest {
 
-    private static final String TARGET = "drop_not_null_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int NOT NULL, note text NOT NULL");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    DropNotNullTest() {
+        super("drop_not_null_target", "id int NOT NULL, note text NOT NULL");
     }
 
     /**
@@ -36,8 +27,8 @@ class DropNotNullTest extends PostgresTestBase {
     void dropsNotNull() {
         dropNotNull("note");
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "id", "is_nullable"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "id", "is_nullable"));
     }
 
     /**
@@ -47,9 +38,9 @@ class DropNotNullTest extends PostgresTestBase {
     void acceptsNullAfterDroppingNotNull() {
         dropNotNull("note");
 
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, note) VALUES (1, NULL)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, NULL)");
         Integer nulls = dsl.fetchOne(
-                        "SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + TARGET + " WHERE note IS NULL")
+                        "SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note IS NULL")
                 .get(0, Integer.class);
         assertEquals(1, nulls);
     }
@@ -70,7 +61,7 @@ class DropNotNullTest extends PostgresTestBase {
     }
 
     private void dropNotNull(String column, Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column,
+        Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), column,
                 lockTimeout, sleepTime, duration);
     }
 }

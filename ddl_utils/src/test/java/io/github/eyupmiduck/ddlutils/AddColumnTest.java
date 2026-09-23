@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,18 +10,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * applies it through {@code ddl_utils_lib.alter_table}, honouring the nullable flag
  * and an optional default expression.
  */
-class AddColumnTest extends PostgresTestBase {
+class AddColumnTest extends SingleTableTest {
 
-    private static final String TARGET = "add_column_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    AddColumnTest() {
+        super("add_column_target", "id int");
     }
 
     /**
@@ -34,9 +24,9 @@ class AddColumnTest extends PostgresTestBase {
     void addsNullableColumnWithoutDefault() {
         addColumn("note", "text", true, null, 1000, 10, 5000);
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "note"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
     }
 
     /**
@@ -47,7 +37,7 @@ class AddColumnTest extends PostgresTestBase {
     void addsColumnWithDefaultExpression() {
         addColumn("created", "timestamptz", true, "now()", 1000, 10, 5000);
 
-        assertTrue(columnAttribute(PUBLIC_SCHEMA, TARGET, "created", "column_default").contains("now()"));
+        assertTrue(columnAttribute(PUBLIC_SCHEMA, target(), "created", "column_default").contains("now()"));
     }
 
     /**
@@ -57,8 +47,8 @@ class AddColumnTest extends PostgresTestBase {
     void addsNotNullColumnWithDefault() {
         addColumn("count", "int", false, "0", 1000, 10, 5000);
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "is_nullable"));
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "count", "column_default");
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "count", "is_nullable"));
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "count", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("0"));
     }
@@ -69,11 +59,11 @@ class AddColumnTest extends PostgresTestBase {
      */
     @Test
     void rejectsNotNullColumnWithoutDefaultOnPopulatedTable() {
-        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id) VALUES (1)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id) VALUES (1)");
 
         assertSqlState("23502", () -> addColumn("required", "int", false, null, 1000, 10, 5000));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "required"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "required"));
     }
 
     /**
@@ -116,7 +106,7 @@ class AddColumnTest extends PostgresTestBase {
 
     private void addColumn(String column, String type, Boolean nullable, String defaultValue,
                            Integer lockTimeout, Integer sleepTime, Integer duration) {
-        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, nullable,
+        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, type, nullable,
                 defaultValue, lockTimeout, sleepTime, duration);
     }
 }

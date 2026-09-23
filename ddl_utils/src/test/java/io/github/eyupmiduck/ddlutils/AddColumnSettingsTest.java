@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,22 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code ddl_utils.get_lock_settings} and delegate the actual DDL to the
  * {@code ddl_utils_lib} helpers.
  */
-class AddColumnSettingsTest extends PostgresTestBase {
+class AddColumnSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "add_column_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    AddColumnSettingsTest() {
+        super("add_column_settings_target", "id int", true);
     }
 
     /**
@@ -39,9 +25,9 @@ class AddColumnSettingsTest extends PostgresTestBase {
     void addColumnUsesDatabaseDefaults() {
         addColumn("note", "text", "'none'", false);
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "note"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "is_nullable"));
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, TARGET, "note", "column_default");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
         assertNotNull(defaultExpression);
         assertTrue(defaultExpression.contains("'none'"));
     }
@@ -54,11 +40,11 @@ class AddColumnSettingsTest extends PostgresTestBase {
     @Test
     void addColumnOmitsDefaultWhenNotGiven() {
         dsl.execute("SELECT ddl_utils.add_column(?, ?, ?, ?, ?)",
-                PUBLIC_SCHEMA, TARGET, "blank", "int", true);
+                PUBLIC_SCHEMA, target(), "blank", "int", true);
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "blank"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "blank", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "blank", "column_default"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "blank"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "blank", "is_nullable"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "blank", "column_default"));
     }
 
     /**
@@ -72,11 +58,11 @@ class AddColumnSettingsTest extends PostgresTestBase {
                 new String[]{null, null},
                 new Boolean[]{true, false});
 
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "first"));
-        assertTrue(hasColumn(PUBLIC_SCHEMA, TARGET, "second"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, TARGET, "first", "column_default"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, TARGET, "second", "is_nullable"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "second"));
+        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "first", "is_nullable"));
+        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "first", "column_default"));
+        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "second", "is_nullable"));
     }
 
     /**
@@ -87,11 +73,11 @@ class AddColumnSettingsTest extends PostgresTestBase {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000, () -> addColumn("blocked", "int", null, true));
+        assertGivesUpWhileTableLocked(target(), 2000, () -> addColumn("blocked", "int", null, true));
 
-        assertFalse(hasColumn(PUBLIC_SCHEMA, TARGET, "blocked"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked"));
     }
 
     /**
@@ -116,11 +102,11 @@ class AddColumnSettingsTest extends PostgresTestBase {
     }
 
     private void addColumn(String column, String type, String defaultValue, Boolean nullable) {
-        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, TARGET, column, type, nullable, defaultValue);
+        Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, type, nullable, defaultValue);
     }
 
     private void addColumns(String[] names, String[] types, String[] defaults, Boolean[] nullable) {
-        Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, TARGET, names, types, defaults, nullable);
+        Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, target(), names, types, defaults, nullable);
     }
 
 }

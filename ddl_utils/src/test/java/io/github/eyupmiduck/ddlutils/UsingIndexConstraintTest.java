@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,21 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * index as a primary key or unique constraint through
  * {@code ddl_utils_lib.alter_table}.
  */
-class UsingIndexConstraintTest extends PostgresTestBase {
+class UsingIndexConstraintTest extends SingleTableTest {
 
-    private static final String TARGET = "using_index_target";
     private static final int DDL_LOCK_TIMEOUT = 1000;
     private static final int SLEEP_TIME = 10;
     private static final int STATEMENT_DURATION = 5000;
 
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int NOT NULL, code text NOT NULL");
-    }
-
-    @AfterEach
-    void dropTargetTable() {
-        dropTestTable(TARGET);
+    UsingIndexConstraintTest() {
+        super("using_index_target", "id int NOT NULL, code text NOT NULL");
     }
 
     /**
@@ -35,7 +26,7 @@ class UsingIndexConstraintTest extends PostgresTestBase {
      */
     @Test
     void addsPrimaryKeyUsingIndex() {
-        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + TARGET + " (id)");
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
 
         addPrimaryKeyUsingIndex("target_pk", "target_pk_idx");
 
@@ -55,13 +46,13 @@ class UsingIndexConstraintTest extends PostgresTestBase {
      */
     @Test
     void addsUniqueConstraintUsingIndex() {
-        dsl.execute("CREATE UNIQUE INDEX target_code_idx ON " + PUBLIC_SCHEMA + "." + TARGET + " (code)");
+        dsl.execute("CREATE UNIQUE INDEX target_code_idx ON " + PUBLIC_SCHEMA + "." + target() + " (code)");
 
         addUniqueConstraintUsingIndex("target_code", "target_code_idx");
 
         assertEquals("u", constraintType("target_code"));
         assertSqlState("23505",
-                () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (id, code) VALUES (1, 'a'), (2, 'a')"));
+                () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, code) VALUES (1, 'a'), (2, 'a')"));
     }
 
     /**
@@ -86,12 +77,12 @@ class UsingIndexConstraintTest extends PostgresTestBase {
     }
 
     private void addPrimaryKeyUsingIndex(String name, String index) {
-        Routines.addPrimaryKeyUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, name, index,
+        Routines.addPrimaryKeyUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, target(), name, index,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }
 
     private void addUniqueConstraintUsingIndex(String name, String index) {
-        Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, name, index,
+        Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, target(), name, index,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }
 }

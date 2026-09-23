@@ -1,8 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,22 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * resolves the table's lock settings through {@code get_lock_settings} and
  * delegates to the {@code ddl_utils_lib} helper.
  */
-class SetColumnAttributeSettingsTest extends PostgresTestBase {
+class SetColumnAttributeSettingsTest extends SingleTableTest {
 
-    private static final String TARGET = "set_column_attribute_settings_target";
-
-    @BeforeEach
-    void createTargetTable() {
-        createTestTable(TARGET, "id int, note text");
-    }
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-        }
+    SetColumnAttributeSettingsTest() {
+        super("set_column_attribute_settings_target", "id int, note text", true);
     }
 
     /**
@@ -36,9 +22,9 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
      */
     @Test
     void setColumnStorageUsesDatabaseDefaults() {
-        Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "EXTERNAL");
+        Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL");
 
-        assertEquals("external", columnStorage(PUBLIC_SCHEMA, TARGET, "note"));
+        assertEquals("external", columnStorage(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -46,9 +32,9 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
      */
     @Test
     void setColumnCompressionUsesDatabaseDefaults() {
-        Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz");
+        Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz");
 
-        assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, TARGET, "note"));
+        assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -59,12 +45,12 @@ class SetColumnAttributeSettingsTest extends PostgresTestBase {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 100, 100, 300);
+        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
 
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "EXTERNAL"));
-        assertGivesUpWhileTableLocked(TARGET, 2000,
-                () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "note", "pglz"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"));
+        assertGivesUpWhileTableLocked(target(), 2000,
+                () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz"));
     }
 
 }
