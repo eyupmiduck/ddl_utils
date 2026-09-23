@@ -30,7 +30,7 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertValidated(PUBLIC_SCHEMA, target(), "positive");
         assertSqlState("23514",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (-1)"));
     }
@@ -56,7 +56,7 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
 
     /**
@@ -67,11 +67,11 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
     void recoversFromPartialFailureAfterAdd() {
         dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
                 + " ADD CONSTRAINT positive CHECK (value > 0) NOT VALID");
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertNotValidated(PUBLIC_SCHEMA, target(), "positive");
 
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
 
     /**
@@ -84,12 +84,12 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (-1)");
 
         assertSqlState("23514", () -> callEnsureCheckConstraint("positive", "value > 0"));
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertNotValidated(PUBLIC_SCHEMA, target(), "positive");
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET value = 1 WHERE value < 0");
         callEnsureCheckConstraint("positive", "value > 0");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
 
     /**
@@ -122,7 +122,7 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
             pool.shutdownNow();
         }
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, target(), "positive"));
+        assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
 
     private void callEnsureCheckConstraint(String name, String expression) {

@@ -28,7 +28,7 @@ class DropColumnDefaultTest extends SingleTableTest {
     void dropsDefault() {
         dropColumnDefault("note");
 
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
     }
 
@@ -39,7 +39,7 @@ class DropColumnDefaultTest extends SingleTableTest {
     void dropsDefaultWhenAbsent() {
         dropColumnDefault("id");
 
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "id", "column_default"));
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "id");
     }
 
     /**

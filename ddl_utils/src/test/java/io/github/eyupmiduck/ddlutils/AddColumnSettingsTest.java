@@ -26,10 +26,8 @@ class AddColumnSettingsTest extends SingleTableTest {
         addColumn("note", "text", "'none'", false);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("'none'"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'none'");
     }
 
     /**
@@ -43,8 +41,8 @@ class AddColumnSettingsTest extends SingleTableTest {
                 PUBLIC_SCHEMA, target(), "blank", "int", true);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "blank"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "blank", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "blank", "column_default"));
+        assertNullable(PUBLIC_SCHEMA, target(), "blank");
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "blank");
     }
 
     /**
@@ -60,9 +58,9 @@ class AddColumnSettingsTest extends SingleTableTest {
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "first"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "second"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "first", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "first", "column_default"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "second", "is_nullable"));
+        assertNullable(PUBLIC_SCHEMA, target(), "first");
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "first");
+        assertNotNullable(PUBLIC_SCHEMA, target(), "second");
     }
 
     /**

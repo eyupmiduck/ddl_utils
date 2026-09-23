@@ -25,8 +25,8 @@ class AddColumnTest extends SingleTableTest {
         addColumn("note", "text", true, null, 1000, 10, 5000);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
+        assertNullable(PUBLIC_SCHEMA, target(), "note");
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**
@@ -37,7 +37,7 @@ class AddColumnTest extends SingleTableTest {
     void addsColumnWithDefaultExpression() {
         addColumn("created", "timestamptz", true, "now()", 1000, 10, 5000);
 
-        assertTrue(columnAttribute(PUBLIC_SCHEMA, target(), "created", "column_default").contains("now()"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "created", "now()");
     }
 
     /**
@@ -47,10 +47,8 @@ class AddColumnTest extends SingleTableTest {
     void addsNotNullColumnWithDefault() {
         addColumn("count", "int", false, "0", 1000, 10, 5000);
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "count", "is_nullable"));
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "count", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("0"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "count");
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "count", "0");
     }
 
     /**

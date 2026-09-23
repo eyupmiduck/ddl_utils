@@ -33,16 +33,12 @@ class SchemaLockSettingsTest extends PostgresTestBase {
         setSchemaLockSettings(SCHEMA, 200, 300, 40);
         Record inserted = getSchemaLockSettings(SCHEMA);
         assertNotNull(inserted);
-        assertEquals(200, inserted.get("ddl_lock_timeout", Integer.class));
-        assertEquals(300, inserted.get("sleep_time", Integer.class));
-        assertEquals(40, inserted.get("statement_duration", Integer.class));
+        assertLockSettings(inserted, 200, 300, 40);
 
         setSchemaLockSettings(SCHEMA, 10, 20, 30);
         Record updated = getSchemaLockSettings(SCHEMA);
         assertNotNull(updated);
-        assertEquals(10, updated.get("ddl_lock_timeout", Integer.class));
-        assertEquals(20, updated.get("sleep_time", Integer.class));
-        assertEquals(30, updated.get("statement_duration", Integer.class));
+        assertLockSettings(updated, 10, 20, 30);
     }
 
     /**

@@ -23,7 +23,7 @@ class DropColumnDefaultSettingsTest extends SingleTableTest {
     void dropColumnDefaultUsesDatabaseDefaults() {
         Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**

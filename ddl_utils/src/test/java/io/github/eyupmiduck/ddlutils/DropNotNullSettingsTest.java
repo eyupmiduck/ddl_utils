@@ -23,7 +23,7 @@ class DropNotNullSettingsTest extends SingleTableTest {
     void dropNotNullUsesDatabaseDefaults() {
         Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNullable(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**
