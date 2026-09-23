@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.eyupmiduck</groupId>
         <artifactId>ddl-utils-parent</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>docker_java_config</artifactId>
