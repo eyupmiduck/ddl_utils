@@ -30,7 +30,7 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
         addPrimaryKeyUsingIndex("target_pk", "target_pk_idx");
 
-        assertEquals("p", constraintType("target_pk"));
+        assertEquals("p", constraintType(PUBLIC_SCHEMA, "target_pk"));
     }
 
     /**
@@ -50,7 +50,7 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
         addUniqueConstraintUsingIndex("target_code", "target_code_idx");
 
-        assertEquals("u", constraintType("target_code"));
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "target_code"));
         assertSqlState("23505",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, code) VALUES (1, 'a'), (2, 'a')"));
     }
@@ -64,16 +64,6 @@ class UsingIndexConstraintTest extends SingleTableTest {
         assertDomainViolation(() -> addPrimaryKeyUsingIndex("pk", null));
         assertDomainViolation(() -> addUniqueConstraintUsingIndex(null, "idx"));
         assertDomainViolation(() -> addUniqueConstraintUsingIndex("uq", null));
-    }
-
-    private String constraintType(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT contype::text
-                        FROM pg_constraint
-                        WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, String.class);
     }
 
     private void addPrimaryKeyUsingIndex(String name, String index) {

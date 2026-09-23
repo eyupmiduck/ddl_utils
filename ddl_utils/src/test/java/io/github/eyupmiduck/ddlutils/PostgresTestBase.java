@@ -18,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
@@ -709,6 +710,70 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Returns whether any constraint with the given name exists in a schema.
+     * Constraint names are unique per table, not per schema, so this matches a
+     * name on any table in the schema.
+     *
+     * @param schema the schema name
+     * @param name   the constraint name
+     * @return {@code true} when a constraint with that name exists in the schema
+     */
+    protected boolean constraintExists(String schema, String name) {
+        return Boolean.TRUE.equals(dsl.fetchValue(
+                """
+                        SELECT EXISTS (
+                            SELECT 1 FROM pg_constraint
+                            WHERE conname = ?
+                                AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
+                        )
+                        """,
+                name, schema));
+    }
+
+    /**
+     * Returns the {@code contype} of the named constraint in a schema
+     * ({@code p} primary key, {@code u} unique, {@code f} foreign key,
+     * {@code c} check).
+     *
+     * @param schema the schema name
+     * @param name   the constraint name
+     * @return the constraint type code
+     */
+    protected String constraintType(String schema, String name) {
+        return dsl.fetchOne(
+                """
+                        SELECT contype::text FROM pg_constraint
+                        WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
+                        """,
+                name, schema).get(0, String.class);
+    }
+
+    /**
+     * Returns the number of temporary NOT NULL proof CHECK constraints for a
+     * column, or {@code -1} when the count cannot be read. Only CHECK
+     * constraints count: PostgreSQL 18+ also records the column's NOT NULL as a
+     * {@code pg_constraint} row.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     * @return the number of matching constraints, or {@code -1}
+     */
+    protected int notNullProofConstraintCount(String schema, String table, String column) {
+        Integer count = dsl.fetchOne(
+                """
+                        SELECT count(*)::int
+                        FROM pg_constraint
+                        WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
+                                            AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                            AND contype = 'c'
+                            AND conname = ?
+                        """,
+                table, schema, notNullCheckConstraintName(schema, table, column)).get(0, Integer.class);
+        return count != null ? count : -1;
+    }
+
+    /**
      * Sets the table-level lock settings.
      *
      * @param schema      the table schema
@@ -810,6 +875,49 @@ abstract class PostgresTestBase {
                         SELECT ddl_lock_timeout, sleep_time, statement_duration
                         FROM ddl_utils.get_database_lock_settings()
                         """);
+    }
+
+    /**
+     * Deletes the singleton database defaults row, for tests that exercise the
+     * missing-row path. Use with {@link #restoreDatabaseDefaults}.
+     */
+    protected void deleteDatabaseDefaults() {
+        try (Connection connection = openOwnerConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("DELETE FROM ddl_utils.database_lock_settings WHERE id = 1");
+        } catch (SQLException e) {
+            throw new IllegalStateException("failed to delete the database defaults", e);
+        }
+    }
+
+    /**
+     * Recreates the singleton database defaults row with the given values, for
+     * tests that deleted it. A raw INSERT is needed because
+     * {@code set_database_lock_settings} raises when the row is missing.
+     *
+     * @param ddlLockTimeout    the {@code ddl_lock_timeout} to restore
+     * @param sleepTime         the {@code sleep_time} to restore
+     * @param statementDuration the {@code statement_duration} to restore
+     */
+    protected void restoreDatabaseDefaults(int ddlLockTimeout, int sleepTime, int statementDuration) {
+        try (Connection connection = openOwnerConnection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     INSERT INTO ddl_utils.database_lock_settings (
+                         id, ddl_lock_timeout, sleep_time, statement_duration
+                     )
+                     VALUES (1, ?, ?, ?)
+                     ON CONFLICT (id) DO UPDATE
+                         SET ddl_lock_timeout   = EXCLUDED.ddl_lock_timeout,
+                             sleep_time         = EXCLUDED.sleep_time,
+                             statement_duration = EXCLUDED.statement_duration
+                     """)) {
+            statement.setInt(1, ddlLockTimeout);
+            statement.setInt(2, sleepTime);
+            statement.setInt(3, statementDuration);
+            statement.execute();
+        } catch (SQLException e) {
+            throw new IllegalStateException("failed to restore the database defaults", e);
+        }
     }
 
     /**

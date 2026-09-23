@@ -47,7 +47,7 @@ class TableHelperSettingsTest extends PostgresTestBase {
 
         Routines.addPrimaryKeyUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "pk", "pk_idx");
 
-        assertEquals("p", constraintType("pk"));
+        assertEquals("p", constraintType(PUBLIC_SCHEMA, "pk"));
     }
 
     /**
@@ -58,11 +58,11 @@ class TableHelperSettingsTest extends PostgresTestBase {
     void addUniqueAndForeignKeyUseDatabaseDefaults() {
         dsl.execute("CREATE UNIQUE INDEX code_idx ON " + PUBLIC_SCHEMA + "." + TARGET + " (code)");
         Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "code_uq", "code_idx");
-        assertEquals("u", constraintType("code_uq"));
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "code_uq"));
 
         Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "fk_parent",
                 new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"});
-        assertTrue(constraintExists("fk_parent"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, "fk_parent"));
     }
 
     /**
@@ -93,26 +93,6 @@ class TableHelperSettingsTest extends PostgresTestBase {
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
                         "code_uq", "code_idx"));
-    }
-
-    private String constraintType(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT contype::text FROM pg_constraint
-                        WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        """,
-                name, PUBLIC_SCHEMA).get(0, String.class);
-    }
-
-    private boolean constraintExists(String name) {
-        return dsl.fetchOne(
-                """
-                        SELECT EXISTS (
-                            SELECT 1 FROM pg_constraint
-                            WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                        )
-                        """,
-                name, PUBLIC_SCHEMA).get(0, Boolean.class);
     }
 
 }
