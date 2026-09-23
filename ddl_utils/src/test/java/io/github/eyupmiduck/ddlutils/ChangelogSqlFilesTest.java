@@ -4,8 +4,6 @@ import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -24,11 +22,9 @@ class ChangelogSqlFilesTest {
      * XML).
      */
     @Test
-    void noOrphanedSqlFiles() throws IOException, URISyntaxException {
-        URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
-        assertNotNull(changelogUrl, "changelog directory must be on the test classpath");
-        Path changelogRoot = Path.of(changelogUrl.toURI());
-        Path master = changelogRoot.resolve("db.changelog-master.xml");
+    void noOrphanedSqlFiles() throws IOException {
+        Path changelogRoot = ChangelogTestSupport.changelogRoot();
+        Path master = ChangelogTestSupport.master();
 
         // Sanity check so the assertion below cannot pass while the graph
         // references nothing (a misresolved root or an empty changelog).

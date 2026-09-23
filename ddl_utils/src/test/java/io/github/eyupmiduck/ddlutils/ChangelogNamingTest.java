@@ -4,13 +4,10 @@ import io.github.eyupmiduck.changelogvalidator.ChangelogValidator;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -37,12 +34,8 @@ class ChangelogNamingTest {
      * violates the {@code NNN-name.sql} pattern.
      */
     @Test
-    void sqlFilesHaveThreeDigitPrefix() throws IOException, URISyntaxException {
-        URL changesUrl = getClass().getClassLoader().getResource("db/changelog/changes");
-        assertNotNull(changesUrl, "changelog directory must be on the test classpath");
-        // Resolved from the exploded test classes on the file system; the tests
-        // are not run from a packaged jar.
-        Path changesRoot = Path.of(changesUrl.toURI());
+    void sqlFilesHaveThreeDigitPrefix() throws IOException {
+        Path changesRoot = ChangelogTestSupport.changesRoot();
 
         List<Path> invalid = ChangelogValidator.findInvalidlyNamedSqlFiles(changesRoot);
 
@@ -54,11 +47,9 @@ class ChangelogNamingTest {
      * changeSet id violates the naming convention.
      */
     @Test
-    void changeSetsFollowTheNamingConvention() throws IOException, URISyntaxException {
-        URL changelogUrl = getClass().getClassLoader().getResource("db/changelog");
-        assertNotNull(changelogUrl, "changelog directory must be on the test classpath");
-        Path changelogRoot = Path.of(changelogUrl.toURI());
-        Path master = changelogRoot.resolve("db.changelog-master.xml");
+    void changeSetsFollowTheNamingConvention() throws IOException {
+        Path changelogRoot = ChangelogTestSupport.changelogRoot();
+        Path master = ChangelogTestSupport.master();
 
         List<ChangelogValidator.InvalidChangeSet> invalid =
                 ChangelogValidator.findInvalidlyNamedChangeSets(changelogRoot, master, CHANGE_SET_ID);
