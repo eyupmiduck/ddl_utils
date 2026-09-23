@@ -43,7 +43,7 @@ final class ChangelogTestSupport {
      * @return the master changelog path
      */
     static Path master() {
-        return changelogRoot().resolve("db.changelog-master.xml");
+        return changelogRoot().resolve(Path.of(MASTER_RESOURCE).getFileName());
     }
 
     private static Path classpathDir(String resource) {
