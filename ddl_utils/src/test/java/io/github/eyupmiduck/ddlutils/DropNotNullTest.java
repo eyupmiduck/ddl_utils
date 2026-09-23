@@ -27,8 +27,8 @@ class DropNotNullTest extends SingleTableTest {
     void dropsNotNull() {
         dropNotNull("note");
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "id", "is_nullable"));
+        assertNullable(PUBLIC_SCHEMA, target(), "note");
+        assertNotNullable(PUBLIC_SCHEMA, target(), "id");
     }
 
     /**

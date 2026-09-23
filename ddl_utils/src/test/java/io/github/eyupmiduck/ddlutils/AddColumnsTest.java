@@ -35,10 +35,10 @@ class AddColumnsTest extends SingleTableTest {
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "first"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "second"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "first", "is_nullable"));
-        assertNull(columnAttribute(PUBLIC_SCHEMA, target(), "first", "column_default"));
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "second", "is_nullable"));
-        assertTrue(columnAttribute(PUBLIC_SCHEMA, target(), "second", "column_default").contains("'x'"));
+        assertNullable(PUBLIC_SCHEMA, target(), "first");
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "first");
+        assertNotNullable(PUBLIC_SCHEMA, target(), "second");
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "second", "'x'");
     }
 
     /**

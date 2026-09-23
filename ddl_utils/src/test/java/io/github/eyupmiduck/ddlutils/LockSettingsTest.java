@@ -36,9 +36,7 @@ class LockSettingsTest extends PostgresTestBase {
         Record row = tableRow();
 
         assertNotNull(row);
-        assertEquals(DEFAULT_DDL_LOCK_TIMEOUT, row.get("ddl_lock_timeout", Integer.class));
-        assertEquals(DEFAULT_SLEEP_TIME, row.get("sleep_time", Integer.class));
-        assertEquals(DEFAULT_STATEMENT_DURATION, row.get("statement_duration", Integer.class));
+        assertLockSettings(row, DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
     }
 
     /**
@@ -61,9 +59,7 @@ class LockSettingsTest extends PostgresTestBase {
         Record row = getDatabaseLockSettings();
 
         assertNotNull(row);
-        assertEquals(DEFAULT_DDL_LOCK_TIMEOUT, row.get("ddl_lock_timeout", Integer.class));
-        assertEquals(DEFAULT_SLEEP_TIME, row.get("sleep_time", Integer.class));
-        assertEquals(DEFAULT_STATEMENT_DURATION, row.get("statement_duration", Integer.class));
+        assertLockSettings(row, DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
     }
 
     /**
@@ -74,12 +70,8 @@ class LockSettingsTest extends PostgresTestBase {
     void setLockSettingsUpdatesValues() {
         setDatabaseLockSettings(250, 500, 60);
 
-        assertEquals(250, tableRow().get("ddl_lock_timeout", Integer.class));
-        assertEquals(500, tableRow().get("sleep_time", Integer.class));
-        assertEquals(60, tableRow().get("statement_duration", Integer.class));
-        assertEquals(250, getDatabaseLockSettings().get("ddl_lock_timeout", Integer.class));
-        assertEquals(500, getDatabaseLockSettings().get("sleep_time", Integer.class));
-        assertEquals(60, getDatabaseLockSettings().get("statement_duration", Integer.class));
+        assertLockSettings(tableRow(), 250, 500, 60);
+        assertLockSettings(getDatabaseLockSettings(), 250, 500, 60);
     }
 
     /**

@@ -24,9 +24,7 @@ class SetColumnDefaultSettingsTest extends SingleTableTest {
     void setColumnDefaultUsesDatabaseDefaults() {
         Routines.setColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "'none'");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("'none'"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'none'");
     }
 
     /**

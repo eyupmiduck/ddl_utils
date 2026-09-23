@@ -25,7 +25,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 
@@ -40,7 +40,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 
@@ -61,7 +61,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
             clearTableLockSettings(PUBLIC_SCHEMA, target());
         }
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 
@@ -80,7 +80,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull(column);
         callEnsureNotNull(column);
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), column, "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), column);
         assertEquals(0, temporaryConstraints());
     }
 
@@ -95,7 +95,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 
@@ -110,7 +110,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 
@@ -125,13 +125,13 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         assertSqlState("23514", this::callEnsureNotNull);
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(1, temporaryConstraints());
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET note = 'fixed' WHERE note IS NULL");
         callEnsureNotNull();
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, temporaryConstraints());
     }
 

@@ -28,9 +28,7 @@ class SetColumnDefaultTest extends SingleTableTest {
     void setsLiteralDefault() {
         setColumnDefault("note", "'none'");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("'none'"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'none'");
     }
 
     /**
@@ -40,9 +38,7 @@ class SetColumnDefaultTest extends SingleTableTest {
     void setsExpressionDefault() {
         setColumnDefault("note", "upper('a')");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("upper"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "upper");
     }
 
     /**
@@ -53,9 +49,7 @@ class SetColumnDefaultTest extends SingleTableTest {
         setColumnDefault("note", "'first'");
         setColumnDefault("note", "'second'");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("'second'"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'second'");
     }
 
     /**
@@ -76,9 +70,7 @@ class SetColumnDefaultTest extends SingleTableTest {
     void acceptsCommaInsideFunctionCall() {
         setColumnDefault("note", "concat('a', 'b')");
 
-        String defaultExpression = columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default");
-        assertNotNull(defaultExpression);
-        assertTrue(defaultExpression.contains("concat"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "concat");
     }
 
     /**

@@ -23,7 +23,7 @@ class SetNotNullSettingsTest extends SingleTableTest {
     void setNotNullUsesDatabaseDefaults() {
         Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**

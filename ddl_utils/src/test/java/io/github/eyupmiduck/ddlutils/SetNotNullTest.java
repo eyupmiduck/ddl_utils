@@ -27,8 +27,8 @@ class SetNotNullTest extends SingleTableTest {
     void setsNotNull() {
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "id", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertNullable(PUBLIC_SCHEMA, target(), "id");
     }
 
     /**
@@ -40,7 +40,7 @@ class SetNotNullTest extends SingleTableTest {
         setNotNull("note");
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**
@@ -53,7 +53,7 @@ class SetNotNullTest extends SingleTableTest {
 
         assertSqlState("23502", () -> setNotNull("note"));
 
-        assertEquals("YES", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNullable(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**
@@ -70,7 +70,7 @@ class SetNotNullTest extends SingleTableTest {
 
         setNotNull("note");
 
-        assertEquals("NO", columnAttribute(PUBLIC_SCHEMA, target(), "note", "is_nullable"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
     }
 
     /**

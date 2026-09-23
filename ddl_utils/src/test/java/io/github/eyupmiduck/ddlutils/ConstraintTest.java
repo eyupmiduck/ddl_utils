@@ -45,7 +45,7 @@ class ConstraintTest extends PostgresTestBase {
 
         addCheckConstraint("value_positive", "value > 0");
 
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "value_positive"));
+        assertNotValidated(PUBLIC_SCHEMA, TARGET, "value_positive");
     }
 
     /**
@@ -58,7 +58,7 @@ class ConstraintTest extends PostgresTestBase {
 
         validateConstraint("value_positive");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "value_positive"));
+        assertValidated(PUBLIC_SCHEMA, TARGET, "value_positive");
         assertSqlState("23514",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (-1)"));
     }
@@ -94,7 +94,7 @@ class ConstraintTest extends PostgresTestBase {
 
         addForeignKey("fk_parent", new String[]{"parent_id"}, REFERENCED, new String[]{"id"});
 
-        assertFalse(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
+        assertNotValidated(PUBLIC_SCHEMA, TARGET, "fk_parent");
     }
 
     /**
@@ -105,7 +105,7 @@ class ConstraintTest extends PostgresTestBase {
         addForeignKey("fk_parent", new String[]{"parent_id"}, REFERENCED, new String[]{"id"});
         validateConstraint("fk_parent");
 
-        assertTrue(constraintValidated(PUBLIC_SCHEMA, TARGET, "fk_parent"));
+        assertValidated(PUBLIC_SCHEMA, TARGET, "fk_parent");
         assertSqlState("23503",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)"));
     }

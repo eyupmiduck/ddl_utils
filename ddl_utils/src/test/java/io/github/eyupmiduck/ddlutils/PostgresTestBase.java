@@ -601,6 +601,93 @@ abstract class PostgresTestBase {
     }
 
     /**
+     * Asserts that a lock-settings row holds the expected values.
+     *
+     * @param row               the settings row
+     * @param ddlLockTimeout    the expected {@code ddl_lock_timeout} in ms
+     * @param sleepTime         the expected {@code sleep_time} in ms
+     * @param statementDuration the expected {@code statement_duration} in ms
+     */
+    protected static void assertLockSettings(Record row, int ddlLockTimeout, int sleepTime, int statementDuration) {
+        assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
+        assertEquals(sleepTime, row.get("sleep_time", Integer.class));
+        assertEquals(statementDuration, row.get("statement_duration", Integer.class));
+    }
+
+    /**
+     * Asserts that a column is nullable.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     */
+    protected void assertNullable(String schema, String table, String column) {
+        assertEquals("YES", columnAttribute(schema, table, column, "is_nullable"),
+                () -> column + " should be nullable");
+    }
+
+    /**
+     * Asserts that a column is not nullable.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     */
+    protected void assertNotNullable(String schema, String table, String column) {
+        assertEquals("NO", columnAttribute(schema, table, column, "is_nullable"),
+                () -> column + " should not be nullable");
+    }
+
+    /**
+     * Asserts that a column has a default expression containing the given text.
+     *
+     * @param schema            the table schema
+     * @param table             the table name
+     * @param column            the column name
+     * @param expectedSubstring a substring the default expression must contain
+     */
+    protected void assertColumnDefault(String schema, String table, String column, String expectedSubstring) {
+        String defaultExpression = columnAttribute(schema, table, column, "column_default");
+        assertNotNull(defaultExpression, () -> column + " should have a default");
+        assertTrue(defaultExpression.contains(expectedSubstring),
+                () -> "default " + defaultExpression + " should contain " + expectedSubstring);
+    }
+
+    /**
+     * Asserts that a column has no default expression.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param column the column name
+     */
+    protected void assertNoColumnDefault(String schema, String table, String column) {
+        assertNull(columnAttribute(schema, table, column, "column_default"),
+                () -> column + " should have no default");
+    }
+
+    /**
+     * Asserts that the named constraint on a table is validated.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param name   the constraint name
+     */
+    protected void assertValidated(String schema, String table, String name) {
+        assertTrue(constraintValidated(schema, table, name), () -> name + " should be validated");
+    }
+
+    /**
+     * Asserts that the named constraint on a table is not validated.
+     *
+     * @param schema the table schema
+     * @param table  the table name
+     * @param name   the constraint name
+     */
+    protected void assertNotValidated(String schema, String table, String name) {
+        assertFalse(constraintValidated(schema, table, name), () -> name + " should not be validated");
+    }
+
+    /**
      * Returns whether the named constraint exists on a table.
      *
      * @param schema the table schema
