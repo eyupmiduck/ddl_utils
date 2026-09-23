@@ -16,9 +16,6 @@ class RenameTableTest extends PostgresTestBase {
 
     private static final String TARGET = "rename_table_target";
     private static final String NEW_NAME = "rename_table_renamed";
-    private static final int DDL_LOCK_TIMEOUT = 1000;
-    private static final int SLEEP_TIME = 10;
-    private static final int STATEMENT_DURATION = 5000;
 
     @BeforeEach
     void createTargetTable() {

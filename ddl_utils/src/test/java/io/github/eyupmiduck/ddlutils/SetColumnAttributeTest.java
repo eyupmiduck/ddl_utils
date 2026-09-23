@@ -13,10 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class SetColumnAttributeTest extends SingleTableTest {
 
-    private static final int DDL_LOCK_TIMEOUT = 1000;
-    private static final int SLEEP_TIME = 10;
-    private static final int STATEMENT_DURATION = 5000;
-
     SetColumnAttributeTest() {
         super("set_column_attribute_target", "id int, note text");
     }
