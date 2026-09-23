@@ -312,6 +312,44 @@ list, each quoted with `%I` and optionally prefixed with a literal SQL clause
 (for example `'DROP COLUMN '`). Used to build the identifier lists in
 `add_foreign_key` and `drop_columns`.
 
+### `ddl_utils_lib.assert_no_top_level_comma(i_value, i_context)`
+
+```sql
+i_value   text
+i_context ddl_utils.non_null_text
+RETURNS void
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the value contains a
+top-level comma (one that could append another `ALTER TABLE` action). Used by
+`add_check_constraint`, `add_columns` and `set_column_default`.
+
+### `ddl_utils_lib.assert_allowed_keyword(i_value, i_allowed, i_context)`
+
+```sql
+i_value   ddl_utils.non_null_text
+i_allowed text[]
+i_context ddl_utils.non_null_text
+RETURNS void
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the value is not one of the
+lower-case keyword allow-list (the comparison is case-insensitive). Used by
+`add_identity`, `set_column_compression` and `set_column_storage`.
+
+### `ddl_utils_lib.assert_equal_cardinality(i_a, i_b, i_context)`
+
+```sql
+i_a       anyarray
+i_b       anyarray
+i_context ddl_utils.non_null_text
+RETURNS void
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the two arrays have
+different lengths (a NULL array counts as unequal). Used by `add_foreign_key`
+and the `ensure_foreign_key` procedure.
+
 ###
 
 `ddl_utils_lib.add_columns(i_schema_name, i_table_name, i_column_names, i_column_types, i_default_values, i_nullable, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`

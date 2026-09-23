@@ -16,11 +16,9 @@ BEGIN
     -- The default is an arbitrary expression (now(), coalesce(a, b), ...), so
     -- reject only a top-level comma that could append another ALTER TABLE
     -- action. The non_null_text domain already rejects a null or blank value.
-    IF ddl_utils_lib.has_top_level_comma(i_default_value) THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.set_column_default: the default expression contains a top-level comma'
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_no_top_level_comma(
+            i_value => i_default_value,
+            i_context => 'ddl_utils_lib.set_column_default: the default expression');
 
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,

@@ -31,15 +31,10 @@ BEGIN
     -- The definitions are compared as a column mapping, which only makes sense
     -- for equal-length lists; reject mismatched lengths up front instead of
     -- silently dropping the surplus when they are zipped.
-    IF pg_catalog.cardinality(i_column_names)
-        <> pg_catalog.cardinality(i_referenced_column_names) THEN
-        RAISE EXCEPTION
-            'ddl_utils.ensure_foreign_key: the referencing and referenced '
-                'column lists must have the same length (columns=%, referenced=%)',
-            pg_catalog.cardinality(i_column_names),
-            pg_catalog.cardinality(i_referenced_column_names)
-            USING ERRCODE = '22023';
-    END IF;
+    PERFORM ddl_utils_lib.assert_equal_cardinality(
+            i_a => i_column_names,
+            i_b => i_referenced_column_names,
+            i_context => 'ddl_utils.ensure_foreign_key: column lists');
 
     -- A transaction-scoped advisory lock on this table serializes concurrent
     -- runs. The read-then-act guards are separated by COMMIT, so the lock is
