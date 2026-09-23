@@ -14,5 +14,9 @@
     <packaging>jar</packaging>
 
     <!-- Carries docker-java.properties onto classpaths that need it
-         (jOOQ codegen plugin realm, test classpath). -->
+         (jOOQ codegen plugin realm, test classpath). It is a build shim, not a
+         consumable artifact, so it is installed but never deployed. -->
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
 </project>

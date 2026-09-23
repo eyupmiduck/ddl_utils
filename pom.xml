@@ -128,6 +128,17 @@
         </repository>
     </repositories>
 
+    <!-- Releases are published to GitHub Packages by the Release workflow on a
+         v* tag. The tag drives the version via -Drevision; the `github` server
+         id supplies the write:packages credential (GITHUB_TOKEN in CI). -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/eyupmiduck/ddl_utils</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <pluginManagement>
             <plugins>

@@ -71,6 +71,23 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - Auto-fix SQL style: `scripts/sqlfluff-fix.sh` (uses the repo's `.venv`)
 - Lint the changelog semantics only (skip SQLFluff): `./mvnw -pl ddl_utils -am verify -Dskip.sqlfluff`
 - Skip the changelog linter only: `./mvnw verify -Dskip.liquibase-linter`
+- Simulate a release deploy locally (file repo, no credentials):
+  `./mvnw -Drevision=1.2.3 -DaltDeploymentRepository=local::file:/tmp/m2 deploy`
+
+## Releases
+
+- Versioning is CI-friendly: the root POM declares `<revision>` and uses
+  `flatten-maven-plugin` (`resolveCiFriendliesOnly`), and each module's
+  `<parent>` version is `${revision}`. `flatten` resolves it in the installed/
+  deployed POM. A release does not edit the POM; a snapshot bump changes the
+  single `<revision>` line.
+- A release is a `v<version>` tag pushed to `main`. The `Release` workflow
+  (`.github/workflows/release.yml`) derives the version from the tag
+  (`-Drevision=${tag#v}`), runs the full `verify` gate, deploys to GitHub
+  Packages, then creates the GitHub Release. Do not tag a commit that CI has
+  not built green.
+- The parent POM and `ddl_utils` are published. `docker_java_config` is a build
+  shim, so it sets `maven.deploy.skip` and is never deployed.
 
 ## Development principles
 
