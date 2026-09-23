@@ -255,3 +255,5 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - Work on a feature branch.
 - Keep commits focused.
 - Do not commit generated build output, secrets, credentials, or local IDE files.
+- Never merge a pull request without explicit approval. Open the PR, wait for
+  CI and review, then ask; do not merge it yourself.
