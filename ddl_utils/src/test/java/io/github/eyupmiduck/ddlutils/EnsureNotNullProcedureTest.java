@@ -26,7 +26,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull();
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -41,7 +41,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull();
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -62,7 +62,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         }
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -81,7 +81,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull(column);
 
         assertNotNullable(PUBLIC_SCHEMA, target(), column);
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -96,7 +96,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull();
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -111,7 +111,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull();
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -126,13 +126,13 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         assertSqlState("23514", this::callEnsureNotNull);
 
         assertNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(1, temporaryConstraints());
+        assertEquals(1, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET note = 'fixed' WHERE note IS NULL");
         callEnsureNotNull();
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
-        assertEquals(0, temporaryConstraints());
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -161,22 +161,5 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
     private void callEnsureNotNull(String column) {
         dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, target(), column);
-    }
-
-    private int temporaryConstraints() {
-        // Only CHECK constraints count as the temporary proof: PostgreSQL 18+
-        // records the column's NOT NULL as a pg_constraint row (contype 'n') too.
-        Integer count = dsl.fetchOne(
-                """
-                        SELECT count(*)::int
-                        FROM pg_constraint
-                        WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
-                                            AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
-                            AND contype = 'c'
-                            AND conname = ?
-                        """,
-                target(), PUBLIC_SCHEMA,
-                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note")).get(0, Integer.class);
-        return count != null ? count : -1;
     }
 }
