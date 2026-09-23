@@ -73,9 +73,7 @@ class AddColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000, () -> addColumn("blocked", "int", null, true));
+        assertUsesTableLockSettings(() -> addColumn("blocked", "int", null, true));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked"));
     }

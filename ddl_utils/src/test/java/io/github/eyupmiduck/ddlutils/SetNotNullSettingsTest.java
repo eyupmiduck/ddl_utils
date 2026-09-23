@@ -33,9 +33,7 @@ class SetNotNullSettingsTest extends SingleTableTest {
      */
     @Test
     void setNotNullUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
                 () -> Routines.setNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }

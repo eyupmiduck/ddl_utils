@@ -37,9 +37,7 @@ class SetColumnDefaultSettingsTest extends SingleTableTest {
      */
     @Test
     void setColumnDefaultUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
                 () -> Routines.setColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "'none'"));
     }
 }

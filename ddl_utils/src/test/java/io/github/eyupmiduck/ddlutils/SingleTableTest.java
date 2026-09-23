@@ -2,6 +2,9 @@ package io.github.eyupmiduck.ddlutils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.function.Executable;
+
+import java.sql.SQLException;
 
 /**
  * Base for tests that exercise one target table. The subclass supplies the
@@ -47,6 +50,41 @@ abstract class SingleTableTest extends PostgresTestBase {
      */
     protected final String target() {
         return targetName;
+    }
+
+    /**
+     * Sets the target table's lock settings to a short budget and asserts each
+     * call gives up quickly while the table is locked. The table budget is far
+     * below the database default (30000 ms), so a wrapper that used the database
+     * defaults would retry for ~30 s instead of giving up.
+     *
+     * @param wrapperCalls the wrapper calls expected to give up
+     * @throws SQLException         if the competing connection cannot be opened
+     * @throws InterruptedException if waiting for the lock is interrupted
+     */
+    protected void assertUsesTableLockSettings(Executable... wrapperCalls)
+            throws SQLException, InterruptedException {
+        assertUsesTableLockSettings(100, 100, 300, 2000, wrapperCalls);
+    }
+
+    /**
+     * Sets the target table's lock settings and asserts each call gives up
+     * quickly while the table is locked.
+     *
+     * @param lockTimeout       the per-attempt lock timeout in ms
+     * @param sleepTime         the retry sleep in ms
+     * @param statementDuration the statement budget in ms
+     * @param giveUpMillis      the maximum expected time to give up
+     * @param wrapperCalls      the wrapper calls expected to give up
+     * @throws SQLException         if the competing connection cannot be opened
+     * @throws InterruptedException if waiting for the lock is interrupted
+     */
+    protected void assertUsesTableLockSettings(int lockTimeout, int sleepTime, int statementDuration,
+            long giveUpMillis, Executable... wrapperCalls) throws SQLException, InterruptedException {
+        setTableLockSettings(PUBLIC_SCHEMA, targetName, lockTimeout, sleepTime, statementDuration);
+        for (Executable wrapperCall : wrapperCalls) {
+            assertGivesUpWhileTableLocked(targetName, giveUpMillis, wrapperCall);
+        }
     }
 
     @BeforeEach

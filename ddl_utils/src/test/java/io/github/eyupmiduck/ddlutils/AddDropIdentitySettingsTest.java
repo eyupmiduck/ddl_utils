@@ -39,11 +39,8 @@ class AddDropIdentitySettingsTest extends SingleTableTest {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
-                () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", IDENTITY_ALWAYS));
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
+                () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", IDENTITY_ALWAYS),
                 () -> Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", DROP_IDENTITY_IF_EXISTS));
     }
 }

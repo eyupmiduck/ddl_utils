@@ -65,9 +65,8 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
-
-        assertGivesUpWhileTableLocked(target(), GIVE_UP_MILLIS,
+        assertUsesTableLockSettings(
+                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name"));
     }
 
@@ -77,9 +76,8 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void dropColumnsUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
-
-        assertGivesUpWhileTableLocked(target(), GIVE_UP_MILLIS,
+        assertUsesTableLockSettings(
+                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, target(),
                         new String[]{"old_name", "keep"}));
     }
@@ -90,9 +88,8 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void renameColumnUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION);
-
-        assertGivesUpWhileTableLocked(target(), GIVE_UP_MILLIS,
+        assertUsesTableLockSettings(
+                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name", "new_name"));
     }
 }

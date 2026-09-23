@@ -34,9 +34,7 @@ class DropColumnDefaultSettingsTest extends SingleTableTest {
      */
     @Test
     void dropColumnDefaultUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
                 () -> Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }
