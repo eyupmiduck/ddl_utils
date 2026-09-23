@@ -45,11 +45,8 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
-                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"));
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
+                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"),
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz"));
     }
 

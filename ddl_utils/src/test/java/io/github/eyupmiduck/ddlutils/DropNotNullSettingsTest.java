@@ -34,9 +34,7 @@ class DropNotNullSettingsTest extends SingleTableTest {
      */
     @Test
     void dropNotNullUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
                 () -> Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
     }
 }

@@ -34,9 +34,7 @@ class DropExpressionSettingsTest extends SingleTableTest {
      */
     @Test
     void dropExpressionUsesTableLockSettings() throws Exception {
-        setTableLockSettings(PUBLIC_SCHEMA, target(), 100, 100, 300);
-
-        assertGivesUpWhileTableLocked(target(), 2000,
+        assertUsesTableLockSettings(
                 () -> Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), "b"));
 
         assertTrue(isGenerated(PUBLIC_SCHEMA, target(), "b"));
