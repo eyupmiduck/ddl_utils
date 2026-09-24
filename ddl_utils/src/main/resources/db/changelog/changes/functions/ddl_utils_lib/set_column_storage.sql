@@ -19,7 +19,7 @@ BEGIN
     -- unquoted PostgreSQL keywords.
     PERFORM ddl_utils_lib.assert_allowed_keyword(
             i_value => i_storage,
-            i_allowed => ARRAY['plain', 'external', 'extended', 'main'],
+            i_allowed => ARRAY ['plain', 'external', 'extended', 'main'],
             i_context => 'ddl_utils_lib.set_column_storage: storage');
 
     PERFORM ddl_utils_lib.alter_table(

@@ -19,7 +19,7 @@ BEGIN
     -- future writes only; existing values are not rewritten.
     PERFORM ddl_utils_lib.assert_allowed_keyword(
             i_value => i_compression,
-            i_allowed => ARRAY['pglz', 'lz4', 'default'],
+            i_allowed => ARRAY ['pglz', 'lz4', 'default'],
             i_context => 'ddl_utils_lib.set_column_compression: compression');
 
     PERFORM ddl_utils_lib.alter_table(

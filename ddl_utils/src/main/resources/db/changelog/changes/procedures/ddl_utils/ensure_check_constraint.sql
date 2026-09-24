@@ -9,10 +9,10 @@ CREATE OR REPLACE PROCEDURE ddl_utils.ensure_check_constraint(
 AS
 $$
 DECLARE
-    l_settings           ddl_utils.lock_settings;
-    l_relation           regclass;
-    l_lock_class         integer;
-    l_lock_key           integer;
+    l_settings   ddl_utils.lock_settings;
+    l_relation   regclass;
+    l_lock_class integer;
+    l_lock_key   integer;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
     SELECT *

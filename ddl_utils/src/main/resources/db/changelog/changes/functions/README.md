@@ -308,8 +308,8 @@ RETURNS text
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Joins the identifiers into a comma-separated
-list, each quoted with `%I` and optionally prefixed with a literal SQL clause
-(for example `'DROP COLUMN '`). Used to build the identifier lists in
+list, each quoted with `%I` and optionally prefixed with a literal SQL clause (for example `'DROP COLUMN '`). Used to
+build the identifier lists in
 `add_foreign_key` and `drop_columns`.
 
 ### `ddl_utils_lib.assert_no_top_level_comma(i_value, i_context)`

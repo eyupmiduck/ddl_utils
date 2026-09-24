@@ -1,4 +1,5 @@
-CREATE TYPE ddl_utils.lock_settings AS (
+CREATE TYPE ddl_utils.lock_settings AS
+(
     ddl_lock_timeout integer,
     sleep_time integer,
     statement_duration integer

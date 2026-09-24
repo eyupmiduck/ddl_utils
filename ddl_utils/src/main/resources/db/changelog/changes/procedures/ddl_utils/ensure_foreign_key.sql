@@ -12,7 +12,7 @@ CREATE OR REPLACE PROCEDURE ddl_utils.ensure_foreign_key(
 AS
 $$
 DECLARE
-    l_settings           ddl_utils.lock_settings;
+    l_settings            ddl_utils.lock_settings;
     l_relation            regclass;
     l_referenced_relation regclass;
     l_lock_class          integer;

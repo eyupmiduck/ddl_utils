@@ -3,8 +3,6 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
  * Verifies {@code ddl_utils_lib.set_not_null}: it builds an
  * {@code ALTER COLUMN ... SET NOT NULL} fragment and applies it through
