@@ -18,7 +18,7 @@ BEGIN
     -- identifier) because these are unquoted PostgreSQL keywords.
     PERFORM ddl_utils_lib.assert_allowed_keyword(
             i_value => i_generated,
-            i_allowed => ARRAY['always', 'by default'],
+            i_allowed => ARRAY ['always', 'by default'],
             i_context => 'ddl_utils_lib.add_identity: generated');
 
     -- Adding an identity is metadata-only (like SET DEFAULT) and affects future

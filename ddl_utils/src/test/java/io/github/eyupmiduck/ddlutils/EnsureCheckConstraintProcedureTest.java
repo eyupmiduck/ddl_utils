@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
  * Verifies the {@code ddl_utils.ensure_check_constraint} procedure: it adds a
  * CHECK constraint as NOT VALID, commits, then validates it in a second

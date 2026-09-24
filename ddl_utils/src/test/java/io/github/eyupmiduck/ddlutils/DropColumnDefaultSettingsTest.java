@@ -3,8 +3,6 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 /**
  * Verifies the lock-aware {@code ddl_utils.drop_column_default} wrapper: it
  * resolves the table's lock settings through {@code get_lock_settings} and

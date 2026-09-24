@@ -23,13 +23,13 @@ BEGIN
     -- no DEFAULT clause) and are skipped.
     FOR l_index IN 1..pg_catalog.cardinality(i_values)
         LOOP
-        IF i_values[l_index] IS NOT NULL
-            AND pg_catalog.btrim(i_values[l_index], E' \t\n\r\f\013') = '' THEN
-            RAISE EXCEPTION '%: % at position % is blank',
-                i_context, i_label, l_index
-                USING ERRCODE = '22023';
-        END IF;
-    END LOOP;
+            IF i_values[l_index] IS NOT NULL
+                AND pg_catalog.btrim(i_values[l_index], E' \t\n\r\f\013') = '' THEN
+                RAISE EXCEPTION '%: % at position % is blank',
+                    i_context, i_label, l_index
+                    USING ERRCODE = '22023';
+            END IF;
+        END LOOP;
 END;
 $$;
 

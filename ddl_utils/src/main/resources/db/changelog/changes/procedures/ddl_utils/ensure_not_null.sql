@@ -8,13 +8,13 @@ CREATE OR REPLACE PROCEDURE ddl_utils.ensure_not_null(
 AS
 $$
 DECLARE
-    l_settings           ddl_utils.lock_settings;
-    l_already_not_null   boolean;
-    l_base               text;
-    l_constraint_name    text;
-    l_relation           regclass;
-    l_lock_class         integer;
-    l_lock_key           integer;
+    l_settings         ddl_utils.lock_settings;
+    l_already_not_null boolean;
+    l_base             text;
+    l_constraint_name  text;
+    l_relation         regclass;
+    l_lock_class       integer;
+    l_lock_key         integer;
 BEGIN
     -- Read the lock settings once; they are reused across every step.
     SELECT *

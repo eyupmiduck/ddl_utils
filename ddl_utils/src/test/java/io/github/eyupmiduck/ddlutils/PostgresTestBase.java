@@ -16,11 +16,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -208,6 +204,20 @@ abstract class PostgresTestBase {
                     .append(word.substring(1).toLowerCase());
         }
         return name.append("Lock").toString();
+    }
+
+    /**
+     * Asserts that a lock-settings row holds the expected values.
+     *
+     * @param row               the settings row
+     * @param ddlLockTimeout    the expected {@code ddl_lock_timeout} in ms
+     * @param sleepTime         the expected {@code sleep_time} in ms
+     * @param statementDuration the expected {@code statement_duration} in ms
+     */
+    protected static void assertLockSettings(Record row, int ddlLockTimeout, int sleepTime, int statementDuration) {
+        assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
+        assertEquals(sleepTime, row.get("sleep_time", Integer.class));
+        assertEquals(statementDuration, row.get("statement_duration", Integer.class));
     }
 
     /**
@@ -617,20 +627,6 @@ abstract class PostgresTestBase {
                 name, table, schema);
         assertNotNull(record, () -> "constraint not found: " + schema + "." + table + "." + name);
         return Boolean.TRUE.equals(record.get("convalidated", Boolean.class));
-    }
-
-    /**
-     * Asserts that a lock-settings row holds the expected values.
-     *
-     * @param row               the settings row
-     * @param ddlLockTimeout    the expected {@code ddl_lock_timeout} in ms
-     * @param sleepTime         the expected {@code sleep_time} in ms
-     * @param statementDuration the expected {@code statement_duration} in ms
-     */
-    protected static void assertLockSettings(Record row, int ddlLockTimeout, int sleepTime, int statementDuration) {
-        assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
-        assertEquals(sleepTime, row.get("sleep_time", Integer.class));
-        assertEquals(statementDuration, row.get("statement_duration", Integer.class));
     }
 
     /**

@@ -81,9 +81,8 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   `<parent>` version is `${revision}`. `flatten` resolves it in the installed/
   deployed POM. A release does not edit the POM; a snapshot bump changes the
   single `<revision>` line.
-- A release is a `v<version>` tag pushed to `main`. The `Release` workflow
-  (`.github/workflows/release.yml`) derives the version from the tag
-  (`-Drevision=${tag#v}`), runs the full `verify` gate, deploys to GitHub
+- A release is a `v<version>` tag pushed to `main`. The `Release` workflow (`.github/workflows/release.yml`) derives the
+  version from the tag (`-Drevision=${tag#v}`), runs the full `verify` gate, deploys to GitHub
   Packages, then creates the GitHub Release. Do not tag a commit that CI has
   not built green. Cut one with `scripts/cut-release.sh <version>`, which
   refuses anything but a clean, up-to-date `main` and a version newer than the

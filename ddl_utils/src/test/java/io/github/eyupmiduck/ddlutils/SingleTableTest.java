@@ -80,7 +80,7 @@ abstract class SingleTableTest extends PostgresTestBase {
      * @throws InterruptedException if waiting for the lock is interrupted
      */
     protected void assertUsesTableLockSettings(int lockTimeout, int sleepTime, int statementDuration,
-            long giveUpMillis, Executable... wrapperCalls) throws SQLException, InterruptedException {
+                                               long giveUpMillis, Executable... wrapperCalls) throws SQLException, InterruptedException {
         setTableLockSettings(PUBLIC_SCHEMA, targetName, lockTimeout, sleepTime, statementDuration);
         for (Executable wrapperCall : wrapperCalls) {
             assertGivesUpWhileTableLocked(targetName, giveUpMillis, wrapperCall);

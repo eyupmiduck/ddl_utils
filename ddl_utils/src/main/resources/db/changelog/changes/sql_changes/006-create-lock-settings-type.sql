@@ -1,7 +1,10 @@
-CREATE TYPE ddl_utils.lock_settings AS (
-    ddl_lock_timeout integer,
-    sleep_time integer,
+CREATE TYPE ddl_utils.lock_settings AS
+(
+    -- noqa:disable=LT01
+    ddl_lock_timeout   integer,
+    sleep_time         integer,
     statement_duration integer
+    -- noqa:enable=LT01
 );
 
 COMMENT ON TYPE ddl_utils.lock_settings IS
