@@ -38,7 +38,7 @@ jobs:
       contents: read
       actions: read
       security-events: write
-    uses: eyupmiduck/workflow_library/.github/workflows/codeql.yml@f722e6e3baf3eff163720b4910fb09a94c623fd4
+    uses: eyupmiduck/workflow_library/.github/workflows/codeql.yml@83d3de534b94b63f7876709f2e969621136caaf8
     with:
       languages: java-kotlin
       build-mode: none

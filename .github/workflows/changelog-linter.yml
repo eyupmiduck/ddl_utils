@@ -27,7 +27,7 @@ jobs:
       contents: read
       packages: read
       security-events: write
-    uses: eyupmiduck/workflow_library/.github/workflows/liquibase-changelog-linter.yml@f722e6e3baf3eff163720b4910fb09a94c623fd4
+    uses: eyupmiduck/workflow_library/.github/workflows/liquibase-changelog-linter.yml@83d3de534b94b63f7876709f2e969621136caaf8
     with:
       maven-module: ddl_utils
       changelog-root: ddl_utils/src/main/resources/db/changelog

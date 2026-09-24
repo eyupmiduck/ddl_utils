@@ -62,7 +62,7 @@ jobs:
     # Pinned to the workflow_library commit so a change to its default branch
     # cannot alter what runs here with pull-requests: write and the LLM secret.
     # Bump the SHA deliberately when upgrading the library.
-    uses: eyupmiduck/workflow_library/.github/workflows/ocr-review.yml@7fa94c847818d1d45df7132d6cc3857bf6162f61
+    uses: eyupmiduck/workflow_library/.github/workflows/ocr-review.yml@83d3de534b94b63f7876709f2e969621136caaf8
     permissions:
       contents: read
       pull-requests: write
