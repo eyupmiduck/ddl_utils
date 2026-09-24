@@ -72,7 +72,7 @@ The three settings are:
 
 ## What is in the box
 
-Liquibase loads two schemas:
+Liquibase loads two application schemas:
 
 - **`ddl_utils`** — the application surface:
     - the `database_lock_settings` (single row), `schema_lock_settings`, and
@@ -89,6 +89,10 @@ Liquibase loads two schemas:
   `alter_table` is the internal runner they build on: it is the only routine
   that executes dynamic SQL, and callers should prefer the structured
   operations so the fragment is built from validated identifiers.
+
+Liquibase's own tracking tables are kept out of both schemas: they live in a
+dedicated `liquibase` schema as `liquibase.ddl_utils_databasechangelog` and
+`liquibase.ddl_utils_databasechangeloglock`.
 
 The user-facing helpers cover `ALTER TABLE` work that blocks concurrent DML —
 it takes `ACCESS EXCLUSIVE` (all of these except `add_foreign_key`) or
@@ -172,6 +176,11 @@ CREATE ROLE ddl_utils_caller; -- no login; the routines are granted to it
 GRANT CREATE ON DATABASE mydb TO ddl_utils_owner;
 \connect mydb
 GRANT CREATE ON SCHEMA public TO ddl_utils_owner;
+
+-- Liquibase keeps its tracking tables in a dedicated schema and does not create
+-- the schema itself, so create it here, owned by the role that runs the
+-- migration.
+CREATE SCHEMA liquibase AUTHORIZATION ddl_utils_owner;
 ```
 
 `ddl_utils_owner` needs `CREATE` on the database and schema so Liquibase can
@@ -191,6 +200,9 @@ liquibase \
   --username=ddl_utils_owner \
   --password=change-me \
   --changelog-file=ddl_utils/src/main/resources/db/changelog/db.changelog-master.xml \
+  --liquibase-schema-name=liquibase \
+  --database-changelog-table-name=ddl_utils_databasechangelog \
+  --database-changelog-lock-table-name=ddl_utils_databasechangeloglock \
   update
 ```
 
@@ -217,6 +229,9 @@ liquibase \
   --username=ddl_utils_owner \
   --password=change-me \
   --changelog-file=ddl_utils/src/main/resources/db/changelog/db.changelog-master.xml \
+  --liquibase-schema-name=liquibase \
+  --database-changelog-table-name=ddl_utils_databasechangelog \
+  --database-changelog-lock-table-name=ddl_utils_databasechangeloglock \
   rollback-count --count=1
 ```
 
@@ -234,7 +249,10 @@ docker run --rm -it \
   sh -c "lpm add postgresql --global && \
          liquibase --url=jdbc:postgresql://localhost:5432/mydb \
                    --username=ddl_utils_owner --password=change-me \
-                   --changelog-file=changelog/db.changelog-master.xml update"
+                   --changelog-file=changelog/db.changelog-master.xml \
+                   --liquibase-schema-name=liquibase \
+                   --database-changelog-table-name=ddl_utils_databasechangelog \
+                   --database-changelog-lock-table-name=ddl_utils_databasechangeloglock update"
 ```
 
 `--network host` reaches a database on the Docker host on Linux; on Docker
@@ -362,7 +380,10 @@ scripts/start-local-db.sh                            # up -d --wait
 ```
 
 This starts a `ddl-utils-postgres:17-alpine` container plus a one-shot Liquibase
-service that applies the changelog as the `ddl_utils_owner` role. Connect with:
+service that applies the changelog as the `ddl_utils_owner` role. Liquibase's
+tracking tables live in the `liquibase` schema (`liquibase.ddl_utils_databasechangelog` and
+`liquibase.ddl_utils_databasechangeloglock`), created by the image's init
+script. Connect with:
 
 ```sh
 psql -h localhost -p 5432 -U postgres -d ddl_utils   # password: postgres
@@ -385,6 +406,11 @@ Liquibase runs:
 - `ddl_utils_caller` — the role privileges are granted to (e.g. `SELECT` on the
   lock-settings tables and `EXECUTE` on the routines).
 - `ddl_utils_test` — granted `ddl_utils_caller`; used by the integration tests.
+
+The init script also creates the `liquibase` schema that holds Liquibase's
+tracking tables (owned by `ddl_utils_owner`); the migration is pointed at it
+with `--liquibase-schema-name` and the two `--database-changelog-*-table-name`
+flags.
 
 The image also compiles the [`plpgsql_check`](https://github.com/okbob/plpgsql_check)
 extension from source (pinned and checksum-verified), so it is available in dev

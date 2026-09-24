@@ -211,6 +211,12 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
 - Prefer changes that are safe to deploy against a live database.
 - Consider rollback and idempotency where appropriate.
 - Do not modify an already-deployed changeset unless explicitly instructed.
+- Liquibase's tracking tables are kept out of the application schemas: they live
+  in a dedicated `liquibase` schema as `ddl_utils_databasechangelog` and
+  `ddl_utils_databasechangeloglock`. Every entry point sets this — the jOOQ
+  codegen plugin (`ddl_utils/pom.xml`), `PostgresTestBase`, and the CLI flags in
+  `compose.yaml` — and the custom image's init script (`docker/postgres/roles.sql`)
+  creates the schema, because Liquibase does not.
 - SQLFluff (`.sqlfluff`, dialect `postgres`) lints the changelog `.sql` files
   during `verify` via `exec-maven-plugin`. Requires `sqlfluff` on PATH (use
   the repo's `.venv`); skip with `-Dskip.sqlfluff`.
