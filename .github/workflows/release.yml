@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: eyupmiduck/workflow_library/.github/workflows/maven-release.yml@4a15bce32ddbe87674c5660738246278b26f7210
+    uses: eyupmiduck/workflow_library/.github/workflows/maven-release.yml@f722e6e3baf3eff163720b4910fb09a94c623fd4
     with:
       java-version: "25"
       postgres-version: postgres:17-alpine
