@@ -4,8 +4,7 @@ name: Changelog linter
 # result to GitHub code scanning, so changelog findings show inline on the pull
 # request next to CodeQL. The failing gate itself is `./mvnw verify` in the
 # Maven Build workflow; this job exists to surface the findings in the code
-# scanning UI.
-
+# scanning UI. The linter runner lives in workflow_library.
 on:
   pull_request:
     branches:
@@ -22,51 +21,15 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Set up Java 25
-        uses: actions/setup-java@v6.0.1
-        with:
-          distribution: temurin
-          java-version: "25"
-          cache: maven
-          # Server credentials so Maven can fetch liquibase-validation.
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
-
-      # The version is read from the POM (single source of truth) rather than
-      # repeated here, and the executable `cli` classifier jar is fetched from
-      # GitHub Packages.
-      - name: Fetch the linter CLI
-        run: |
-          version="$(./mvnw --batch-mode --no-transfer-progress -q -N \
-            help:evaluate -Dexpression=liquibase-validation.version -DforceStdout)"
-          ./mvnw --batch-mode --no-transfer-progress -q -pl ddl_utils \
-            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy \
-            -Dartifact="io.github.eyupmiduck:liquibase-validation:${version}:jar:cli" \
-            -DoutputDirectory=target/linter-cli
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Lint the changelog (SARIF)
-        # A non-zero exit is expected when the changelog has a finding; the
-        # upload below reports it, and `verify` is the gate.
-        run: |
-          java -jar ddl_utils/target/linter-cli/liquibase-validation-*-cli.jar \
-            --changelog-root ddl_utils/src/main/resources/db/changelog \
-            --config ddl_utils/.liquibase-linter.yml \
-            --whitelist ddl_utils/.liquibase-linter-whitelist.yml \
-            --reporter sarif \
-            --fail-on error \
-            > ddl_utils/target/changelog-linter.sarif || true
-
-      - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
-        with:
-          sarif_file: ddl_utils/target/changelog-linter.sarif
+    # Pinned to the workflow_library commit; bump the SHA deliberately when
+    # upgrading the library.
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    uses: eyupmiduck/workflow_library/.github/workflows/liquibase-changelog-linter.yml@4a15bce32ddbe87674c5660738246278b26f7210
+    with:
+      maven-module: ddl_utils
+      changelog-root: ddl_utils/src/main/resources/db/changelog
+      config-path: ddl_utils/.liquibase-linter.yml
+      whitelist-path: ddl_utils/.liquibase-linter-whitelist.yml

@@ -2,6 +2,7 @@ name: CodeQL
 
 # Static analysis for Java. Runs on every change to main and on a weekly
 # schedule so newly added CodeQL queries are applied to unchanged code.
+# The analysis itself lives in workflow_library.
 on:
   push:
     branches:
@@ -22,32 +23,23 @@ concurrency:
 permissions:
   contents: read
   actions: read
+  security-events: write
 
 jobs:
   analyze:
-    name: Analyze Java
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Pinned to the workflow_library commit; bump the SHA deliberately when
+    # upgrading the library.
+    #
+    # build-mode: none extracts the database from source without compiling.
+    # A full build would need Docker (Testcontainers-driven jOOQ codegen) and
+    # a GitHub Packages token; the generated jOOQ classes are not
+    # security-relevant, so skipping the build is the pragmatic trade-off.
     permissions:
       contents: read
       actions: read
       security-events: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # build-mode: none extracts the database from source without compiling.
-      # A full build would need Docker (Testcontainers-driven jOOQ codegen) and
-      # a GitHub Packages token; the generated jOOQ classes are not
-      # security-relevant, so skipping the build is the pragmatic trade-off.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
-        with:
-          languages: java-kotlin
-          build-mode: none
-
-      - name: Analyze
-        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
-        with:
-          category: "/language:java-kotlin"
+    uses: eyupmiduck/workflow_library/.github/workflows/codeql.yml@4a15bce32ddbe87674c5660738246278b26f7210
+    with:
+      languages: java-kotlin
+      build-mode: none
+      category: /language:java-kotlin
