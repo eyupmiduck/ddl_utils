@@ -136,6 +136,14 @@
                             </database>
                             <liquibase>
                                 <changeLogPath>src/main/resources/db/changelog/db.changelog-master.xml</changeLogPath>
+                                <!-- Keep Liquibase's tracking tables out of the
+                                     application schemas: a dedicated `liquibase`
+                                     schema with ddl_utils-prefixed tables. The
+                                     schema is created by the custom image's init
+                                     script (Liquibase does not create it). -->
+                                <liquibaseSchemaName>liquibase</liquibaseSchemaName>
+                                <databaseChangeLogTableName>ddl_utils_databasechangelog</databaseChangeLogTableName>
+                                <databaseChangeLogLockTableName>ddl_utils_databasechangeloglock</databaseChangeLogLockTableName>
                             </liquibase>
                             <jooq>
                                 <generator>

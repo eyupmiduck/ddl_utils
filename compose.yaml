@@ -26,8 +26,9 @@ services:
     volumes:
       - ./ddl_utils/src/main/resources/db/changelog:/liquibase/changelog
     # `lpm add postgresql` downloads the JDBC driver on each run; the dev-only
-    # credentials match the postgres service above.
-    command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=ddl_utils_owner --password=ddl_utils_owner --changelog-file=changelog/db.changelog-master.xml update"
+    # credentials match the postgres service above. The tracking tables live in
+    # the dedicated `liquibase` schema (created by the image's init script).
+    command: sh -c "lpm add postgresql --global && liquibase --url=jdbc:postgresql://postgres:5432/ddl_utils --username=ddl_utils_owner --password=ddl_utils_owner --changelog-file=changelog/db.changelog-master.xml --liquibase-schema-name=liquibase --database-changelog-table-name=ddl_utils_databasechangelog --database-changelog-lock-table-name=ddl_utils_databasechangeloglock update"
 
 volumes:
   ddl_utils_pgdata:

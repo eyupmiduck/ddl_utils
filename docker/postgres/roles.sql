@@ -30,6 +30,12 @@ GRANT CREATE ON DATABASE ddl_utils TO ddl_utils_owner;
 \connect ddl_utils
 GRANT CREATE ON SCHEMA public TO ddl_utils_owner;
 
+-- Liquibase stores its tracking tables (ddl_utils_databasechangelog and
+-- ddl_utils_databasechangeloglock) in a dedicated schema. Liquibase does not
+-- create the schema itself, so create it here, owned by the role that runs the
+-- migration and creates the tables.
+CREATE SCHEMA IF NOT EXISTS liquibase AUTHORIZATION ddl_utils_owner;
+
 -- plpgsql_check is compiled into this image and used for static analysis of
 -- the ddl_utils / ddl_utils_lib routines (for example
 -- SELECT plpgsql_check_function('ddl_utils.get_lock_settings(..., ...)'::regprocedure)).

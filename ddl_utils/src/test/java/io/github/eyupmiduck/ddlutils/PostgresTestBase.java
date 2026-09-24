@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import liquibase.Liquibase;
+import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -67,6 +68,14 @@ abstract class PostgresTestBase {
     private static final String TEST_USER = "ddl_utils_test";
     private static final String TEST_PASSWORD = "ddl_utils_test";
     /**
+     * The schema Liquibase keeps its tracking tables in, so they stay out of the
+     * application schemas. The custom image's init script creates it for real
+     * databases; {@link #prepareTemplateDatabase()} creates it for the template.
+     */
+    static final String LIQUIBASE_SCHEMA = "liquibase";
+    static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
+    static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
+    /**
      * The PostgreSQL image to run, matching the one used for jOOQ codegen.
      * Set by surefire from the {@code postgres.image} Maven property. The
      * custom image has the application roles baked in.
@@ -119,11 +128,21 @@ abstract class PostgresTestBase {
                 statement.execute("GRANT CREATE ON SCHEMA public TO " + TEST_USER);
             }
             try (Connection connection = openConnection(TEMPLATE_DATABASE, OWNER_USER, OWNER_PASSWORD)) {
+                // Liquibase keeps its tracking tables in a dedicated schema and
+                // does not create the schema itself, so create it as the owner
+                // (who owns the tables) before the update.
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute("CREATE SCHEMA IF NOT EXISTS " + LIQUIBASE_SCHEMA);
+                }
+                Database database = DatabaseFactory.getInstance()
+                        .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+                database.setLiquibaseSchemaName(LIQUIBASE_SCHEMA);
+                database.setDatabaseChangeLogTableName(DATABASE_CHANGELOG_TABLE);
+                database.setDatabaseChangeLogLockTableName(DATABASE_CHANGELOG_LOCK_TABLE);
                 Liquibase liquibase = new Liquibase(
                         ChangelogTestSupport.MASTER_RESOURCE,
                         new ClassLoaderResourceAccessor(),
-                        DatabaseFactory.getInstance()
-                                .findCorrectDatabaseImplementation(new JdbcConnection(connection)));
+                        database);
                 liquibase.update();
             }
             // Install the static-analysis extension (compiled into the custom
