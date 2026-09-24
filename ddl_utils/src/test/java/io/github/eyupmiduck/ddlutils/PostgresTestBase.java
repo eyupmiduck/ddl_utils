@@ -72,9 +72,9 @@ abstract class PostgresTestBase {
      * application schemas. The custom image's init script creates it for real
      * databases; {@link #prepareTemplateDatabase()} creates it for the template.
      */
-    private static final String LIQUIBASE_SCHEMA = "liquibase";
-    private static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
-    private static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
+    static final String LIQUIBASE_SCHEMA = "liquibase";
+    static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
+    static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
     /**
      * The PostgreSQL image to run, matching the one used for jOOQ codegen.
      * Set by surefire from the {@code postgres.image} Maven property. The

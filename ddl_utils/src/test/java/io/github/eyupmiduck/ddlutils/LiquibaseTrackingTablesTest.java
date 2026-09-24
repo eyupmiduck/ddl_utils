@@ -20,10 +20,10 @@ class LiquibaseTrackingTablesTest extends PostgresTestBase {
      */
     @Test
     void trackingTablesLiveInTheLiquibaseSchema() {
-        assertTrue(relationExists("liquibase", "ddl_utils_databasechangelog"),
-                "expected liquibase.ddl_utils_databasechangelog");
-        assertTrue(relationExists("liquibase", "ddl_utils_databasechangeloglock"),
-                "expected liquibase.ddl_utils_databasechangeloglock");
+        assertTrue(relationExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_TABLE),
+                "expected " + LIQUIBASE_SCHEMA + "." + DATABASE_CHANGELOG_TABLE);
+        assertTrue(relationExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_LOCK_TABLE),
+                "expected " + LIQUIBASE_SCHEMA + "." + DATABASE_CHANGELOG_LOCK_TABLE);
 
         assertFalse(relationExists("public", "databasechangelog"),
                 "the generic public.databasechangelog should not exist");
