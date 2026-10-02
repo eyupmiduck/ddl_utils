@@ -33,7 +33,11 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
       changeset per routine (one `createProcedure` plus its rollback), with one
       file per routine under `changes/functions/<schema>/`
       and `changes/procedures/<schema>/` (rollback bodies under
-      `changes/functions-rollback/<schema>/`).       `changes/functions/README.md`
+      `changes/functions-rollback/<schema>/`). `changes/triggers.xml` mirrors
+      that layout for table triggers: one changeset per trigger (one `sqlFile`
+      plus its rollback), with one file per trigger under
+      `changes/triggers/<schema>/` and rollback bodies under
+      `changes/triggers-rollback/<schema>/`.       `changes/functions/README.md`
       lists each routine's signature and purpose. The `ddl_utils`
       schema holds the lock-settings tables/accessors, the shared domains, and
       the lock-aware DDL wrappers (columns, constraints and tables) that resolve
@@ -121,11 +125,11 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   `ddl_utils.set_updated_at()` trigger (`BEFORE UPDATE ... FOR EACH ROW`) to the
   table so `updated_at` is refreshed on every `UPDATE` regardless of the caller;
   a caller must not have to set it, and must not be able to bypass it. Create a
-  table together with its trigger in the same changeset (the shared function
-  already exists). The lock-settings tables are the reference implementation for
-  the columns (`changes/sql_changes/003-create-lock-settings.sql`); their
-  triggers are attached in `005-create-updated-at-triggers.sql` only because the
-  shared function is introduced in the same release.
+  table and add its `BEFORE UPDATE ... FOR EACH ROW` trigger as a new changeset
+  in `changes/triggers.xml` with its body under `changes/triggers/<schema>/` (the
+  shared function already exists). The lock-settings tables are the reference
+  implementation for the columns (`changes/sql_changes/003-create-lock-settings.sql`)
+  and the triggers (`changes/triggers/ddl_utils/`).
 - **Every object has a comment.** Add a `COMMENT ON` for each schema, table,
   column, domain, function and procedure, describing what it is for. Comment a
   function or procedure at the end of the `.sql` file that creates it; comment
@@ -169,6 +173,14 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   `changes/changes.xml`. The schema is part of the id because the same routine
   name exists in both `ddl_utils` and `ddl_utils_lib`. Overloads of one routine (same schema and name, different
   signature) share a single changeset.
+- One trigger per `.sql` file, grouped by the schema of the table it is on:
+  `.../changes/triggers/<schema>/<name>.sql`, rollback bodies in
+  `.../changes/triggers-rollback/<schema>/<name>-rollback.sql`, named
+  `snake_case` without an `NNN-` prefix. `changes/triggers.xml` contains one
+  changeset per trigger, with the id `trigger-<schema>.<name>` (one `sqlFile`
+  plus its rollback), included from `changes/changes.xml`. Use
+  `CREATE OR REPLACE TRIGGER` (PostgreSQL 14+) so the changeset is re-runnable
+  without dropping the trigger first.
 - Load a routine with the `createProcedure` change type and an external body:
   `<createProcedure path="functions/<schema>/<name>.sql" relativeToChangelogFile="true"/>`.
   Liquibase has no `createFunction` change type, so functions use
@@ -207,7 +219,12 @@ jOOQ codegen and tests; `docker_java_config` is a build shim. CI: GitHub Actions
   with forward SQL in `changes/sql_changes/NNN-description.sql` and rollback
   SQL in `changes/rollback/NNN-description-rollback.sql`. Stored routines are
   the exception: they use the `createProcedure` change type with a `path` to a
-  per-routine `.sql` file (see the PL/pgSQL section).
+  per-routine `.sql` file (see the PL/pgSQL section). Triggers follow the same
+  per-object layout: one `.sql` file per trigger under
+  `changes/triggers/<schema>/`, referenced by `<sqlFile path="...">` from
+  `changes/triggers.xml`, with the drop in `changes/triggers-rollback/<schema>/`.
+  The validator (`liquibase-validation`) exempts `triggers/` and
+  `triggers-rollback/` from the `NNN-` file-name rule, like `functions/`.
 - Prefer changes that are safe to deploy against a live database.
 - Consider rollback and idempotency where appropriate.
 - Do not modify an already-deployed changeset unless explicitly instructed.
