@@ -61,12 +61,6 @@ abstract class PostgresTestBase {
      * helpers.
      */
     protected static final int STATEMENT_DURATION = 5000;
-
-    private static final String TEMPLATE_DATABASE = "ddl_utils_template";
-    private static final String OWNER_USER = "ddl_utils_owner";
-    private static final String OWNER_PASSWORD = "ddl_utils_owner";
-    private static final String TEST_USER = "ddl_utils_test";
-    private static final String TEST_PASSWORD = "ddl_utils_test";
     /**
      * The schema Liquibase keeps its tracking tables in, so they stay out of the
      * application schemas. The custom image's init script creates it for real
@@ -75,6 +69,11 @@ abstract class PostgresTestBase {
     static final String LIQUIBASE_SCHEMA = "liquibase";
     static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
     static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
+    private static final String TEMPLATE_DATABASE = "ddl_utils_template";
+    private static final String OWNER_USER = "ddl_utils_owner";
+    private static final String OWNER_PASSWORD = "ddl_utils_owner";
+    private static final String TEST_USER = "ddl_utils_test";
+    private static final String TEST_PASSWORD = "ddl_utils_test";
     /**
      * The PostgreSQL image to run, matching the one used for jOOQ codegen.
      * Set by surefire from the {@code postgres.image} Maven property. The
