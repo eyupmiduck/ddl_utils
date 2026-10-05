@@ -10,12 +10,7 @@ import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ddl_utils' PostgreSQL test base: the shared
@@ -55,6 +50,37 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     static final String LIQUIBASE_SCHEMA = "liquibase";
     static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
     static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
+
+    /**
+     * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
+     * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
+     * {@code AccessShareLock}.
+     *
+     * @param mode the lock mode as written in SQL
+     * @return the lock mode as reported by {@code pg_locks}
+     */
+    private static String lockModeName(String mode) {
+        StringBuilder name = new StringBuilder();
+        for (String word : mode.trim().split("\\s+")) {
+            name.append(Character.toUpperCase(word.charAt(0)))
+                    .append(word.substring(1).toLowerCase());
+        }
+        return name.append("Lock").toString();
+    }
+
+    /**
+     * Asserts that a lock-settings row holds the expected values.
+     *
+     * @param row               the settings row
+     * @param ddlLockTimeout    the expected {@code ddl_lock_timeout} in ms
+     * @param sleepTime         the expected {@code sleep_time} in ms
+     * @param statementDuration the expected {@code statement_duration} in ms
+     */
+    protected static void assertLockSettings(Record row, int ddlLockTimeout, int sleepTime, int statementDuration) {
+        assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
+        assertEquals(sleepTime, row.get("sleep_time", Integer.class));
+        assertEquals(statementDuration, row.get("statement_duration", Integer.class));
+    }
 
     @Override
     protected String defaultPostgresImage() {
@@ -104,37 +130,6 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
             // image) so every cloned test database has it.
             statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
         }
-    }
-
-    /**
-     * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
-     * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
-     * {@code AccessShareLock}.
-     *
-     * @param mode the lock mode as written in SQL
-     * @return the lock mode as reported by {@code pg_locks}
-     */
-    private static String lockModeName(String mode) {
-        StringBuilder name = new StringBuilder();
-        for (String word : mode.trim().split("\\s+")) {
-            name.append(Character.toUpperCase(word.charAt(0)))
-                    .append(word.substring(1).toLowerCase());
-        }
-        return name.append("Lock").toString();
-    }
-
-    /**
-     * Asserts that a lock-settings row holds the expected values.
-     *
-     * @param row               the settings row
-     * @param ddlLockTimeout    the expected {@code ddl_lock_timeout} in ms
-     * @param sleepTime         the expected {@code sleep_time} in ms
-     * @param statementDuration the expected {@code statement_duration} in ms
-     */
-    protected static void assertLockSettings(Record row, int ddlLockTimeout, int sleepTime, int statementDuration) {
-        assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
-        assertEquals(sleepTime, row.get("sleep_time", Integer.class));
-        assertEquals(statementDuration, row.get("statement_duration", Integer.class));
     }
 
     /**
