@@ -397,7 +397,7 @@ migrations.
 ## Custom PostgreSQL image
 
 The build and local dev database use a custom image (`ddl-utils-postgres:<ver>-alpine`) built from the official
-`postgres:<ver>-alpine` image. It bakes in a roles init script (`docker/postgres/roles.sql`) that creates the
+`postgres:<ver>-alpine` image. It bakes in a roles init script (`scripts/postgres/roles.sql`) that creates the
 application roles before
 Liquibase runs:
 
