@@ -108,6 +108,28 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
+     * A multi-column foreign key is created with the requested source-to-
+     * referenced mapping, so a valid composite value is accepted and an orphan
+     * composite value is rejected.
+     */
+    @Test
+    void validatesCompositeForeignKey() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + REFERENCED + " ADD COLUMN code int");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + REFERENCED
+                + " ADD CONSTRAINT ref_code_id UNIQUE (code, id)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + REFERENCED + " (id, code) VALUES (1, 10)");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id, value) VALUES (10, 1)");
+
+        addForeignKey("fk_composite", new String[]{"parent_id", "value"}, REFERENCED,
+                new String[]{"code", "id"});
+        validateConstraint("fk_composite");
+
+        assertValidated(PUBLIC_SCHEMA, TARGET, "fk_composite");
+        assertSqlState("23503", () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET
+                + " (parent_id, value) VALUES (99, 1)"));
+    }
+
+    /**
      * add_foreign_key rejects referencing and referenced column lists of
      * different lengths.
      */

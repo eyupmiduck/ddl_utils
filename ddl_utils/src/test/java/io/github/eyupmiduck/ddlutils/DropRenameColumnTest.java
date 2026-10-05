@@ -116,6 +116,32 @@ class DropRenameColumnTest extends SingleTableTest {
         assertDomainViolation(() -> renameColumn("old_name", null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
     }
 
+    /**
+     * The nullable integer settings are bound in the right order for each
+     * helper: null and negative values for the lock timeout, sleep time and
+     * duration are all rejected through the domains, leaving the table
+     * unchanged.
+     */
+    @Test
+    void rejectsInvalidSettingsArguments() {
+        assertDomainViolation(() -> dropColumn("old_name", null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropColumn("old_name", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropColumn("old_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        assertDomainViolation(() -> dropColumn("old_name", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropColumn("old_name", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> dropColumn("old_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
+
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> renameColumn("old_name", "new_name", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "new_name"));
+    }
+
     private void dropColumn(String column, Integer lockTimeout, Integer sleepTime, Integer duration) {
         Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, lockTimeout, sleepTime, duration);
     }

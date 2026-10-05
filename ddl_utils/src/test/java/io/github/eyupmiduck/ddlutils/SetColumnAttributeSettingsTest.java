@@ -44,10 +44,25 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      * give up quickly.
      */
     @Test
-    void usesTableLockSettings() throws Exception {
+    void setColumnStorageUsesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
-                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"),
+                () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"));
+
+        assertEquals("extended", columnStorage(PUBLIC_SCHEMA, target(), "note"),
+                "a call that gave up must not have changed the storage");
+    }
+
+    /**
+     * set_column_compression resolves the table settings and gives up while the
+     * table is locked, leaving the compression unchanged.
+     */
+    @Test
+    void setColumnCompressionUsesTableLockSettings() throws Exception {
+        assertUsesTableLockSettings(
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz"));
+
+        assertEquals("default", columnCompression(PUBLIC_SCHEMA, target(), "note"),
+                "a call that gave up must not have changed the compression");
     }
 
 }

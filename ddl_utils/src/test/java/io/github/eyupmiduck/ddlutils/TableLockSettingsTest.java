@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TableLockSettingsTest extends PostgresTestBase {
 
     private static final String SCHEMA = "table_lock_settings_test_schema";
+    private static final String OTHER_SCHEMA = "table_lock_settings_other_schema";
     private static final String TABLE = "table_lock_settings_test_table";
     private static final String CLEAR_TABLE = "table_lock_settings_clear_table";
     private static final String KEEP_TABLE = "table_lock_settings_keep_table";
@@ -27,6 +28,7 @@ class TableLockSettingsTest extends PostgresTestBase {
         clearTableLockSettings(SCHEMA, TABLE);
         clearTableLockSettings(SCHEMA, CLEAR_TABLE);
         clearTableLockSettings(SCHEMA, KEEP_TABLE);
+        clearTableLockSettings(OTHER_SCHEMA, CLEAR_TABLE);
     }
 
     /**
@@ -104,6 +106,22 @@ class TableLockSettingsTest extends PostgresTestBase {
 
         clearTableLockSettings(SCHEMA, KEEP_TABLE);
         assertDoesNotThrow(() -> clearTableLockSettings(SCHEMA, CLEAR_TABLE));
+    }
+
+    /**
+     * clear_table_lock_settings filters on both the schema and the table: a row
+     * with the same table name under another schema is left alone.
+     */
+    @Test
+    void clearTableLockSettingsDoesNotCrossSchemas() {
+        setTableLockSettings(SCHEMA, CLEAR_TABLE, 111, 222, 33);
+        setTableLockSettings(OTHER_SCHEMA, CLEAR_TABLE, 444, 555, 66);
+
+        clearTableLockSettings(SCHEMA, CLEAR_TABLE);
+
+        assertNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
+        assertNotNull(getTableLockSettings(OTHER_SCHEMA, CLEAR_TABLE),
+                "a same-named table in another schema must keep its settings");
     }
 
     /**

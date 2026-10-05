@@ -3,6 +3,16 @@ package io.github.eyupmiduck.ddlutils;
 import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -47,13 +57,59 @@ class SchemaLockSettingsTest extends PostgresTestBase {
      */
     @Test
     void setSchemaLockSettingsRejectsInvalidValues() {
-        assertDomainViolation(() -> setSchemaLockSettings(null, 100, 1000, 30));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, null, 1000, 30));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, 100, null, 30));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, 100, 1000, null));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, -1, 1000, 30));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, 100, -1, 30));
-        assertDomainViolation(() -> setSchemaLockSettings(SCHEMA, 100, 1000, -1));
+        assertSqlState("23514", () -> setSchemaLockSettings(null, 100, 1000, 30));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, null, 1000, 30));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, 100, null, 30));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, 100, 1000, null));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, -1, 1000, 30));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, 100, -1, 30));
+        assertSqlState("23514", () -> setSchemaLockSettings(SCHEMA, 100, 1000, -1));
+    }
+
+    /**
+     * Concurrent first-time writers for the same schema all complete without a
+     * unique violation or deadlock, and the final row is one writer's complete
+     * value set (the three columns stay consistent), so the upsert is atomic.
+     */
+    @Test
+    void concurrentFirstWritesLeaveAConsistentRow() throws Exception {
+        int writers = 4;
+        ExecutorService pool = Executors.newFixedThreadPool(writers);
+        CyclicBarrier barrier = new CyclicBarrier(writers);
+        List<Future<?>> futures = new ArrayList<>();
+        Record row = null;
+        try {
+            for (int i = 0; i < writers; i++) {
+                int offset = i;
+                futures.add(pool.submit(() -> {
+                    barrier.await();
+                    try (Connection connection = openTestConnection();
+                         PreparedStatement statement = connection.prepareStatement(
+                                 "SELECT ddl_utils.set_schema_lock_settings(?, ?, ?, ?)")) {
+                        statement.setString(1, SCHEMA);
+                        statement.setInt(2, 100 + offset);
+                        statement.setInt(3, 200 + offset);
+                        statement.setInt(4, 300 + offset);
+                        statement.execute();
+                    }
+                    return null;
+                }));
+            }
+            for (Future<?> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+            row = getSchemaLockSettings(SCHEMA);
+        } finally {
+            pool.shutdownNow();
+            clearSchemaLockSettings(SCHEMA);
+        }
+
+        assertNotNull(row);
+        int ddl = row.get("ddl_lock_timeout", Integer.class);
+        assertEquals(ddl + 100, row.get("sleep_time", Integer.class),
+                "the row must be one writer's complete value set");
+        assertEquals(ddl + 200, row.get("statement_duration", Integer.class),
+                "the row must be one writer's complete value set");
     }
 
     /**

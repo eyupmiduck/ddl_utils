@@ -1,10 +1,16 @@
 package io.github.eyupmiduck.ddlutils;
 
+import org.jooq.Record;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies the {@code ddl_utils.ensure_foreign_key} procedure: it adds a foreign
@@ -38,8 +44,50 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
         callEnsureForeignKey("fk_parent");
 
         assertValidated(PUBLIC_SCHEMA, TARGET, "fk_parent");
+        assertForeignKeyDefinition("fk_parent");
         assertSqlState("23503",
                 () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)"));
+    }
+
+    /**
+     * The created foreign key has the requested source/referenced tables and
+     * column mapping and the PostgreSQL-default referential actions and
+     * deferrability, not just any constraint named {@code fk_parent}.
+     */
+    private void assertForeignKeyDefinition(String name) {
+        Record definition = dsl.fetchOne("""
+                SELECT c.relname AS table_name,
+                       cr.relname AS referenced_table_name,
+                       con.confupdtype::text AS update_action,
+                       con.confdeltype::text AS delete_action,
+                       con.confmatchtype::text AS match_type,
+                       con.condeferrable,
+                       con.condeferred
+                FROM pg_constraint con
+                JOIN pg_class c ON c.oid = con.conrelid
+                JOIN pg_class cr ON cr.oid = con.confrelid
+                JOIN pg_namespace n ON n.oid = con.connamespace
+                WHERE con.conname = ? AND n.nspname = ?
+                """, name, PUBLIC_SCHEMA);
+        assertNotNull(definition, () -> "constraint not found: " + name);
+        assertEquals(TARGET, definition.get("table_name", String.class));
+        assertEquals(REFERENCED, definition.get("referenced_table_name", String.class));
+        assertEquals("a", definition.get("update_action", String.class), "NO ACTION update");
+        assertEquals("a", definition.get("delete_action", String.class), "NO ACTION delete");
+        assertEquals("s", definition.get("match_type", String.class), "MATCH SIMPLE");
+        assertFalse(definition.get("condeferrable", Boolean.class));
+        assertFalse(definition.get("condeferred", Boolean.class));
+
+        List<String> mapping = dsl.fetch("""
+                SELECT sa.attname || '->' || ra.attname
+                FROM pg_constraint con
+                JOIN generate_subscripts(con.conkey, 1) AS s(i) ON true
+                JOIN pg_attribute sa ON sa.attrelid = con.conrelid AND sa.attnum = con.conkey[s.i]
+                JOIN pg_attribute ra ON ra.attrelid = con.confrelid AND ra.attnum = con.confkey[s.i]
+                WHERE con.conname = ?
+                    AND con.connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
+                """, name, PUBLIC_SCHEMA).getValues(0, String.class);
+        assertEquals(List.of("parent_id->id"), mapping);
     }
 
     /**
@@ -52,6 +100,11 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 + " ADD CONSTRAINT fk_parent UNIQUE (parent_id)");
 
         assertSqlState("42710", () -> callEnsureForeignKey("fk_parent"));
+
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "fk_parent"),
+                "the pre-existing constraint must be left in place");
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "fk_parent"),
+                "the pre-existing UNIQUE constraint must not be replaced");
     }
 
     /**

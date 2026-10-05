@@ -3,6 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -206,6 +207,56 @@ class AddColumnsTest extends SingleTableTest {
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "amount"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "label"));
+        assertNullable(PUBLIC_SCHEMA, target(), "amount");
+        assertNullable(PUBLIC_SCHEMA, target(), "label");
+        assertEquals("numeric", columnAttribute(PUBLIC_SCHEMA, target(), "amount", "data_type"));
+        assertEquals("10", columnAttribute(PUBLIC_SCHEMA, target(), "amount", "numeric_precision"));
+        assertEquals("2", columnAttribute(PUBLIC_SCHEMA, target(), "amount", "numeric_scale"));
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "amount", "COALESCE(1, 2)");
+        assertEquals("'a,b'::text", columnAttribute(PUBLIC_SCHEMA, target(), "label", "column_default"));
+    }
+
+    /**
+     * A hostile column name is quoted as a single identifier: the semicolon and
+     * quote cannot break out into a second statement, and the table survives.
+     * The name stays under the 63-byte identifier limit so it is not truncated.
+     */
+    @Test
+    void quotesHostileColumnNameAsOneIdentifier() {
+        String hostile = "x\"; DROP TABLE t";
+
+        addColumns(
+                new String[]{hostile},
+                new String[]{"int"},
+                new String[]{null},
+                new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+
+        assertTrue(tableExists(target()), "the injected DROP must not have run");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), hostile),
+                "the hostile name must be created verbatim as one identifier");
+    }
+
+    /**
+     * A NULL argument array violates the array domain exactly like an empty
+     * array, before any DDL, leaving the table unchanged.
+     */
+    @Test
+    void rejectsNullArraysThroughDomains() {
+        assertDomainViolation(() -> addColumns(
+                null, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, null, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, null, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, null,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
     }
 
     /**
