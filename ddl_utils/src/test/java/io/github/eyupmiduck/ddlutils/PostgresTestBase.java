@@ -3,11 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.jooq.Record;
 import org.junit.jupiter.api.function.Executable;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -155,7 +151,7 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * @param table      the table to lock
      * @param mode       the PostgreSQL lock mode, for example {@code ACCESS SHARE}
      * @return the backend PID holding the lock, so a wait can be scoped to this
-     *         exact session rather than any session holding the same lock
+     * exact session rather than any session holding the same lock
      * @throws SQLException if the lock cannot be taken
      */
     protected int holdTableLock(Connection connection, String table, String mode) throws SQLException {

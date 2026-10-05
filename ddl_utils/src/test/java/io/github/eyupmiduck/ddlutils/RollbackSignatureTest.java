@@ -9,11 +9,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -37,6 +33,14 @@ class RollbackSignatureTest extends PostgresTestBase {
     private static final Pattern DROP = Pattern.compile(
             "DROP\\s+(?:FUNCTION|PROCEDURE)\\s+IF\\s+EXISTS\\s+(.+?);",
             Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Removes SQL line and block comments so a DROP written inside a comment is
+     * not treated as a rollback statement.
+     */
+    private static String stripComments(String sql) {
+        return sql.replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("(?m)--[^\\n]*", " ");
+    }
 
     /**
      * The set of routines the rollback files drop equals the set of routines in
@@ -123,13 +127,5 @@ class RollbackSignatureTest extends PostgresTestBase {
             }
         }
         return contents;
-    }
-
-    /**
-     * Removes SQL line and block comments so a DROP written inside a comment is
-     * not treated as a rollback statement.
-     */
-    private static String stripComments(String sql) {
-        return sql.replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("(?m)--[^\\n]*", " ");
     }
 }

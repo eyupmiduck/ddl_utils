@@ -3,10 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies {@code ddl_utils_lib.assert_no_top_level_comma}: it raises when a

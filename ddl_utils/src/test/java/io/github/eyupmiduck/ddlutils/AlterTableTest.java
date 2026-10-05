@@ -25,6 +25,12 @@ class AlterTableTest extends SingleTableTest {
         super("alter_table_target", "id int");
     }
 
+    private static void assertCallerLockTimeout(DSLContext tx, String expected) {
+        String actual = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
+                .get("value", String.class);
+        assertEquals(expected, actual);
+    }
+
     /**
      * Applies an add-column and a drop-column fragment to a caller-owned table
      * and observes the schema change.
@@ -201,12 +207,6 @@ class AlterTableTest extends SingleTableTest {
             }
             assertCallerLockTimeout(tx, "7s");
         });
-    }
-
-    private static void assertCallerLockTimeout(DSLContext tx, String expected) {
-        String actual = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
-                .get("value", String.class);
-        assertEquals(expected, actual);
     }
 
     private void alterTable(String schema, String table, String fragment,

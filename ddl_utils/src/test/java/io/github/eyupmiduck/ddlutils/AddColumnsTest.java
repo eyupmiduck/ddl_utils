@@ -3,9 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies {@code ddl_utils_lib.add_columns}: it builds a single ADD COLUMN
