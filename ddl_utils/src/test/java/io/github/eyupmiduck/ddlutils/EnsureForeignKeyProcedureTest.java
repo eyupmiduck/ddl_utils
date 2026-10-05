@@ -128,6 +128,18 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A repeated column in either list is rejected, since a foreign key's column
+     * lists must name distinct columns.
+     */
+    @Test
+    void rejectsDuplicateColumnNames() {
+        assertSqlState("22023", () -> dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, TARGET, "fk_parent",
+                new String[]{"parent_id", "parent_id"}, PUBLIC_SCHEMA, REFERENCED,
+                new String[]{"id", "id"}));
+    }
+
+    /**
      * A same-named foreign key is a mismatch when its match type, update action
      * or deferrability differs from the PostgreSQL defaults.
      */

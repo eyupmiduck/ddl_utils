@@ -26,6 +26,17 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- A named relation with an attribute is not necessarily a table a CHECK
+    -- constraint and SET NOT NULL can be added to; reject other relation kinds
+    -- (views, sequences, ...) before the commit-separated workflow starts.
+    IF (SELECT c.relkind
+        FROM pg_catalog.pg_class AS c
+        WHERE c.oid = l_relation) NOT IN ('r', 'p') THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_not_null: %.% is not a table',
+            i_schema_name, i_table_name
+            USING ERRCODE = '42809';
+    END IF;
+
     -- A transaction-scoped advisory lock on this table and column serializes
     -- concurrent runs. The read-then-act guards are separated by COMMIT, so the
     -- lock is taken again before each step; it is released by that step's
@@ -63,6 +74,10 @@ BEGIN
                                                                                    i_column_name)),
                                                          1, 8);
 
+    -- Take the advisory lock before reading the column state, so two callers
+    -- cannot both observe a nullable column and then both run the scan.
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
+
     -- An already-NOT-NULL column needs no proof, so skip the add/validate/set
     -- steps and do not take a fresh ACCESS EXCLUSIVE lock or re-scan the table.
     -- Step 4 still runs, to clean up any temporary constraint left by a partial
@@ -83,7 +98,6 @@ BEGIN
             USING ERRCODE = '42703';
     END IF;
 
-    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
     -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS EXCLUSIVE
     -- lock). Skipped when the column is already NOT NULL or the constraint
     -- already exists, which is how a re-run recovers.

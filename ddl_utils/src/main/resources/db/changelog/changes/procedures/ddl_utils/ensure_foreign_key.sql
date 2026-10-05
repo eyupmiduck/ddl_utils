@@ -36,12 +36,26 @@ BEGIN
             i_b => i_referenced_column_names,
             i_context => 'ddl_utils.ensure_foreign_key: column lists');
 
+    -- PostgreSQL requires a foreign key's column lists to name distinct
+    -- columns; the join-based existence checks below would not notice a repeat,
+    -- so reject duplicates before comparing or adding.
+    IF pg_catalog.cardinality(i_column_names) <> (SELECT pg_catalog.count(DISTINCT name)
+                                                  FROM pg_catalog.unnest(i_column_names) AS t(name))
+        OR pg_catalog.cardinality(i_referenced_column_names) <>
+           (SELECT pg_catalog.count(DISTINCT name)
+            FROM pg_catalog.unnest(i_referenced_column_names) AS t(name)) THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: column lists must not contain duplicates'
+            USING ERRCODE = '22023';
+    END IF;
+
     -- A transaction-scoped advisory lock on this table serializes concurrent
-    -- runs. The read-then-act guards are separated by COMMIT, so the lock is
-    -- taken again before each step; it is released by that step's COMMIT and on
-    -- error, so a failed run cannot leak it.
+    -- runs. It is taken before the read-then-act guards so two callers cannot
+    -- both observe "no constraint" and then add different definitions; the
+    -- lock is released by each step's COMMIT and on error, so a failed run
+    -- cannot leak it, and step 2 re-takes it after step 1's COMMIT.
     l_lock_class := pg_catalog.hashtext('ddl_utils.ensure_foreign_key');
     l_lock_key := pg_catalog.hashtext(pg_catalog.format('%I.%I', i_schema_name, i_table_name));
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
 
     l_referenced_relation := pg_catalog.to_regclass(
             pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
@@ -143,7 +157,21 @@ BEGIN
             USING ERRCODE = '42710';
     END IF;
 
-    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
+    -- The advisory lock taken above is still held here. A same-named constraint
+    -- of another kind (PRIMARY KEY, UNIQUE, CHECK, EXCLUDE) would make
+    -- add_foreign_key fail with a generic duplicate-object error; name the
+    -- conflict instead.
+    IF EXISTS (SELECT 1
+               FROM pg_catalog.pg_constraint
+               WHERE conname = i_constraint_name
+                 AND conrelid = l_relation
+                 AND contype <> 'f') THEN
+        RAISE EXCEPTION
+            'ddl_utils.ensure_foreign_key: constraint % already exists on %.% as a different kind of constraint',
+            i_constraint_name, i_schema_name, i_table_name
+            USING ERRCODE = '42710';
+    END IF;
+
     -- Step 1: add the foreign key as NOT VALID (no scan; SHARE ROW EXCLUSIVE on
     -- both tables, released at the commit). Skipped when it already exists, so a
     -- re-run recovers after a partial failure.
@@ -189,4 +217,5 @@ END;
 $$;
 
 COMMENT ON PROCEDURE ddl_utils.ensure_foreign_key IS
-    'Adds a foreign key as NOT VALID and then validates it, committing between steps.';
+    'Adds a foreign key as NOT VALID and then validates it, committing between steps. '
+        'Call it outside a transaction block (autocommit).';

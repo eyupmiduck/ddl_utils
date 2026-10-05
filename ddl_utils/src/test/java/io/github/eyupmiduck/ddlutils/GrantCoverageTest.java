@@ -26,8 +26,16 @@ class GrantCoverageTest extends PostgresTestBase {
         List<Record> routines = dsl.fetch("""
                 SELECT n.nspname,
                        p.proname,
-                       pg_catalog.has_function_privilege('ddl_utils_caller', p.oid, 'EXECUTE')
-                           AS caller_execute,
+                       (p.oid = pg_catalog.to_regprocedure('ddl_utils.set_updated_at()'))
+                           AS is_trigger_function,
+                       EXISTS (
+                           SELECT 1
+                           FROM pg_catalog.aclexplode(p.proacl) AS a
+                           WHERE a.privilege_type = 'EXECUTE'
+                             AND a.grantee = (SELECT r.oid
+                                              FROM pg_catalog.pg_roles AS r
+                                              WHERE r.rolname = 'ddl_utils_caller')
+                       ) AS caller_execute,
                        COALESCE(
                            (SELECT bool_or(a.grantee = 0::oid)
                             FROM pg_catalog.aclexplode(p.proacl) AS a
@@ -43,7 +51,7 @@ class GrantCoverageTest extends PostgresTestBase {
 
         for (Record routine : routines) {
             String name = routine.get("nspname", String.class) + "." + routine.get("proname", String.class);
-            boolean isTriggerFunction = name.equals("ddl_utils.set_updated_at");
+            boolean isTriggerFunction = routine.get("is_trigger_function", Boolean.class);
 
             assertEquals(!isTriggerFunction, routine.get("caller_execute", Boolean.class),
                     () -> name + ": ddl_utils_caller EXECUTE should be " + !isTriggerFunction);

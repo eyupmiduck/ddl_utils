@@ -81,7 +81,7 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         callEnsureNotNull(column);
 
         assertNotNullable(PUBLIC_SCHEMA, target(), column);
-        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), column));
     }
 
     /**

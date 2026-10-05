@@ -30,22 +30,27 @@ CREATE DOMAIN ddl_utils.non_empty_text_array AS text[]
 COMMENT ON DOMAIN ddl_utils.non_empty_text_array IS
     'text array with at least one element; elements may be NULL.';
 
+-- array_position is undefined for multidimensional arrays (it raises rather
+-- than returning a result), so require a one-dimensional array first; the AND
+-- short-circuits, so array_position is never evaluated for a multidimension.
 CREATE DOMAIN ddl_utils.non_empty_non_null_text_array AS text[]
     CONSTRAINT non_empty_non_null_text_array_check CHECK (
         value IS NOT NULL
             AND pg_catalog.cardinality(value) >= 1
+            AND pg_catalog.array_ndims(value) = 1
             AND pg_catalog.array_position(value, NULL) IS NULL
         );
 
 COMMENT ON DOMAIN ddl_utils.non_empty_non_null_text_array IS
-    'text array with at least one element and no NULL elements.';
+    'one-dimensional text array with at least one element and no NULL elements.';
 
 CREATE DOMAIN ddl_utils.non_empty_non_null_boolean_array AS boolean[]
     CONSTRAINT non_empty_non_null_boolean_array_check CHECK (
         value IS NOT NULL
             AND pg_catalog.cardinality(value) >= 1
+            AND pg_catalog.array_ndims(value) = 1
             AND pg_catalog.array_position(value, NULL) IS NULL
         );
 
 COMMENT ON DOMAIN ddl_utils.non_empty_non_null_boolean_array IS
-    'boolean array with at least one element and no NULL elements.';
+    'one-dimensional boolean array with at least one element and no NULL elements.';

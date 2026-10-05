@@ -44,6 +44,15 @@ class AssertOneBasedTest extends PostgresTestBase {
         assertSqlState("22023", () -> assertOneBased("NULL::text[]"));
     }
 
+    /**
+     * A multidimensional array is rejected: helpers index a single subscript,
+     * so they cannot address such an array's elements.
+     */
+    @Test
+    void rejectsMultidimensionalArray() {
+        assertSqlState("22023", () -> assertOneBased("ARRAY[['a'], ['b']]::text[]"));
+    }
+
     private void assertOneBased(String valueExpression) {
         dsl.fetchOne("SELECT ddl_utils_lib.assert_one_based(" + valueExpression + ", ?)", "ctx");
     }
