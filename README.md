@@ -237,7 +237,7 @@ liquibase \
 
 ### Docker instead of a local CLI
 
-The repository's `compose.yaml` runs the same changelog in the official
+The shared `scripts/compose.yaml` runs the same changelog in the official
 Liquibase image, which already has `lpm` on `PATH`. Use it as a template, or run
 the CLI container directly (mounting the changelog read-only):
 
@@ -389,10 +389,10 @@ script. Connect with:
 psql -h localhost -p 5432 -U postgres -d ddl_utils   # password: postgres
 ```
 
-The port is bound to `127.0.0.1` only, and the credentials are set in
-`compose.yaml`. Data lives in the `ddl_utils_pgdata` volume: `scripts/stop-local-db.sh`
-keeps it, while `scripts/refresh-local-db.sh` wipes it and re-runs the
-migrations.
+The port is bound to `127.0.0.1` only and defaults to `5432`, and the stack is
+defined in `scripts/compose.yaml`. Data lives in the `ddl_utils_pgdata` volume:
+`scripts/stop-local-db.sh` keeps it, while `scripts/refresh-local-db.sh` wipes
+it and re-runs the migrations.
 
 ## Custom PostgreSQL image
 
@@ -437,8 +437,8 @@ custom image tag:
 scripts/build-postgres-image.sh postgres:16-alpine
 ./mvnw verify -Dpostgres.version=16-alpine
 
-# Local dev database (Docker Compose) takes the image tag directly
-POSTGRES_IMAGE=ddl-utils-postgres:16-alpine docker compose up -d
+# Local dev database: build the image for that version, then start the stack
+POSTGRES_IMAGE=ddl-utils-postgres:16-alpine scripts/start-local-db.sh
 ```
 
 The `postgres.image` property is derived as
