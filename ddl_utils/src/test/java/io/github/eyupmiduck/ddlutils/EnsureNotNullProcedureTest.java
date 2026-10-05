@@ -3,6 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies the {@code ddl_utils.ensure_not_null} procedure: it makes a column
@@ -153,6 +154,24 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
     @Test
     void rejectsUnknownColumn() {
         assertSqlState("42703", () -> callEnsureNotNull("missing"));
+    }
+
+    /**
+     * A pre-existing constraint that happens to have the generated proof name
+     * but a different definition is not treated as this routine's proof: the
+     * call fails and the foreign constraint is left in place.
+     */
+    @Test
+    void rejectsSameNamedConstraintWithDifferentDefinition() {
+        String constraint = notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
+                + " ADD CONSTRAINT " + constraint + " CHECK (note <> '')");
+
+        assertSqlState("42710", this::callEnsureNotNull);
+
+        assertTrue(constraintExists(PUBLIC_SCHEMA, target(), constraint),
+                "the pre-existing constraint must not be dropped");
+        assertEquals(1, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     private void callEnsureNotNull() {

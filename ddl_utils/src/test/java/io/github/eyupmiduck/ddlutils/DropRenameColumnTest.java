@@ -70,6 +70,20 @@ class DropRenameColumnTest extends SingleTableTest {
     }
 
     /**
+     * Two names that differ only after the 63-byte identifier limit collapse to
+     * the same PostgreSQL identifier and are rejected as duplicates.
+     */
+    @Test
+    void dropColumnsRejectsNamesThatCollapseToTheSameIdentifier() {
+        String base = "a".repeat(63);
+
+        assertSqlState("22023", () -> dropColumns(
+                new String[]{base + "x", base + "y"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+    }
+
+    /**
      * drop_columns rejects a null array and a null element through the array
      * domain.
      */

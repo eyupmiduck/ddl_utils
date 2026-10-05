@@ -12,6 +12,9 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_identity(
     SECURITY INVOKER
 AS
 $$
+DECLARE
+    l_sequence regclass;
+    l_max      bigint;
 BEGIN
     -- The generated mode is a two-value keyword set; validate it so a caller
     -- cannot splice arbitrary SQL. It is emitted verbatim (not as an
@@ -23,8 +26,7 @@ BEGIN
 
     -- Adding an identity is metadata-only (like SET DEFAULT) and affects future
     -- rows only. PostgreSQL requires the column to be NOT NULL (it raises 42P16
-    -- otherwise), and the new sequence starts at 1, so adding it to a populated
-    -- column can hand out duplicate values to later inserts.
+    -- otherwise).
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -37,9 +39,27 @@ BEGIN
             i_sleep_time => i_sleep_time,
             i_statement_duration => i_statement_duration
             );
+
+    -- A new identity sequence starts at 1, so a populated column would hand out
+    -- duplicate values to later inserts. Move the sequence past the current
+    -- maximum. The scan runs in the same transaction as the ALTER (which just
+    -- held ACCESS EXCLUSIVE), so no concurrent insert can race it.
+    l_sequence := pg_catalog.pg_get_serial_sequence(
+            pg_catalog.format('%I.%I', i_schema_name, i_table_name), i_column_name)::regclass;
+    IF l_sequence IS NOT NULL THEN
+        EXECUTE pg_catalog.format('SELECT pg_catalog.max(%I)::bigint FROM %I.%I',
+                                  i_column_name, i_schema_name, i_table_name)
+            INTO l_max;
+        IF l_max IS NULL THEN
+            PERFORM pg_catalog.setval(l_sequence, 1, false);
+        ELSE
+            PERFORM pg_catalog.setval(l_sequence, l_max, true);
+        END IF;
+    END IF;
 END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.add_identity IS
     'Adds an identity to a column, taking the lock settings explicitly. The '
-        'column must already be NOT NULL; the sequence starts at 1.';
+        'column must already be NOT NULL; the sequence is advanced past the '
+        'column''s current maximum so generated values cannot collide.';

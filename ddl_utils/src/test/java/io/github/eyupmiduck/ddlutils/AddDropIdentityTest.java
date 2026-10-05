@@ -33,6 +33,22 @@ class AddDropIdentityTest extends SingleTableTest {
     }
 
     /**
+     * Adding an identity to a populated column advances the sequence past the
+     * existing maximum, so a later generated value cannot collide with an
+     * existing one.
+     */
+    @Test
+    void addIdentityContinuesAfterExistingMaximum() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (100, 'a'), (250, 'b')");
+
+        addIdentity("id", "BY DEFAULT");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('c')");
+
+        assertEquals(251, dsl.fetchOne(
+                "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note = 'c'").get(0, Integer.class));
+    }
+
+    /**
      * BY DEFAULT accepts an explicitly supplied value, whereas ALWAYS rejects
      * one (SQLSTATE 428C9) unless it is overridden.
      */

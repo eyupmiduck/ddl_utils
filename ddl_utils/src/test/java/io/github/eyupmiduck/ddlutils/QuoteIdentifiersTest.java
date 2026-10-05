@@ -40,6 +40,30 @@ class QuoteIdentifiersTest extends PostgresTestBase {
                         "DROP COLUMN "));
     }
 
+    /**
+     * A blank element would become an empty identifier {@code ""}, which is not
+     * a valid PostgreSQL identifier; it is rejected.
+     */
+    @Test
+    void rejectsBlankElement() {
+        assertSqlState("22023", () -> quoteIdentifiers(
+                "ARRAY['a', '  ']::ddl_utils.non_empty_non_null_text_array"));
+        assertSqlState("22023", () -> quoteIdentifiers(
+                "ARRAY[E'\\t\\n']::ddl_utils.non_empty_non_null_text_array"));
+    }
+
+    /**
+     * An element longer than NAMEDATALEN - 1 (63) bytes would be emitted in full
+     * by {@code %I} but silently truncated by PostgreSQL, so it is rejected.
+     */
+    @Test
+    void rejectsOverlongElement() {
+        assertSqlState("22023", () -> quoteIdentifiers(
+                "ARRAY[repeat('a', 64)]::ddl_utils.non_empty_non_null_text_array"));
+        assertSqlState("22023", () -> quoteIdentifiers(
+                "ARRAY[repeat('a', 63), repeat('b', 64)]::ddl_utils.non_empty_non_null_text_array"));
+    }
+
     private String quoteIdentifiers(String valueExpression) {
         return quoteIdentifiers(valueExpression, "");
     }

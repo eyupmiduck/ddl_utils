@@ -15,8 +15,7 @@ DECLARE
     l_settings            ddl_utils.lock_settings;
     l_relation            regclass;
     l_referenced_relation regclass;
-    l_lock_class          integer;
-    l_lock_key            integer;
+    l_lock_key            bigint;
 BEGIN
     -- Read the lock settings once; they are reused across both steps.
     SELECT *
@@ -53,9 +52,10 @@ BEGIN
     -- both observe "no constraint" and then add different definitions; the
     -- lock is released by each step's COMMIT and on error, so a failed run
     -- cannot leak it, and step 2 re-takes it after step 1's COMMIT.
-    l_lock_class := pg_catalog.hashtext('ddl_utils.ensure_foreign_key');
-    l_lock_key := pg_catalog.hashtext(pg_catalog.format('%I.%I', i_schema_name, i_table_name));
-    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
+    l_lock_key := pg_catalog.hashtextextended(
+            pg_catalog.format('ddl_utils.ensure_foreign_key|%I.%I', i_schema_name, i_table_name),
+            0);
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_key);
 
     l_referenced_relation := pg_catalog.to_regclass(
             pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
@@ -195,7 +195,7 @@ BEGIN
         COMMIT;
     END IF;
 
-    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_class, l_lock_key);
+    PERFORM pg_catalog.pg_advisory_xact_lock(l_lock_key);
     -- Step 2: validate the constraint, scanning under SHARE UPDATE EXCLUSIVE.
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_constraint
