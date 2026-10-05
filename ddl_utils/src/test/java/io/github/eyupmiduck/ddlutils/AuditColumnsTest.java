@@ -34,16 +34,22 @@ class AuditColumnsTest extends PostgresTestBase {
      */
     @Test
     void updateTriggerRefreshesUpdatedAtAndPreservesCreatedAt() throws SQLException {
-        setSchemaLockSettings("audit_columns_test_schema", 100, 1000, 30);
-        setTableLockSettings("audit_columns_test_schema", "audit_columns_test_table", 100, 1000, 30);
-        try (Connection owner = openOwnerConnection()) {
-            RoutineAssertions.assertUpdateTriggerRefreshesAuditColumns(owner, "ddl_utils",
-                    List.of("database_lock_settings", "schema_lock_settings", "table_lock_settings"));
+        try {
+            setSchemaLockSettings("audit_columns_test_schema", 100, 1000, 30);
+            setTableLockSettings("audit_columns_test_schema", "audit_columns_test_table", 100, 1000, 30);
+            try (Connection owner = openOwnerConnection()) {
+                RoutineAssertions.assertUpdateTriggerRefreshesAuditColumns(owner, "ddl_utils",
+                        List.of("database_lock_settings", "schema_lock_settings", "table_lock_settings"));
+            }
         } finally {
             // The seeded rows above are committed and shared with the other test
-            // in this class, so remove them.
-            clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
-            clearSchemaLockSettings("audit_columns_test_schema");
+            // in this class, so remove them. Run both cleanups even if the first
+            // throws, and keep any primary failure primary.
+            try {
+                clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
+            } finally {
+                clearSchemaLockSettings("audit_columns_test_schema");
+            }
         }
     }
 }

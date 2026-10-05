@@ -4,6 +4,7 @@ import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies {@code ddl_utils_lib.add_identity} and {@code drop_identity}: they
@@ -26,19 +27,59 @@ class AddDropIdentityTest extends SingleTableTest {
 
         assertEquals("d", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('a')");
-        Integer next = dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + target()).get(0, Integer.class);
+        Integer next = dsl.fetchOne(
+                "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " ORDER BY id").get(0, Integer.class);
         assertEquals(1, next);
     }
 
     /**
-     * Drops the identity, leaving the column in place.
+     * Adding an identity to a populated column advances the sequence past the
+     * existing maximum, so a later generated value cannot collide with an
+     * existing one.
+     */
+    @Test
+    void addIdentityContinuesAfterExistingMaximum() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (100, 'a'), (250, 'b')");
+
+        addIdentity("id", "BY DEFAULT");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('c')");
+
+        assertEquals(251, dsl.fetchOne(
+                "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note = 'c'").get(0, Integer.class));
+    }
+
+    /**
+     * BY DEFAULT accepts an explicitly supplied value, whereas ALWAYS rejects
+     * one (SQLSTATE 428C9) unless it is overridden.
+     */
+    @Test
+    void byDefaultAcceptsExplicitValueAndAlwaysRejectsIt() {
+        addIdentity("id", "BY DEFAULT");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (100, 'a')");
+        assertEquals(100, dsl.fetchOne("SELECT id FROM " + PUBLIC_SCHEMA + "." + target())
+                .get(0, Integer.class));
+
+        dropIdentity("id", true);
+        addIdentity("id", "ALWAYS");
+        assertSqlState("428C9", () -> dsl.execute(
+                "INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (101, 'b')"));
+    }
+
+    /**
+     * Drops the identity, leaving the column and its data in place.
      */
     @Test
     void dropsIdentity() {
         addIdentity("id", "ALWAYS");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('a')");
         dropIdentity("id", true);
 
         assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
+        assertNotNullable(PUBLIC_SCHEMA, target(), "id");
+        assertEquals("a", dsl.fetchOne(
+                        "SELECT note FROM " + PUBLIC_SCHEMA + "." + target() + " ORDER BY id")
+                .get(0, String.class));
     }
 
     /**
@@ -63,6 +104,9 @@ class AddDropIdentityTest extends SingleTableTest {
     @Test
     void rejectsInvalidGeneratedMode() {
         assertSqlState("22023", () -> addIdentity("id", "SOMETIMES"));
+
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"),
+                "a rejected call must not have added an identity");
     }
 
     /**
@@ -73,6 +117,9 @@ class AddDropIdentityTest extends SingleTableTest {
         assertDomainViolation(() -> addIdentity(null, "ALWAYS"));
         assertDomainViolation(() -> addIdentity("id", null));
         assertDomainViolation(() -> dropIdentity("id", null));
+
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"),
+                "a rejected call must not have added an identity");
     }
 
     private void addIdentity(String column, String generated) {

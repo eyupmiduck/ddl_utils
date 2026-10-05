@@ -68,6 +68,9 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
         assertUsesTableLockSettings(
                 TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name"));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"),
+                "a call that gave up must not have dropped the column");
     }
 
     /**
@@ -80,6 +83,10 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
                 TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, target(),
                         new String[]{"old_name", "keep"}));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"),
+                "a call that gave up must not have dropped the columns");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -91,5 +98,9 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
         assertUsesTableLockSettings(
                 TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name", "new_name"));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"),
+                "a call that gave up must not have renamed the column");
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "new_name"));
     }
 }

@@ -3,10 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.jooq.Record;
 import org.junit.jupiter.api.function.Executable;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -141,8 +138,8 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * @param table      the table to lock
      * @throws SQLException if the lock cannot be taken
      */
-    protected void holdAccessShareLock(Connection connection, String table) throws SQLException {
-        holdTableLock(connection, table, "ACCESS SHARE");
+    protected int holdAccessShareLock(Connection connection, String table) throws SQLException {
+        return holdTableLock(connection, table, "ACCESS SHARE");
     }
 
     /**
@@ -153,38 +150,48 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * @param connection a connection to this test class's private database
      * @param table      the table to lock
      * @param mode       the PostgreSQL lock mode, for example {@code ACCESS SHARE}
+     * @return the backend PID holding the lock, so a wait can be scoped to this
+     * exact session rather than any session holding the same lock
      * @throws SQLException if the lock cannot be taken
      */
-    protected void holdTableLock(Connection connection, String table, String mode) throws SQLException {
+    protected int holdTableLock(Connection connection, String table, String mode) throws SQLException {
         connection.setAutoCommit(false);
         try (Statement statement = connection.createStatement()) {
             statement.execute("LOCK TABLE " + table + " IN " + mode + " MODE");
         }
+        try (Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT pg_backend_pid()")) {
+            result.next();
+            return result.getInt(1);
+        }
     }
 
     /**
-     * Waits until a competing session holds an ACCESS SHARE lock on the table,
-     * so a test can be sure the lock is in place before calling a routine that
-     * must wait for it.
-     *
-     * @param table the table to check
-     * @throws InterruptedException if interrupted while waiting
-     */
-    protected void awaitAccessShareLockHeld(String table) throws InterruptedException {
-        awaitTableLockHeld(table, "AccessShareLock");
-    }
-
-    /**
-     * Waits until a competing session holds a lock in the given mode on the
-     * table, so a test can be sure the lock is in place before calling a
+     * Waits until the given competing session holds an ACCESS SHARE lock on the
+     * table, so a test can be sure its own blocker is in place before calling a
      * routine that must wait for it.
      *
-     * @param table the table to check
-     * @param mode  the PostgreSQL lock mode as reported by {@code pg_locks},
-     *              for example {@code AccessExclusiveLock}
+     * @param table     the table to check
+     * @param holderPid the backend PID expected to hold the lock
      * @throws InterruptedException if interrupted while waiting
      */
-    protected void awaitTableLockHeld(String table, String mode) throws InterruptedException {
+    protected void awaitAccessShareLockHeld(String table, int holderPid) throws InterruptedException {
+        awaitTableLockHeld(table, "AccessShareLock", holderPid);
+    }
+
+    /**
+     * Waits until the given competing session holds a lock in the given mode on
+     * the table, so a test can be sure its own blocker is in place before
+     * calling a routine that must wait for it. Scoping the lookup to the holder
+     * PID prevents an unrelated session's lock from satisfying the wait.
+     *
+     * @param table     the table to check
+     * @param mode      the PostgreSQL lock mode as reported by {@code pg_locks},
+     *                  for example {@code AccessExclusiveLock}
+     * @param holderPid the backend PID expected to hold the lock
+     * @throws InterruptedException if interrupted while waiting
+     */
+    protected void awaitTableLockHeld(String table, String mode, int holderPid) throws InterruptedException {
         for (int attempt = 0; attempt < 100; attempt++) {
             Object held = dsl.fetchValue(
                     """
@@ -197,9 +204,10 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
                                     AND n.nspname = current_schema()
                                     AND l.mode = ?
                                     AND l.granted
+                                    AND l.pid = ?
                             )
                             """,
-                    table, mode);
+                    table, mode, holderPid);
             if (Boolean.TRUE.equals(held)) {
                 return;
             }
@@ -551,12 +559,14 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * @return the constraint type code
      */
     protected String constraintType(String schema, String name) {
-        return dsl.fetchOne(
+        Record record = dsl.fetchOne(
                 """
                         SELECT contype::text FROM pg_constraint
                         WHERE conname = ? AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
                         """,
-                name, schema).get(0, String.class);
+                name, schema);
+        assertNotNull(record, () -> "constraint not found: " + schema + "." + name);
+        return record.get(0, String.class);
     }
 
     /**
@@ -783,8 +793,8 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     protected void assertGivesUpWhileTableLocked(String table, String mode, long maxMillis, Executable call)
             throws SQLException, InterruptedException {
         try (Connection other = openTestConnection()) {
-            holdTableLock(other, table, mode);
-            awaitTableLockHeld(table, lockModeName(mode));
+            int holderPid = holdTableLock(other, table, mode);
+            awaitTableLockHeld(table, lockModeName(mode), holderPid);
 
             long startedAt = System.nanoTime();
             assertSqlState("55P03", call);
@@ -805,8 +815,8 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      */
     protected void runWhileTableLocked(String table, long releaseDelayMillis, Runnable call) {
         try (Connection other = openTestConnection()) {
-            holdAccessShareLock(other, table);
-            awaitAccessShareLockHeld(table);
+            int holderPid = holdAccessShareLock(other, table);
+            awaitAccessShareLockHeld(table, holderPid);
 
             CompletableFuture<Void> release = rollbackAfter(other, releaseDelayMillis);
             Throwable failure = null;

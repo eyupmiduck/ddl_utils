@@ -18,6 +18,8 @@ class AssertAllowedKeywordTest extends PostgresTestBase {
         assertDoesNotThrow(() -> assertAllowedKeyword("ALWAYS", "ARRAY['always', 'by default']"));
         assertDoesNotThrow(() -> assertAllowedKeyword("by default", "ARRAY['always', 'by default']"));
         assertDoesNotThrow(() -> assertAllowedKeyword("LZ4", "ARRAY['pglz', 'lz4', 'default']"));
+        // The allow-list entries are matched case-insensitively too.
+        assertDoesNotThrow(() -> assertAllowedKeyword("always", "ARRAY['ALWAYS', 'By Default']"));
     }
 
     /**
@@ -28,6 +30,17 @@ class AssertAllowedKeywordTest extends PostgresTestBase {
     void rejectsDisallowedKeyword() {
         assertSqlState("22023",
                 () -> assertAllowedKeyword("sometimes", "ARRAY['always', 'by default']"));
+    }
+
+    /**
+     * A NULL, empty, or NULL-element allow-list cannot match, so the value is
+     * rejected rather than silently accepted (the predicate must not be NULL).
+     */
+    @Test
+    void rejectsNullOrEmptyAllowList() {
+        assertSqlState("22023", () -> assertAllowedKeyword("always", "NULL::text[]"));
+        assertSqlState("22023", () -> assertAllowedKeyword("always", "ARRAY[]::text[]"));
+        assertSqlState("22023", () -> assertAllowedKeyword("always", "ARRAY[NULL]::text[]"));
     }
 
     private void assertAllowedKeyword(String value, String allowedExpression) {

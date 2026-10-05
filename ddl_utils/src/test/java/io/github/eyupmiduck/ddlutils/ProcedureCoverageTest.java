@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -53,8 +52,13 @@ class ProcedureCoverageTest extends PostgresTestBase {
             List<PlpgsqlCheck.Finding> findings =
                     PlpgsqlCheck.findFindings(owner, List.of(PUBLIC_SCHEMA));
 
-            assertFalse(findings.isEmpty(),
-                    "plpgsql_check found nothing wrong with a deliberately broken procedure");
+            PlpgsqlCheck.Finding broken = findings.stream()
+                    .filter(finding -> "broken_procedure_probe".equals(finding.function()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError(
+                            "no plpgsql_check finding for the deliberately broken procedure; findings: " + findings));
+            assertTrue(broken.message().contains("nonexistent_col"),
+                    () -> "the finding should name the missing column: " + broken.message());
         } finally {
             dsl.execute("DROP PROCEDURE IF EXISTS " + PUBLIC_SCHEMA + ".broken_procedure_probe()");
         }

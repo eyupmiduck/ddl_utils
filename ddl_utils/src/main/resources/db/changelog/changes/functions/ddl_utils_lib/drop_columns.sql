@@ -17,7 +17,11 @@ DECLARE
 BEGIN
     -- Duplicates would emit the same DROP COLUMN twice and fail with a raw
     -- 42703 from PostgreSQL; reject them with this function's own error.
-    IF l_count <> (SELECT pg_catalog.count(DISTINCT name)
+    -- Compare as name, not text: PostgreSQL truncates an identifier to
+    -- NAMEDATALEN - 1 bytes and compares it byte-wise, so two entries that
+    -- collapse to the same identifier (or differ only in case under a
+    -- case-insensitive collation) must be treated as duplicates.
+    IF l_count <> (SELECT pg_catalog.count(DISTINCT t.name::pg_catalog.name)
                    FROM pg_catalog.unnest(i_column_names) AS t(name)) THEN
         RAISE EXCEPTION
             'ddl_utils_lib.drop_columns: duplicate column names are not allowed'

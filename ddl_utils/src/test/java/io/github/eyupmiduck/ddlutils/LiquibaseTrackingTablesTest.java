@@ -20,9 +20,9 @@ class LiquibaseTrackingTablesTest extends PostgresTestBase {
      */
     @Test
     void trackingTablesLiveInTheLiquibaseSchema() {
-        assertTrue(anyRelationExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_TABLE),
+        assertTrue(tableExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_TABLE),
                 "expected " + LIQUIBASE_SCHEMA + "." + DATABASE_CHANGELOG_TABLE);
-        assertTrue(anyRelationExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_LOCK_TABLE),
+        assertTrue(tableExists(LIQUIBASE_SCHEMA, DATABASE_CHANGELOG_LOCK_TABLE),
                 "expected " + LIQUIBASE_SCHEMA + "." + DATABASE_CHANGELOG_LOCK_TABLE);
 
         assertFalse(anyRelationExists("public", "databasechangelog"),
@@ -38,13 +38,12 @@ class LiquibaseTrackingTablesTest extends PostgresTestBase {
     /**
      * Returns whether any relation (table, view, sequence or index) exists,
      * reading the catalog directly so the lookup works for schemas the test
-     * role has no privileges on. Unlike the inherited table-only
-     * {@code relationExists}, this matches a relation of any kind, so a
-     * misplaced sequence cannot masquerade as a satisfied tracking table.
+     * role has no privileges on. Any relation kind counts, so a misplaced
+     * sequence cannot masquerade as an absent tracking table.
      *
      * @param schema   the schema name
      * @param relation the relation name
-     * @return {@code true} when the relation exists
+     * @return {@code true} when any relation of that name exists
      */
     private boolean anyRelationExists(String schema, String relation) {
         return Boolean.TRUE.equals(dsl.fetchValue(

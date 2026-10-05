@@ -35,6 +35,7 @@ class DropColumnDefaultTest extends SingleTableTest {
         dropColumnDefault("id");
 
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "id");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**

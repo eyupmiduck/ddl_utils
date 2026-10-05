@@ -72,9 +72,14 @@ class AddColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void usesTableLockSettings() throws Exception {
-        assertUsesTableLockSettings(() -> addColumn("blocked", "int", null, true));
+        assertUsesTableLockSettings(
+                () -> addColumn("blocked", "int", null, true),
+                () -> addColumns(
+                        new String[]{"blocked_multi"}, new String[]{"int"}, new String[]{null},
+                        new Boolean[]{true}));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked_multi"));
     }
 
     /**
@@ -96,6 +101,20 @@ class AddColumnSettingsTest extends SingleTableTest {
     void addColumnsRejectsEmptyArraysThroughDomains() {
         assertDomainViolation(() -> addColumns(
                 new String[0], new String[0], new String[0], new Boolean[0]));
+    }
+
+    /**
+     * The wrapper rejects non-empty arrays of mismatched lengths before any DDL,
+     * leaving the table unchanged.
+     */
+    @Test
+    void addColumnsRejectsMismatchedNonEmptyArrays() {
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first", "second"}, new String[]{"int"}, new String[]{null, null},
+                new Boolean[]{true, true}));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "second"));
     }
 
     private void addColumn(String column, String type, String defaultValue, Boolean nullable) {

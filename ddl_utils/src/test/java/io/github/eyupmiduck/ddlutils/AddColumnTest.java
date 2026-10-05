@@ -3,8 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies {@code ddl_utils_lib.add_column}: it builds an ADD COLUMN fragment and
@@ -38,7 +37,10 @@ class AddColumnTest extends SingleTableTest {
     void addsColumnWithDefaultExpression() {
         addColumn("created", "timestamptz", true, "now()", 1000, 10, 5000);
 
-        assertColumnDefault(PUBLIC_SCHEMA, target(), "created", "now()");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "created"));
+        assertNullable(PUBLIC_SCHEMA, target(), "created");
+        assertEquals("now()", columnAttribute(PUBLIC_SCHEMA, target(), "created", "column_default"),
+                "the default must be exactly now(), not merely contain it");
     }
 
     /**

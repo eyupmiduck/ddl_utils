@@ -35,6 +35,15 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
         assertSqlState("22023", () -> assertEqualCardinality("NULL::text[]", "ARRAY['c']"));
     }
 
+    /**
+     * Two NULL arrays are rejected: both cardinalities are NULL, so
+     * {@code IS DISTINCT FROM} alone would treat them as equal.
+     */
+    @Test
+    void rejectsBothNullArrays() {
+        assertSqlState("22023", () -> assertEqualCardinality("NULL::text[]", "NULL::text[]"));
+    }
+
     private void assertEqualCardinality(String a, String b) {
         dsl.fetchOne(
                 "SELECT ddl_utils_lib.assert_equal_cardinality(" + a + "::text[], " + b

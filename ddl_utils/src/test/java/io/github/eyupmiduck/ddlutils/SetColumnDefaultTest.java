@@ -80,6 +80,10 @@ class SetColumnDefaultTest extends SingleTableTest {
         assertDomainViolation(() -> setColumnDefault("note", "'x'", null, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> setColumnDefault("note", "'x'", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> setColumnDefault("note", "'x'", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        // Negative values are outside the non_negative_integer domain.
+        assertDomainViolation(() -> setColumnDefault("note", "'x'", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setColumnDefault("note", "'x'", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> setColumnDefault("note", "'x'", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
     }
 
     private void setColumnDefault(String column, String defaultValue) {

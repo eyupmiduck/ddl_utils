@@ -10,8 +10,11 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.assert_equal_cardinality(
 AS
 $$
 BEGIN
-    -- IS DISTINCT FROM also rejects a NULL array, whose cardinality is NULL.
-    IF pg_catalog.cardinality(i_a) IS DISTINCT FROM pg_catalog.cardinality(i_b) THEN
+    -- Two NULL arrays both have a NULL cardinality, so IS DISTINCT FROM alone
+    -- would accept them; reject a NULL array explicitly (cardinality is
+    -- undefined for it).
+    IF i_a IS NULL OR i_b IS NULL
+        OR pg_catalog.cardinality(i_a) IS DISTINCT FROM pg_catalog.cardinality(i_b) THEN
         RAISE EXCEPTION '%: arrays must have the same length (% vs %)',
             i_context, pg_catalog.cardinality(i_a), pg_catalog.cardinality(i_b)
             USING ERRCODE = '22023';

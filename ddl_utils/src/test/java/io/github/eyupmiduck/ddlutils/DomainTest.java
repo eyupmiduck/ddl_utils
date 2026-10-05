@@ -164,6 +164,19 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * A multidimensional array is rejected with a check-constraint violation by
+     * both non-null-element array domains, rather than raising the raw
+     * {@code array_position} "multidimensional arrays" error.
+     */
+    @Test
+    void nonEmptyNonNullArrayDomainsRejectMultidimensionalArrays() {
+        assertDomainViolation(() -> evaluate(
+                "ARRAY[['a'], ['b']]::text[]::ddl_utils.non_empty_non_null_text_array", Object.class));
+        assertDomainViolation(() -> evaluate(
+                "ARRAY[[true], [false]]::boolean[]::ddl_utils.non_empty_non_null_boolean_array", Object.class));
+    }
+
+    /**
      * The non-empty, non-null-element boolean-array domain accepts an array
      * whose elements are all non-null.
      */

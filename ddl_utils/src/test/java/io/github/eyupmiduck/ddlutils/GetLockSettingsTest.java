@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import org.jooq.Record;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,17 @@ class GetLockSettingsTest extends PostgresTestBase {
      */
     @BeforeEach
     void resetLockSettings() {
+        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+        clearSchemaLockSettings(SCHEMA);
+        clearTableLockSettings(SCHEMA, TABLE);
+    }
+
+    /**
+     * Restores the shared lock-settings state after every test, so a failure
+     * that leaves an override behind cannot leak into a later test.
+     */
+    @AfterEach
+    void cleanUpLockSettings() {
         setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
         clearSchemaLockSettings(SCHEMA);
         clearTableLockSettings(SCHEMA, TABLE);

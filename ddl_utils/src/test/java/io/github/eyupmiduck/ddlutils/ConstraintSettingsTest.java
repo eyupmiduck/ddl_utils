@@ -58,6 +58,9 @@ class ConstraintSettingsTest extends PostgresTestBase {
 
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "positive", "value > 0"));
+
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "positive"),
+                "a call that gave up must not have created the constraint");
     }
 
     /**
@@ -84,8 +87,15 @@ class ConstraintSettingsTest extends PostgresTestBase {
 
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "old_name"),
+                "a failed drop must leave the constraint in place");
+
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.renameConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name"));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "old_name"),
+                "a failed rename must leave the old name in place");
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"),
+                "a failed rename must not create the new name");
     }
 
     /**
@@ -100,6 +110,9 @@ class ConstraintSettingsTest extends PostgresTestBase {
         assertGivesUpWhileTableLocked(TARGET, "ACCESS EXCLUSIVE", 2000,
                 () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "fk_parent",
                         new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "fk_parent"),
+                "a call that gave up must not have created the foreign key");
     }
 
 }

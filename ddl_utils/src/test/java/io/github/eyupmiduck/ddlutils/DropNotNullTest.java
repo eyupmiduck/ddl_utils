@@ -32,6 +32,10 @@ class DropNotNullTest extends SingleTableTest {
      */
     @Test
     void acceptsNullAfterDroppingNotNull() {
+        // Precondition: the fixture really enforces NOT NULL before the call.
+        assertSqlState("23502",
+                () -> dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id) VALUES (1)"));
+
         dropNotNull("note");
 
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, NULL)");

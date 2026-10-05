@@ -14,3 +14,12 @@
     The internal runner executes a caller-provided ALTER TABLE fragment and is
     SECURITY INVOKER, so a caller already holds the privileges the fragment
     would use. The dynamic SQL is deliberate; see alter_table.sql.
+
+- schema: ddl_utils_lib
+  function: quote_identifiers
+  level: warning
+  message: routine is marked as IMMUTABLE, but expression is STABLE
+  reason: >-
+    quote_identifiers performs no database access; it only validates and
+    formats its argument with unnest/format/string_agg, all immutable.
+    plpgsql_check cannot prove the aggregate subquery immutable.
