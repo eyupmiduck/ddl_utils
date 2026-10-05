@@ -10,7 +10,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>docker_java_config</module>
         <module>ddl_utils</module>
     </modules>
 
