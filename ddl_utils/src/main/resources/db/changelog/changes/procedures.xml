@@ -22,7 +22,7 @@
          "invalid transaction termination"); see procedures/README.md. The
          changesets below only issue CREATE OR REPLACE PROCEDURE, whose embedded
          COMMITs are body text, so they do not need runInTransaction="false". -->
-    <changeSet id="procedure-ddl_utils.ensure_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_not_null" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_not_null-rollback.sql"
@@ -30,7 +30,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="procedure-ddl_utils.ensure_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_check_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_check_constraint-rollback.sql"
@@ -38,7 +38,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="procedure-ddl_utils.ensure_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_foreign_key" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_foreign_key.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_foreign_key-rollback.sql"

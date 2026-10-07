@@ -19,7 +19,7 @@
          The order of the changesets is not significant (PL/pgSQL resolves called
          routines at first execution); most pairs list the lib helper before the
          ddl_utils wrapper, but that is not required. -->
-    <changeSet id="function-ddl_utils.get_database_lock_settings" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.get_database_lock_settings" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -28,7 +28,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_database_lock_settings" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.set_database_lock_settings" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_database_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -37,7 +37,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.get_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.get_schema_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/get_schema_lock_settings-rollback.sql"
@@ -45,7 +45,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_schema_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_schema_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_schema_lock_settings-rollback.sql"
@@ -53,7 +53,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.clear_schema_lock_settings" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.clear_schema_lock_settings" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -62,7 +62,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.get_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.get_table_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/get_table_lock_settings-rollback.sql"
@@ -70,7 +70,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_table_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_table_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_table_lock_settings-rollback.sql"
@@ -78,7 +78,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.clear_table_lock_settings" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.clear_table_lock_settings" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/clear_table_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -87,35 +87,35 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.get_lock_settings" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.get_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/get_lock_settings-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_columns" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_columns-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.alter_table" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.alter_table" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/alter_table.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/alter_table-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.has_top_level_comma" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.has_top_level_comma" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/has_top_level_comma.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/has_top_level_comma-rollback.sql"
@@ -123,7 +123,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.assert_one_based" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.assert_one_based" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/assert_one_based.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/assert_one_based-rollback.sql"
@@ -131,7 +131,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.assert_non_blank_elements" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.assert_non_blank_elements" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/assert_non_blank_elements.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -140,7 +140,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.quote_identifiers" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.quote_identifiers" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/quote_identifiers.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/quote_identifiers-rollback.sql"
@@ -148,7 +148,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.assert_no_top_level_comma" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.assert_no_top_level_comma" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/assert_no_top_level_comma.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -157,7 +157,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.assert_allowed_keyword" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.assert_allowed_keyword" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/assert_allowed_keyword.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -166,7 +166,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.assert_equal_cardinality" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.assert_equal_cardinality" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/assert_equal_cardinality.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -175,63 +175,63 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_columns" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_columns-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.rename_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.rename_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/rename_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/rename_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.rename_column" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.rename_column" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/rename_column.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/rename_column-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_columns" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_columns-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_columns" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_columns" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_columns.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_columns-rollback.sql" relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.set_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.set_column_default" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_column_default.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/set_column_default-rollback.sql"
@@ -239,7 +239,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_column_default" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_column_default.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_column_default-rollback.sql"
@@ -247,7 +247,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_column_default" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_column_default.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_column_default-rollback.sql"
@@ -255,7 +255,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_column_default" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_column_default" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_column_default.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_column_default-rollback.sql"
@@ -263,7 +263,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_not_null" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_not_null-rollback.sql"
@@ -271,7 +271,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_not_null" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_not_null-rollback.sql"
@@ -279,7 +279,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.set_column_storage" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.set_column_storage" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_column_storage.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/set_column_storage-rollback.sql"
@@ -287,7 +287,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_column_storage" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_column_storage" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_column_storage.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_column_storage-rollback.sql"
@@ -295,7 +295,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.set_column_compression" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.set_column_compression" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_column_compression.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -304,7 +304,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_column_compression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_column_compression" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_column_compression.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_column_compression-rollback.sql"
@@ -312,7 +312,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_expression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_expression" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_expression.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_expression-rollback.sql"
@@ -320,7 +320,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_expression" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_expression" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_expression.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_expression-rollback.sql"
@@ -328,7 +328,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_identity" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_identity" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_identity.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_identity-rollback.sql"
@@ -336,7 +336,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_identity" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_identity" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_identity.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_identity-rollback.sql"
@@ -344,7 +344,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_identity" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_identity" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_identity.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_identity-rollback.sql"
@@ -352,7 +352,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_identity" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_identity" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_identity.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_identity-rollback.sql"
@@ -360,7 +360,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_check_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_check_constraint-rollback.sql"
@@ -368,7 +368,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_check_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_check_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_check_constraint-rollback.sql"
@@ -376,7 +376,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_foreign_key" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_foreign_key.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_foreign_key-rollback.sql"
@@ -384,7 +384,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_foreign_key" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.add_foreign_key" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_foreign_key.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/add_foreign_key-rollback.sql"
@@ -392,7 +392,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.validate_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.validate_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/validate_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/validate_constraint-rollback.sql"
@@ -400,7 +400,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.drop_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.drop_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/drop_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/drop_constraint-rollback.sql"
@@ -408,7 +408,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.drop_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.drop_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/drop_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/drop_constraint-rollback.sql"
@@ -416,7 +416,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.rename_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.rename_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/rename_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/rename_constraint-rollback.sql"
@@ -424,7 +424,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.rename_constraint" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.rename_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/rename_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/rename_constraint-rollback.sql"
@@ -432,7 +432,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_primary_key_using_index" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.add_primary_key_using_index" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_primary_key_using_index.sql"
                          relativeToChangelogFile="true"/>
@@ -442,7 +442,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_primary_key_using_index" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.add_primary_key_using_index" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_primary_key_using_index.sql" relativeToChangelogFile="true"/>
         <rollback>
@@ -451,7 +451,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils_lib.add_unique_constraint_using_index" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_unique_constraint_using_index.sql"
                          relativeToChangelogFile="true"/>
@@ -461,7 +461,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.add_unique_constraint_using_index" author="ddl_utils" dbms="postgresql"
+    <changeSet id="function-ddl_utils.add_unique_constraint_using_index" author="lee.horner" dbms="postgresql"
                runOnChange="true">
         <createProcedure path="functions/ddl_utils/add_unique_constraint_using_index.sql"
                          relativeToChangelogFile="true"/>
@@ -471,7 +471,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.rename_table" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.rename_table" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/rename_table.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/rename_table-rollback.sql"
@@ -479,7 +479,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.rename_table" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.rename_table" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/rename_table.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/rename_table-rollback.sql"
@@ -487,7 +487,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.set_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.set_not_null" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/set_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/set_not_null-rollback.sql"
@@ -495,7 +495,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_not_null" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_not_null" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_not_null.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_not_null-rollback.sql"
@@ -503,7 +503,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_updated_at" author="ddl_utils" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_updated_at" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_updated_at.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_updated_at-rollback.sql"
