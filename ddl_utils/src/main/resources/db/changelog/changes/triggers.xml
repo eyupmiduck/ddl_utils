@@ -16,7 +16,7 @@
 
          CREATE OR REPLACE TRIGGER (PostgreSQL 14+) makes the changeset
          re-runnable without dropping the trigger first. -->
-    <changeSet id="trigger-ddl_utils.database_lock_settings_set_updated_at" author="ddl_utils"
+    <changeSet id="trigger-ddl_utils.database_lock_settings_set_updated_at" author="lee.horner"
                dbms="postgresql" runOnChange="true">
         <sqlFile path="triggers/ddl_utils/database_lock_settings_set_updated_at.sql"
                  relativeToChangelogFile="true"/>
@@ -26,7 +26,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="trigger-ddl_utils.schema_lock_settings_set_updated_at" author="ddl_utils"
+    <changeSet id="trigger-ddl_utils.schema_lock_settings_set_updated_at" author="lee.horner"
                dbms="postgresql" runOnChange="true">
         <sqlFile path="triggers/ddl_utils/schema_lock_settings_set_updated_at.sql"
                  relativeToChangelogFile="true"/>
@@ -36,7 +36,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="trigger-ddl_utils.table_lock_settings_set_updated_at" author="ddl_utils"
+    <changeSet id="trigger-ddl_utils.table_lock_settings_set_updated_at" author="lee.horner"
                dbms="postgresql" runOnChange="true">
         <sqlFile path="triggers/ddl_utils/table_lock_settings_set_updated_at.sql"
                  relativeToChangelogFile="true"/>
