@@ -37,7 +37,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.get_schema_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.get_schema_lock_settings" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/get_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/get_schema_lock_settings-rollback.sql"
@@ -45,7 +46,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils.set_schema_lock_settings" author="lee.horner" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils.set_schema_lock_settings" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils/set_schema_lock_settings.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils/set_schema_lock_settings-rollback.sql"
@@ -360,7 +362,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="function-ddl_utils_lib.add_check_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
+    <changeSet id="function-ddl_utils_lib.add_check_constraint" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="functions-rollback/ddl_utils_lib/add_check_constraint-rollback.sql"

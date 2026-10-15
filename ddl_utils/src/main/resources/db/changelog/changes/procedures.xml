@@ -30,7 +30,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="procedure-ddl_utils.ensure_check_constraint" author="lee.horner" dbms="postgresql" runOnChange="true">
+    <changeSet id="procedure-ddl_utils.ensure_check_constraint" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
         <createProcedure path="procedures/ddl_utils/ensure_check_constraint.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="procedures-rollback/ddl_utils/ensure_check_constraint-rollback.sql"
