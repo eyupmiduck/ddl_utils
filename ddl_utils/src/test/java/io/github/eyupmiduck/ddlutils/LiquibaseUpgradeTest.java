@@ -7,9 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 /**
  * Exercises the incremental upgrade from the most recent published release of
  * ddl_utils to the current codebase: the released changelog's SQL is applied to
@@ -91,8 +88,8 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
         assertFalse(report().previousRelease().isEmpty(),
                 "the published release should apply at least one changeset");
         assertEquals(2, upgradeDsl().fetchOne(
-                        "SELECT count(*) FROM pg_namespace WHERE nspname IN ('ddl_utils', 'ddl_utils_lib')")
-                .get(0, Integer.class),
+                                "SELECT count(*) FROM pg_namespace WHERE nspname IN ('ddl_utils', 'ddl_utils_lib')")
+                        .get(0, Integer.class),
                 "the upgraded database should have the ddl_utils schemas");
     }
 }

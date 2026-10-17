@@ -92,6 +92,21 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         assertEquals(statementDuration, row.get("statement_duration", Integer.class));
     }
 
+    /**
+     * Installs the static-analysis extension (compiled into the custom image)
+     * so a database has it before the changelog runs. Shared with
+     * {@link LiquibaseUpgradeTest}, whose scratch database needs the same
+     * extension.
+     *
+     * @param admin a superuser connection to the target database
+     * @throws SQLException if the extension cannot be installed
+     */
+    static void installProjectExtensions(Connection admin) throws SQLException {
+        try (Statement statement = admin.createStatement()) {
+            statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
+        }
+    }
+
     @Override
     protected String defaultPostgresImage() {
         return POSTGRES_IMAGE;
@@ -136,21 +151,6 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     protected void installExtensions(String templateDatabase) throws SQLException {
         try (Connection admin = openAdminConnection(templateDatabase)) {
             installProjectExtensions(admin);
-        }
-    }
-
-    /**
-     * Installs the static-analysis extension (compiled into the custom image)
-     * so a database has it before the changelog runs. Shared with
-     * {@link LiquibaseUpgradeTest}, whose scratch database needs the same
-     * extension.
-     *
-     * @param admin a superuser connection to the target database
-     * @throws SQLException if the extension cannot be installed
-     */
-    static void installProjectExtensions(Connection admin) throws SQLException {
-        try (Statement statement = admin.createStatement()) {
-            statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
         }
     }
 
