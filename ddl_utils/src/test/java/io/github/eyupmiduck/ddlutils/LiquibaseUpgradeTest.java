@@ -9,9 +9,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 /**
  * Exercises the incremental upgrade from the most recent published release of
  * ddl_utils to the current codebase: the released changelog's SQL is applied to
