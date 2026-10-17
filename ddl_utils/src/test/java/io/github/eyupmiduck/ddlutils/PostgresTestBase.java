@@ -49,6 +49,19 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
 
     /**
+     * The container configuration, shared by this base and
+     * {@link LiquibaseUpgradeTest} so the two cannot drift (the container's
+     * template database is prepared once per JVM from the first class that
+     * runs, so an inconsistent configuration would be order-dependent).
+     */
+    static final String POSTGRES_IMAGE = "ddl-utils-postgres:17-alpine";
+    static final String DATABASE = "ddl_utils";
+    static final String OWNER_USER = "ddl_utils_owner";
+    static final String OWNER_PASSWORD = "ddl_utils_owner";
+    static final String TEST_USER = "ddl_utils_test";
+    static final String TEST_PASSWORD = "ddl_utils_test";
+
+    /**
      * Returns the {@code pg_locks.mode} spelling of a lock mode written the way
      * {@code LOCK TABLE} expects it, for example {@code ACCESS SHARE} to
      * {@code AccessShareLock}.
@@ -79,34 +92,49 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         assertEquals(statementDuration, row.get("statement_duration", Integer.class));
     }
 
+    /**
+     * Installs the static-analysis extension (compiled into the custom image)
+     * so a database has it before the changelog runs. Shared with
+     * {@link LiquibaseUpgradeTest}, whose scratch database needs the same
+     * extension.
+     *
+     * @param admin a superuser connection to the target database
+     * @throws SQLException if the extension cannot be installed
+     */
+    static void installProjectExtensions(Connection admin) throws SQLException {
+        try (Statement statement = admin.createStatement()) {
+            statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
+        }
+    }
+
     @Override
     protected String defaultPostgresImage() {
-        return "ddl-utils-postgres:17-alpine";
+        return POSTGRES_IMAGE;
     }
 
     @Override
     protected String databaseName() {
-        return "ddl_utils";
+        return DATABASE;
     }
 
     @Override
     protected String ownerUser() {
-        return "ddl_utils_owner";
+        return OWNER_USER;
     }
 
     @Override
     protected String ownerPassword() {
-        return "ddl_utils_owner";
+        return OWNER_PASSWORD;
     }
 
     @Override
     protected String testUser() {
-        return "ddl_utils_test";
+        return TEST_USER;
     }
 
     @Override
     protected String testPassword() {
-        return "ddl_utils_test";
+        return TEST_PASSWORD;
     }
 
     @Override
@@ -121,11 +149,8 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
 
     @Override
     protected void installExtensions(String templateDatabase) throws SQLException {
-        try (Connection admin = openAdminConnection(templateDatabase);
-             Statement statement = admin.createStatement()) {
-            // Install the static-analysis extension (compiled into the custom
-            // image) so every cloned test database has it.
-            statement.execute("CREATE EXTENSION IF NOT EXISTS plpgsql_check");
+        try (Connection admin = openAdminConnection(templateDatabase)) {
+            installProjectExtensions(admin);
         }
     }
 
