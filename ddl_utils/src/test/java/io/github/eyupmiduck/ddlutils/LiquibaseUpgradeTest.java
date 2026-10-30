@@ -1,26 +1,25 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.testing.PublishedRelease;
-import io.github.eyupmiduck.changelogvalidator.testing.UpgradeTestBase;
-import org.junit.jupiter.api.Test;
+import io.github.eyupmiduck.changelogvalidator.testing.UpgradeContract;
 
 import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Exercises the incremental upgrade from the most recent published release of
- * ddl_utils to the current codebase: the released changelog's SQL is applied to
- * a scratch database, then the current changelog, so an upgrade that only works
- * on an empty database fails here.
+ * ddl_utils to the current codebase, inheriting the shared
+ * {@link UpgradeContract}: the released changelog's SQL is applied to a scratch
+ * database, then the current changelog, so an upgrade that only works on an
+ * empty database fails here.
  *
- * <p>It reuses the shared {@link UpgradeTestBase} and the ddl_utils container
- * configuration (see {@link PostgresTestBase}); the previous release is resolved
- * from GitHub Packages automatically.
+ * <p>The previous release is resolved from GitHub Packages automatically, and
+ * the container configuration is shared with the regular test base (see
+ * {@link PostgresTestBase}).
  */
-class LiquibaseUpgradeTest extends UpgradeTestBase {
+class LiquibaseUpgradeTest extends UpgradeContract {
 
     @Override
     protected PublishedRelease.Coordinates releaseCoordinates() {
@@ -33,6 +32,8 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
     /**
      * The schemas the changelog manages, compared between the upgraded database
      * and a from-scratch build.
+     *
+     * @return the managed schemas
      */
     @Override
     protected Collection<String> managedSchemas() {
@@ -42,6 +43,8 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
     /**
      * Returns the same configuration as the regular test base, so the two
      * classes cannot drift.
+     *
+     * @return the configuration
      */
     @Override
     protected Configuration configuration() {
@@ -49,14 +52,10 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
     }
 
     /**
-     * The published release contributes changesets, the current changelog
-     * applies cleanly on top, and the upgraded database has the ddl_utils
-     * schemas.
+     * The upgraded database has both ddl_utils schemas.
      */
-    @Test
-    void upgradesThePublishedReleaseToTheCurrentChangelog() {
-        assertFalse(report().previousRelease().isEmpty(),
-                "the published release should apply at least one changeset");
+    @Override
+    protected void assertUpgradedDatabase() {
         assertEquals(2, upgradeDsl().fetchOne(
                                 "SELECT count(*) FROM pg_namespace WHERE nspname IN ('ddl_utils', 'ddl_utils_lib')")
                         .get(0, Integer.class),
