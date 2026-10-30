@@ -1,5 +1,6 @@
 package io.github.eyupmiduck.ddlutils;
 
+import io.github.eyupmiduck.changelogvalidator.testing.ChangelogTestSupport;
 import org.jooq.Record;
 import org.junit.jupiter.api.function.Executable;
 
@@ -107,44 +108,18 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         }
     }
 
-    @Override
-    protected String defaultPostgresImage() {
-        return POSTGRES_IMAGE;
-    }
+    /**
+     * The one container and changelog configuration, returned by this class and
+     * by {@link LiquibaseUpgradeTest} so the two cannot drift.
+     */
+    static final Configuration CONFIGURATION = new Configuration(
+            DATABASE, OWNER_USER, OWNER_PASSWORD, TEST_USER, TEST_PASSWORD,
+            POSTGRES_IMAGE, ChangelogTestSupport.MASTER_RESOURCE,
+            DATABASE_CHANGELOG_TABLE, DATABASE_CHANGELOG_LOCK_TABLE, null);
 
     @Override
-    protected String databaseName() {
-        return DATABASE;
-    }
-
-    @Override
-    protected String ownerUser() {
-        return OWNER_USER;
-    }
-
-    @Override
-    protected String ownerPassword() {
-        return OWNER_PASSWORD;
-    }
-
-    @Override
-    protected String testUser() {
-        return TEST_USER;
-    }
-
-    @Override
-    protected String testPassword() {
-        return TEST_PASSWORD;
-    }
-
-    @Override
-    protected String databaseChangeLogTableName() {
-        return DATABASE_CHANGELOG_TABLE;
-    }
-
-    @Override
-    protected String databaseChangeLogLockTableName() {
-        return DATABASE_CHANGELOG_LOCK_TABLE;
+    protected Configuration configuration() {
+        return CONFIGURATION;
     }
 
     @Override

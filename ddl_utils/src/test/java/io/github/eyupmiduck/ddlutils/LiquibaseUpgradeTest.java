@@ -42,6 +42,15 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
     }
 
     /**
+     * Returns the same configuration as the regular test base, so the two
+     * classes cannot drift.
+     */
+    @Override
+    protected Configuration configuration() {
+        return PostgresTestBase.CONFIGURATION;
+    }
+
+    /**
      * Installs the same extension as the template, so the container's shared
      * template is identical whichever test class prepares it first.
      */
@@ -50,46 +59,6 @@ class LiquibaseUpgradeTest extends UpgradeTestBase {
         try (Connection admin = openAdminConnection(database)) {
             PostgresTestBase.installProjectExtensions(admin);
         }
-    }
-
-    @Override
-    protected String defaultPostgresImage() {
-        return PostgresTestBase.POSTGRES_IMAGE;
-    }
-
-    @Override
-    protected String databaseName() {
-        return PostgresTestBase.DATABASE;
-    }
-
-    @Override
-    protected String ownerUser() {
-        return PostgresTestBase.OWNER_USER;
-    }
-
-    @Override
-    protected String ownerPassword() {
-        return PostgresTestBase.OWNER_PASSWORD;
-    }
-
-    @Override
-    protected String testUser() {
-        return PostgresTestBase.TEST_USER;
-    }
-
-    @Override
-    protected String testPassword() {
-        return PostgresTestBase.TEST_PASSWORD;
-    }
-
-    @Override
-    protected String databaseChangeLogTableName() {
-        return PostgresTestBase.DATABASE_CHANGELOG_TABLE;
-    }
-
-    @Override
-    protected String databaseChangeLogLockTableName() {
-        return PostgresTestBase.DATABASE_CHANGELOG_LOCK_TABLE;
     }
 
     /**
