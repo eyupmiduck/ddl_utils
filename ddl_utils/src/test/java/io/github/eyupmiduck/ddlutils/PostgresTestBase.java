@@ -3,9 +3,12 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.changelogvalidator.testing.ChangelogTestSupport;
 import org.jooq.Record;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * ddl_utils' PostgreSQL test base: the shared
