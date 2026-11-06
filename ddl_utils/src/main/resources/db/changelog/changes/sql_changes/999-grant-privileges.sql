@@ -793,6 +793,16 @@ GRANT EXECUTE ON FUNCTION ddl_utils.add_unique_constraint_using_index(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils.move_table_lock_settings(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils.move_table_lock_settings(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils.rename_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

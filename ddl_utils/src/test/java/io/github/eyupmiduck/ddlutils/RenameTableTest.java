@@ -68,6 +68,25 @@ class RenameTableTest extends PostgresTestBase {
     }
 
     /**
+     * A pre-existing settings row for the destination is replaced by the moved
+     * values (the procedure raises a NOTICE so the caller can see the collision).
+     */
+    @Test
+    void movesTableLockSettingsToNewNameReplacingDestination() {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 10, 20, 30);
+        setTableLockSettings(PUBLIC_SCHEMA, NEW_NAME, 100, 200, 300);
+
+        io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, NEW_NAME);
+
+        assertNull(getTableLockSettings(PUBLIC_SCHEMA, TARGET),
+                "the old name must not keep a stale settings row");
+        Record settings = getTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        assertNotNull(settings);
+        assertLockSettings(settings, 10, 20, 30);
+    }
+
+    /**
      * Rejects null arguments through their domains.
      */
     @Test

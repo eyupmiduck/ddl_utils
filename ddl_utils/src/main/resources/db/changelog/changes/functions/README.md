@@ -235,7 +235,9 @@ and `add_foreign_key` emit `NOT VALID` (metadata-only); call
 against existing rows (it scans but takes only `SHARE UPDATE EXCLUSIVE`, so it
 has no lock-aware wrapper). The two `*_using_index` helpers attach a pre-built
 unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is metadata-only when
-the index is valid.
+the index is valid. `ddl_utils.rename_table` also moves the table's lock
+settings to the new name in one statement (`ddl_utils.move_table_lock_settings`);
+an existing row for the destination is replaced with a `NOTICE`.
 
 ## `ddl_utils_lib`
 

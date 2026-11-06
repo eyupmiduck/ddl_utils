@@ -491,6 +491,15 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="function-ddl_utils.move_table_lock_settings" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils/move_table_lock_settings.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/move_table_lock_settings-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="function-ddl_utils.rename_table" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils/rename_table.sql" relativeToChangelogFile="true"/>
         <rollback>
