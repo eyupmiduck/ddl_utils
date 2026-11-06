@@ -683,6 +683,11 @@ RETURNS void
 `SECURITY INVOKER`. Attaches a pre-built unique index as the primary key. Build
 the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the attach is
 metadata-only when the index is valid and the columns are already `NOT NULL`.
+Validates that the index exists in `i_schema_name`, is a valid, non-partial,
+non-expression unique index on the table, and every key column is already
+`NOT NULL`; otherwise raises `42704`/`42809`/`55000` before the ALTER.
+`i_index_name` must be an unquoted, unqualified identifier, and both names must
+be at most 63 bytes.
 
 ###
 
@@ -698,7 +703,10 @@ RETURNS void
 ```
 
 `SECURITY INVOKER`. Attaches a pre-built unique index as a unique constraint;
-metadata-only when the index is valid.
+metadata-only when the index is valid. Validates that the index exists in
+`i_schema_name`, is a valid, non-partial, non-expression unique index on the
+table; otherwise raises `42704`/`42809` before the ALTER. `i_index_name` must be
+an unquoted, unqualified identifier, and both names must be at most 63 bytes.
 
 ### `ddl_utils_lib.rename_table(i_schema_name, i_table_name, i_new_table_name, settings...)`
 

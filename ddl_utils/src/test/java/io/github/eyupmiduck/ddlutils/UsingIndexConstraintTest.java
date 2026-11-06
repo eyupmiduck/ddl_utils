@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -111,6 +112,56 @@ class UsingIndexConstraintTest extends SingleTableTest {
                     AND con.connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
                 """, constraint, PUBLIC_SCHEMA).getValues(0, String.class);
         assertEquals(List.of(column), columns);
+    }
+
+    /**
+     * A primary-key attach requires every indexed column to be NOT NULL; a
+     * valid unique index on a nullable column is rejected before the scan.
+     */
+    @Test
+    void rejectsPrimaryKeyOnNullableColumn() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN note text");
+        dsl.execute("CREATE UNIQUE INDEX target_note_idx ON " + PUBLIC_SCHEMA + "." + target() + " (note)");
+
+        assertSqlState("55000", () -> addPrimaryKeyUsingIndex("target_note_pk", "target_note_idx"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_note_pk"));
+    }
+
+    /**
+     * A unique constraint may be attached to a nullable column; only the
+     * primary-key path requires NOT NULL.
+     */
+    @Test
+    void acceptsUniqueConstraintOnNullableColumn() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN note text");
+        dsl.execute("CREATE UNIQUE INDEX target_note_idx ON " + PUBLIC_SCHEMA + "." + target() + " (note)");
+
+        addUniqueConstraintUsingIndex("target_note", "target_note_idx");
+
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "target_note"));
+    }
+
+    /**
+     * A qualified or pre-quoted index name is rejected: USING INDEX resolves an
+     * unqualified name in the table's schema.
+     */
+    @Test
+    void rejectsQualifiedIndexName() {
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+
+        assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", PUBLIC_SCHEMA + ".target_pk_idx"));
+    }
+
+    /**
+     * Over-long constraint and index names are rejected before PostgreSQL
+     * truncates them.
+     */
+    @Test
+    void rejectsOverLongNames() {
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+
+        assertSqlState("22023", () -> addPrimaryKeyUsingIndex("c".repeat(64), "target_pk_idx"));
+        assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", "i".repeat(64)));
     }
 
     /**
