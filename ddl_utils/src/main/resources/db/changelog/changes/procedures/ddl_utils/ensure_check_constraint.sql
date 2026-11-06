@@ -24,8 +24,12 @@ BEGIN
     END IF;
 
     -- Read the lock settings once; they are reused across both steps.
-    SELECT *
-    INTO l_settings
+    SELECT ls.ddl_lock_timeout,
+           ls.sleep_time,
+           ls.statement_duration
+    INTO STRICT l_settings.ddl_lock_timeout,
+                l_settings.sleep_time,
+                l_settings.statement_duration
     FROM ddl_utils.get_lock_settings(
                  i_schema_name => i_schema_name,
                  i_table_name => i_table_name

@@ -190,4 +190,7 @@ or partitioned tables (`relkind` `r`/`p`), otherwise the procedure raises
 Unlike a `CHECK`, a foreign key can be compared exactly, so a same-named key
 that references different columns or a different table is not silently accepted:
 the procedure compares `confrelid` and the ordered `conkey`/`confkey` and raises
-`42710` when the definition differs.
+`42710` when the definition differs. The mismatch message includes the stored
+definition. A transaction-scoped advisory lock is keyed on the sorted pair of
+relations, so reciprocal `ensure_foreign_key(A -> B)` and `(B -> A)` calls
+serialize instead of acquiring the two table locks in opposite order.
