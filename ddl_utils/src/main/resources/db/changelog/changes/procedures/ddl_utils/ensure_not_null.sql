@@ -25,8 +25,8 @@ BEGIN
            ls.sleep_time,
            ls.statement_duration
     INTO STRICT l_settings.ddl_lock_timeout,
-                l_settings.sleep_time,
-                l_settings.statement_duration
+        l_settings.sleep_time,
+        l_settings.statement_duration
     FROM ddl_utils.get_lock_settings(
                  i_schema_name => i_schema_name,
                  i_table_name => i_table_name
@@ -121,24 +121,23 @@ BEGIN
             -- this column) as well as by its normalized deparsed expression, so
             -- parenthesisation differences do not make a leftover proof look
             -- like a foreign constraint.
-            l_proof_exists := EXISTS (
-                SELECT 1
-                FROM pg_catalog.pg_constraint AS c
-                WHERE c.conname = l_constraint_name
-                  AND c.conrelid = l_relation
-                  AND c.contype = 'c'
-                  AND c.conkey::smallint[] = ARRAY [
-                    (SELECT a.attnum
-                     FROM pg_catalog.pg_attribute AS a
-                     WHERE a.attrelid = l_relation
-                       AND a.attname = i_column_name
-                       AND a.attnum > 0
-                       AND NOT a.attisdropped)
-                    ]::smallint[]
-                  AND pg_catalog.regexp_replace(
-                          pg_catalog.btrim(pg_catalog.pg_get_expr(c.conbin, c.conrelid)),
-                          '^\((.*)\)$', '\1') =
-                      pg_catalog.format('%I IS NOT NULL', i_column_name));
+            l_proof_exists := EXISTS (SELECT 1
+                                      FROM pg_catalog.pg_constraint AS c
+                                      WHERE c.conname = l_constraint_name
+                                        AND c.conrelid = l_relation
+                                        AND c.contype = 'c'
+                                        AND c.conkey::smallint[] = ARRAY [
+                                          (SELECT a.attnum
+                                           FROM pg_catalog.pg_attribute AS a
+                                           WHERE a.attrelid = l_relation
+                                             AND a.attname = i_column_name
+                                             AND a.attnum > 0
+                                             AND NOT a.attisdropped)
+                                          ]::smallint[]
+                                        AND pg_catalog.regexp_replace(
+                                                    pg_catalog.btrim(pg_catalog.pg_get_expr(c.conbin, c.conrelid)),
+                                                    '^\((.*)\)$', '\1') =
+                                            pg_catalog.format('%I IS NOT NULL', i_column_name));
 
             IF l_name_taken AND NOT l_proof_exists THEN
                 RAISE EXCEPTION
@@ -148,11 +147,10 @@ BEGIN
             END IF;
 
             CASE l_step
-                WHEN 1 THEN
-                    -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS
-                    -- EXCLUSIVE lock). Skipped when the column is already NOT NULL
-                    -- or the constraint already exists, which is how a re-run
-                    -- recovers.
+                WHEN 1 THEN -- Step 1: add the proof as NOT VALID (instant; a brief ACCESS
+                -- EXCLUSIVE lock). Skipped when the column is already NOT NULL
+                -- or the constraint already exists, which is how a re-run
+                -- recovers.
                     IF NOT l_already_not_null
                         AND NOT l_proof_exists THEN
                         PERFORM ddl_utils_lib.add_check_constraint(
@@ -166,11 +164,10 @@ BEGIN
                                 );
                         COMMIT;
                     END IF;
-                WHEN 2 THEN
-                    -- Step 2: validate the constraint, scanning under SHARE UPDATE
-                    -- EXCLUSIVE. A NOT VALID constraint with existing NULLs fails
-                    -- here with 23514, leaving the constraint in place so the
-                    -- caller can fix the data and re-run.
+                WHEN 2 THEN -- Step 2: validate the constraint, scanning under SHARE UPDATE
+                -- EXCLUSIVE. A NOT VALID constraint with existing NULLs fails
+                -- here with 23514, leaving the constraint in place so the
+                -- caller can fix the data and re-run.
                     IF NOT l_already_not_null
                         AND l_proof_exists
                         AND EXISTS (SELECT 1
@@ -189,9 +186,8 @@ BEGIN
                                 );
                         COMMIT;
                     END IF;
-                WHEN 3 THEN
-                    -- Step 3: SET NOT NULL. The valid CHECK lets PostgreSQL skip
-                    -- its own scan.
+                WHEN 3 THEN -- Step 3: SET NOT NULL. The valid CHECK lets PostgreSQL skip
+                -- its own scan.
                     IF NOT l_already_not_null THEN
                         PERFORM ddl_utils_lib.set_not_null(
                                 i_schema_name => i_schema_name,
@@ -203,10 +199,9 @@ BEGIN
                                 );
                         COMMIT;
                     END IF;
-                WHEN 4 THEN
-                    -- Step 4: remove the temporary proof constraint. A foreign
-                    -- same-named constraint was rejected above; a concurrent run
-                    -- that already dropped its own proof leaves nothing to do.
+                WHEN 4 THEN -- Step 4: remove the temporary proof constraint. A foreign
+                -- same-named constraint was rejected above; a concurrent run
+                -- that already dropped its own proof leaves nothing to do.
                     IF l_proof_exists THEN
                         PERFORM ddl_utils_lib.drop_constraint(
                                 i_schema_name => i_schema_name,
@@ -218,7 +213,7 @@ BEGIN
                                 );
                         COMMIT;
                     END IF;
-            END CASE;
+                END CASE;
         END LOOP;
 END;
 $$;

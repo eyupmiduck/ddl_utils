@@ -8,11 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies the {@code ddl_utils.ensure_check_constraint} procedure: it adds a
@@ -73,7 +69,7 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
 
         assertValidated(PUBLIC_SCHEMA, target(), "positive");
         assertDoesNotThrow(() -> dsl.execute(
-                "INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (5)"),
+                        "INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (value) VALUES (5)"),
                 "the original value > 0 constraint must still accept 5");
     }
 

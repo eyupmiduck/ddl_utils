@@ -4,10 +4,7 @@ import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies the structured column helpers {@code ddl_utils_lib.drop_column} and

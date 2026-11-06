@@ -22,8 +22,8 @@ BEGIN
     RETURN QUERY
         SELECT tls.ddl_lock_timeout, tls.sleep_time, tls.statement_duration
         FROM ddl_utils.get_table_lock_settings(
-                 i_schema_name => i_schema_name,
-                 i_table_name => i_table_name
+                     i_schema_name => i_schema_name,
+                     i_table_name => i_table_name
              ) AS tls;
 
     IF FOUND THEN
@@ -33,7 +33,7 @@ BEGIN
     RETURN QUERY
         SELECT sls.ddl_lock_timeout, sls.sleep_time, sls.statement_duration
         FROM ddl_utils.get_schema_lock_settings(
-                 i_schema_name => i_schema_name
+                     i_schema_name => i_schema_name
              ) AS sls;
 
     IF FOUND THEN

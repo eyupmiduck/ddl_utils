@@ -12,7 +12,7 @@ ALTER DOMAIN ddl_utils.non_empty_non_null_text_array
             WHEN pg_catalog.cardinality(value) < 1 THEN FALSE
             WHEN pg_catalog.array_ndims(value) IS DISTINCT FROM 1 THEN FALSE
             ELSE pg_catalog.array_position(value, NULL) IS NULL
-        END
+            END
         );
 
 ALTER DOMAIN ddl_utils.non_empty_non_null_boolean_array
@@ -24,5 +24,5 @@ ALTER DOMAIN ddl_utils.non_empty_non_null_boolean_array
             WHEN pg_catalog.cardinality(value) < 1 THEN FALSE
             WHEN pg_catalog.array_ndims(value) IS DISTINCT FROM 1 THEN FALSE
             ELSE pg_catalog.array_position(value, NULL) IS NULL
-        END
+            END
         );

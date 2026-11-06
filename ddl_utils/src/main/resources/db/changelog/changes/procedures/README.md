@@ -107,8 +107,8 @@ i_column_name ddl_utils.non_null_text
 ```
 
 Make a column `NOT NULL` without holding `ACCESS EXCLUSIVE` across the
-verification scan. `CALL` it outside an explicit transaction block
-(autocommit): the `COMMIT`s below fail with `2D000` otherwise. Steps, each
+verification scan. `CALL` it outside an explicit transaction block (autocommit): the `COMMIT`s below fail with `2D000`
+otherwise. Steps, each
 committed before the next:
 
 Each step re-acquires the transaction-scoped advisory lock and re-reads the

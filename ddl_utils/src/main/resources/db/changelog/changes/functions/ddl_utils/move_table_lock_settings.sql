@@ -12,11 +12,10 @@ $$
 DECLARE
     l_replaces_destination boolean;
 BEGIN
-    l_replaces_destination := EXISTS (
-        SELECT 1
-        FROM ddl_utils.table_lock_settings
-        WHERE schema_name = i_schema_name
-          AND table_name = i_new_table_name);
+    l_replaces_destination := EXISTS (SELECT 1
+                                      FROM ddl_utils.table_lock_settings
+                                      WHERE schema_name = i_schema_name
+                                        AND table_name = i_new_table_name);
 
     IF l_replaces_destination THEN
         RAISE NOTICE
@@ -31,13 +30,16 @@ BEGIN
     -- NOTICE above tells the caller).
     WITH moved AS (
         DELETE FROM ddl_utils.table_lock_settings
-        WHERE schema_name = i_schema_name
-          AND table_name = i_table_name
-        RETURNING ddl_lock_timeout, sleep_time, statement_duration
-    )
-    INSERT INTO ddl_utils.table_lock_settings (schema_name, table_name, ddl_lock_timeout,
-                                               sleep_time, statement_duration)
-    SELECT i_schema_name, i_new_table_name, m.ddl_lock_timeout, m.sleep_time,
+            WHERE schema_name = i_schema_name
+                AND table_name = i_table_name
+            RETURNING ddl_lock_timeout, sleep_time, statement_duration)
+    INSERT
+    INTO ddl_utils.table_lock_settings (schema_name, table_name, ddl_lock_timeout,
+                                        sleep_time, statement_duration)
+    SELECT i_schema_name,
+           i_new_table_name,
+           m.ddl_lock_timeout,
+           m.sleep_time,
            m.statement_duration
     FROM moved AS m
     ON CONFLICT (schema_name, table_name) DO UPDATE

@@ -104,6 +104,17 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         }
     }
 
+    /**
+     * Quotes an identifier for the test DDL helpers, so a mixed-case,
+     * reserved-word or multibyte name reproduces the procedure's catalog state.
+     *
+     * @param value the identifier
+     * @return the double-quoted identifier
+     */
+    private static String quoteIdentifier(String value) {
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
     @Override
     protected Configuration configuration() {
         return CONFIGURATION;
@@ -159,17 +170,6 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         simulateNotNullCheckAdded(schema, table, column);
         dsl.execute("ALTER TABLE " + quoteIdentifier(schema) + "." + quoteIdentifier(table)
                 + " VALIDATE CONSTRAINT " + quoteIdentifier(notNullCheckConstraintName(schema, table, column)));
-    }
-
-    /**
-     * Quotes an identifier for the test DDL helpers, so a mixed-case,
-     * reserved-word or multibyte name reproduces the procedure's catalog state.
-     *
-     * @param value the identifier
-     * @return the double-quoted identifier
-     */
-    private static String quoteIdentifier(String value) {
-        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 
     /**
