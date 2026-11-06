@@ -32,6 +32,18 @@
         </rollback>
     </changeSet>
 
+    <!-- The 004 array-domain CHECKs relied on AND short-circuiting before
+         array_position; this changeset redefines them with an explicit CASE so
+         the ndims guard does not depend on boolean evaluation order. 004 is
+         retained for databases that already applied it. -->
+    <changeSet id="005-redefine-array-domain-checks" author="lee.horner" dbms="postgresql">
+        <sqlFile path="sql_changes/005-redefine-array-domain-checks.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/005-redefine-array-domain-checks-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- The composite the lock-aware wrappers read get_lock_settings into; it
          must exist before the routines that declare a variable of it, so it is
          created here rather than after the routine includes. -->
