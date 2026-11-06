@@ -47,6 +47,19 @@ BEGIN
             USING ERRCODE = '42809';
     END IF;
 
+    -- A same-named constraint of another kind would make add_check_constraint
+    -- fail with a generic duplicate-object error; name the conflict instead.
+    IF EXISTS (SELECT 1
+               FROM pg_catalog.pg_constraint
+               WHERE conname = i_constraint_name
+                 AND conrelid = l_relation
+                 AND contype <> 'c') THEN
+        RAISE EXCEPTION
+            'ddl_utils.ensure_check_constraint: constraint % already exists on %.% as a different kind of constraint',
+            i_constraint_name, i_schema_name, i_table_name
+            USING ERRCODE = '42710';
+    END IF;
+
     -- A transaction-scoped advisory lock on this table serializes concurrent
     -- runs. The read-then-act guards are separated by COMMIT, so the lock is
     -- taken again before each step; it is released by that step's COMMIT and on
