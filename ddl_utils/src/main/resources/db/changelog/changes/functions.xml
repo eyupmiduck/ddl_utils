@@ -110,6 +110,15 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="function-ddl_utils_lib.has_unquoted_token" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/has_unquoted_token.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/has_unquoted_token-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="function-ddl_utils_lib.alter_table" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/alter_table.sql" relativeToChangelogFile="true"/>
         <rollback>

@@ -100,6 +100,52 @@ class AlterTableTest extends SingleTableTest {
     }
 
     /**
+     * Rejects a dollar-quoted value that hides a statement separator from a
+     * naive scrub: the apostrophe inside {@code $q$...$q$} is data, but the
+     * semicolon after the closing tag is code and must be rejected before
+     * {@code EXECUTE} can run the stacked {@code DROP TABLE}.
+     */
+    @Test
+    void rejectsDollarQuotedStatementStacking() {
+        dsl.execute("CREATE TABLE " + PUBLIC_SCHEMA + ".alter_table_victim (id int)");
+        try {
+            assertSqlState("22023", () -> alterTable(PUBLIC_SCHEMA, target(),
+                    "ADD COLUMN note text DEFAULT $q$'$q$ ; DROP TABLE "
+                            + PUBLIC_SCHEMA + ".alter_table_victim; SELECT 'x'",
+                    1000, 10, 5000));
+
+            assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "note"));
+            assertDoesNotThrow(() -> dsl.fetchOne(
+                    "SELECT 1 FROM " + PUBLIC_SCHEMA + ".alter_table_victim"));
+        } finally {
+            dsl.execute("DROP TABLE IF EXISTS " + PUBLIC_SCHEMA + ".alter_table_victim");
+        }
+    }
+
+    /**
+     * Accepts dollar-quoted values, E-strings and quoted identifiers that
+     * contain separators, comment markers or apostrophes as data.
+     */
+    @Test
+    void acceptsDollarQuotedValuesAndQuotedIdentifiers() {
+        alterTable(PUBLIC_SCHEMA, target(),
+                "ADD COLUMN payload jsonb DEFAULT $$ {\"v\": \"a;b\"} $$", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "payload"));
+
+        alterTable(PUBLIC_SCHEMA, target(),
+                "ADD COLUMN tagged text DEFAULT $tag$--not a comment; x$tag$", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "tagged"));
+
+        alterTable(PUBLIC_SCHEMA, target(),
+                "ADD COLUMN estr text DEFAULT E'it\\'s;ok'", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "estr"));
+
+        alterTable(PUBLIC_SCHEMA, target(),
+                "ADD COLUMN \"a'b\" int", 1000, 10, 5000);
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "a'b"));
+    }
+
+    /**
      * Retries after a lock timeout and succeeds once a competing session
      * releases its lock. The lock is held when the call starts and released on
      * a background thread after a delay, so at least one attempt must have timed

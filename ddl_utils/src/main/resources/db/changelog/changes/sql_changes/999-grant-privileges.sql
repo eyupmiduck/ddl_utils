@@ -78,6 +78,16 @@ REVOKE EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
 GRANT EXECUTE ON FUNCTION ddl_utils_lib.has_top_level_comma(
     text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.has_unquoted_token(
+    text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_boolean
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.has_unquoted_token(
+    text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_null_boolean
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_one_based(
     anyarray,
     ddl_utils.non_null_text

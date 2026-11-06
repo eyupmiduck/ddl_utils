@@ -256,10 +256,25 @@ RETURNS void
 **Internal runner.** `SECURITY INVOKER`. Runs
 `ALTER TABLE <schema>.<table> <fragment>` with the given lock/retry settings,
 restoring the caller's `lock_timeout` on success. Rejects a blank fragment and
-one containing `;`, `$` or a comment marker (a best-effort guard; the caller
-already holds the privileges the fragment uses). This is the only routine that
-executes dynamic SQL; prefer the structured helpers, which build the fragment
-from validated identifiers/values.
+one containing `;`, `--`, `/*` or `*/` outside quoted text (a best-effort
+guard; the caller already holds the privileges the fragment uses). This is the
+only routine that executes dynamic SQL; prefer the structured helpers, which
+build the fragment from validated identifiers/values.
+
+### `ddl_utils_lib.has_unquoted_token(i_value, i_tokens, i_top_level_only)`
+
+```sql
+i_value          text
+i_tokens         ddl_utils.non_empty_non_null_text_array
+i_top_level_only ddl_utils.non_null_boolean
+RETURNS boolean
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. True when the value contains one of the tokens
+in code (outside parentheses-nested groups, strings, quoted identifiers,
+dollar-quoted literals and comments), optionally only at bracket depth 0. The
+scanner is shared by `alter_table`'s statement-separator guard and
+`has_top_level_comma`. A NULL value returns false.
 
 ### `ddl_utils_lib.has_top_level_comma(i_value)`
 
