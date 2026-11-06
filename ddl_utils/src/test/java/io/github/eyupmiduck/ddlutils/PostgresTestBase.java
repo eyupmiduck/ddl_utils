@@ -139,9 +139,9 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * @param column the column name
      */
     protected void simulateNotNullCheckAdded(String schema, String table, String column) {
-        dsl.execute("ALTER TABLE " + schema + "." + table
-                + " ADD CONSTRAINT " + notNullCheckConstraintName(schema, table, column)
-                + " CHECK (" + column + " IS NOT NULL) NOT VALID");
+        dsl.execute("ALTER TABLE " + quoteIdentifier(schema) + "." + quoteIdentifier(table)
+                + " ADD CONSTRAINT " + quoteIdentifier(notNullCheckConstraintName(schema, table, column))
+                + " CHECK (" + quoteIdentifier(column) + " IS NOT NULL) NOT VALID");
     }
 
     /**
@@ -155,8 +155,19 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      */
     protected void simulateNotNullCheckValidated(String schema, String table, String column) {
         simulateNotNullCheckAdded(schema, table, column);
-        dsl.execute("ALTER TABLE " + schema + "." + table
-                + " VALIDATE CONSTRAINT " + notNullCheckConstraintName(schema, table, column));
+        dsl.execute("ALTER TABLE " + quoteIdentifier(schema) + "." + quoteIdentifier(table)
+                + " VALIDATE CONSTRAINT " + quoteIdentifier(notNullCheckConstraintName(schema, table, column)));
+    }
+
+    /**
+     * Quotes an identifier for the test DDL helpers, so a mixed-case,
+     * reserved-word or multibyte name reproduces the procedure's catalog state.
+     *
+     * @param value the identifier
+     * @return the double-quoted identifier
+     */
+    private static String quoteIdentifier(String value) {
+        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 
     /**

@@ -13,6 +13,16 @@ DECLARE
     l_relation regclass;
     l_lock_key bigint;
 BEGIN
+    -- PostgreSQL truncates an identifier to NAMEDATALEN - 1 bytes with only a
+    -- NOTICE. The catalog guards below compare conname with the untruncated
+    -- argument, so an over-long name would be added under a truncated name,
+    -- committed, and then fail to match on the validation/recovery path.
+    IF pg_catalog.octet_length(i_constraint_name) > 63 THEN
+        RAISE EXCEPTION
+            'ddl_utils.ensure_check_constraint: the constraint name must be at most 63 bytes'
+            USING ERRCODE = '22023';
+    END IF;
+
     -- Read the lock settings once; they are reused across both steps.
     SELECT *
     INTO l_settings

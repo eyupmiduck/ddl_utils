@@ -2,6 +2,12 @@ package io.github.eyupmiduck.ddlutils;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,6 +89,66 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         assertNotNullable(PUBLIC_SCHEMA, target(), column);
         assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), column));
+    }
+
+    /**
+     * A partial failure on a multibyte column name is recovered: the quoted,
+     * NOT VALID proof left by step 1 is recognised as this routine's proof and
+     * validated, not mistaken for a foreign constraint or lost to identifier
+     * truncation.
+     */
+    @Test
+    void recoversFromPartialFailureWithMultibyteColumnName() {
+        String column = "\u00e9".repeat(12);
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
+                + " ADD COLUMN \"" + column + "\" text");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target()
+                + " (id, \"" + column + "\") VALUES (1, 'a')");
+
+        simulateNotNullCheckAdded(PUBLIC_SCHEMA, target(), column);
+        assertNotValidated(PUBLIC_SCHEMA, target(),
+                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), column));
+
+        callEnsureNotNull(column);
+
+        assertNotNullable(PUBLIC_SCHEMA, target(), column);
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), column));
+    }
+
+    /**
+     * Concurrent callers converge on a NOT NULL column with no temporary proof
+     * left behind: every step re-reads the catalog after re-acquiring the
+     * advisory lock, so a caller cannot act on state another caller changed.
+     */
+    @Test
+    void concurrentCallsConverge() throws Exception {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
+
+        int callers = 4;
+        CyclicBarrier barrier = new CyclicBarrier(callers);
+        try (ExecutorService pool = Executors.newFixedThreadPool(callers)) {
+            List<Future<Void>> futures = new ArrayList<>();
+            for (int i = 0; i < callers; i++) {
+                futures.add(pool.submit(() -> {
+                    barrier.await(10, TimeUnit.SECONDS);
+                    try (Connection connection = openTestConnection();
+                         PreparedStatement statement = connection.prepareStatement(
+                                 "CALL ddl_utils.ensure_not_null(?, ?, ?)")) {
+                        statement.setString(1, PUBLIC_SCHEMA);
+                        statement.setString(2, target());
+                        statement.setString(3, "note");
+                        statement.execute();
+                    }
+                    return null;
+                }));
+            }
+            for (Future<Void> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+        }
+
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**

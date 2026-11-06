@@ -240,6 +240,21 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * A constraint name over PostgreSQL's 63-byte identifier limit is rejected
+     * before any DDL, instead of being added under a truncated name that the
+     * validation and recovery guards can never find.
+     */
+    @Test
+    void rejectsOverLongConstraintName() {
+        String overLong = "c".repeat(64);
+        assertSqlState("22023", () -> callEnsureForeignKey(overLong));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, overLong.substring(0, 63)),
+                "no truncated constraint may be created");
+
+        assertSqlState("22023", () -> callEnsureForeignKey("\u00e9".repeat(32)));
+    }
+
+    /**
      * An orphan row makes validation fail with a foreign-key violation, leaving
      * the constraint NOT VALID; the same call succeeds after the data is fixed.
      */

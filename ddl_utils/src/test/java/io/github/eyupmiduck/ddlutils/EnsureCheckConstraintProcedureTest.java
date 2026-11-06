@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 /**
  * Verifies the {@code ddl_utils.ensure_check_constraint} procedure: it adds a
  * CHECK constraint as NOT VALID, commits, then validates it in a second
@@ -42,6 +44,21 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
                 + " ADD CONSTRAINT positive UNIQUE (value)");
 
         assertSqlState("42710", () -> callEnsureCheckConstraint("positive", "value > 0"));
+    }
+
+    /**
+     * A constraint name over PostgreSQL's 63-byte identifier limit is rejected
+     * before any DDL, instead of being added under a truncated name that the
+     * validation and recovery guards can never find.
+     */
+    @Test
+    void rejectsOverLongConstraintName() {
+        String overLong = "c".repeat(64);
+        assertSqlState("22023", () -> callEnsureCheckConstraint(overLong, "value > 0"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), overLong.substring(0, 63)),
+                "no truncated constraint may be created");
+
+        assertSqlState("22023", () -> callEnsureCheckConstraint("\u00e9".repeat(32), "value > 0"));
     }
 
     /**
