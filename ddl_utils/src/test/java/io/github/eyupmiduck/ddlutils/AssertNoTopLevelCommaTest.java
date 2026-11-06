@@ -21,6 +21,16 @@ class AssertNoTopLevelCommaTest extends PostgresTestBase {
     }
 
     /**
+     * A NULL value means "no DEFAULT clause" and is accepted; an empty string
+     * has no top-level comma either.
+     */
+    @Test
+    void acceptsNullAndEmptyValue() {
+        assertDoesNotThrow(() -> assertNoTopLevelComma(null));
+        assertDoesNotThrow(() -> assertNoTopLevelComma(""));
+    }
+
+    /**
      * A comma nested in parentheses or a string literal is accepted.
      */
     @Test

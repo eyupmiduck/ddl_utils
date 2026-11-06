@@ -5,9 +5,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
- * Verifies {@code ddl_utils_lib.assert_one_based}: it rejects an array whose
- * lower bound is not 1, so helpers that loop from subscript 1 cannot read NULL
- * out of range. The argument is polymorphic, so any element type is accepted.
+ * Verifies {@code ddl_utils_lib.assert_one_based}: it rejects a NULL, empty,
+ * multidimensional or non-1-based array, so helpers that loop from subscript 1
+ * cannot read NULL out of range. The argument is polymorphic, so any element
+ * type is accepted.
  */
 class AssertOneBasedTest extends PostgresTestBase {
 
@@ -33,6 +34,23 @@ class AssertOneBasedTest extends PostgresTestBase {
     @Test
     void rejectsZeroBasedArray() {
         assertSqlState("22023", () -> assertOneBased("'[0:1]={a,b}'::text[]"));
+    }
+
+    /**
+     * A 2-based array is rejected too; the check pins the lower bound to
+     * exactly 1 rather than merely requiring a non-negative bound.
+     */
+    @Test
+    void rejectsTwoBasedArray() {
+        assertSqlState("22023", () -> assertOneBased("'[2:3]={a,b}'::text[]"));
+    }
+
+    /**
+     * An empty array has no lower bound and is rejected with its own message.
+     */
+    @Test
+    void rejectsEmptyArray() {
+        assertSqlState("22023", () -> assertOneBased("'{}'::text[]"));
     }
 
     /**

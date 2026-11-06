@@ -297,9 +297,10 @@ i_context ddl_utils.non_null_text
 RETURNS void
 ```
 
-`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the array does not start at
-subscript 1; the array domains constrain cardinality but not the lower bound.
-Used by the helpers whose loops assume a 1-based array.
+`STABLE`, `SECURITY INVOKER`. Raises `22023` when the array is NULL, empty, not
+one-dimensional, or does not start at subscript 1. Used by the helpers whose
+loops assume a 1-based array. It raises, so it is not `IMMUTABLE` (a constant
+call must not be folded at plan time for an unreachable branch).
 
 ### `ddl_utils_lib.assert_non_blank_elements(i_values, i_context, i_label)`
 
@@ -310,7 +311,7 @@ i_label   ddl_utils.non_null_text
 RETURNS void
 ```
 
-`IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the array is not 1-based or
+`STABLE`, `SECURITY INVOKER`. Raises `22023` when the array is not 1-based or
 a non-null element is blank (whitespace-only, using the same trim set as the
 `non_null_text` domain). NULL elements are allowed and skipped (a NULL default
 means no `DEFAULT` clause). Used to validate the array arguments of
@@ -338,7 +339,8 @@ RETURNS void
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the value contains a
-top-level comma (one that could append another `ALTER TABLE` action). Used by
+top-level comma (one that could append another `ALTER TABLE` action). A NULL
+value means "no `DEFAULT` clause" and returns without error. Used by
 `add_check_constraint`, `add_columns` and `set_column_default`.
 
 ### `ddl_utils_lib.assert_allowed_keyword(i_value, i_allowed, i_context)`

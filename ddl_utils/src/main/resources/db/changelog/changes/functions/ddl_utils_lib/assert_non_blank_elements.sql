@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.assert_non_blank_elements(
 )
     RETURNS void
     LANGUAGE plpgsql
-    IMMUTABLE
+    STABLE
     SECURITY INVOKER
 AS
 $$

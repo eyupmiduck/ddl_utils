@@ -23,3 +23,13 @@
     quote_identifiers performs no database access; it only validates and
     formats its argument with unnest/format/string_agg, all immutable.
     plpgsql_check cannot prove the aggregate subquery immutable.
+
+- schema: ddl_utils_lib
+  function: assert_one_based
+  level: performance
+  message: routine is marked as STABLE, should be IMMUTABLE
+  reason: >-
+    The routine only validates and raises. It is intentionally STABLE so the
+    planner does not constant-fold a literal call and raise at plan time for a
+    branch that would never execute; plpgsql_check only sees that it has no
+    database access.
