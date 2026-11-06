@@ -33,6 +33,16 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- regclass only proves the relation exists; a view, sequence or index would
+    -- pass the catalog checks below and fail later inside ALTER TABLE.
+    IF (SELECT c.relkind
+        FROM pg_catalog.pg_class AS c
+        WHERE c.oid = l_relation) NOT IN ('r', 'p') THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_check_constraint: %.% is not a table',
+            i_schema_name, i_table_name
+            USING ERRCODE = '42809';
+    END IF;
+
     -- A transaction-scoped advisory lock on this table serializes concurrent
     -- runs. The read-then-act guards are separated by COMMIT, so the lock is
     -- taken again before each step; it is released by that step's COMMIT and on

@@ -33,6 +33,9 @@ BEGIN
     -- A named relation with an attribute is not necessarily a table a CHECK
     -- constraint and SET NOT NULL can be added to; reject other relation kinds
     -- (views, sequences, ...) before the commit-separated workflow starts.
+    -- A partitioned parent ('p') is accepted, but the ADD/VALIDATE/SET/DROP
+    -- steps recurse to every partition; the lock/retry settings below bound the
+    -- parent statement only, not the per-partition locks and scans.
     IF (SELECT c.relkind
         FROM pg_catalog.pg_class AS c
         WHERE c.oid = l_relation) NOT IN ('r', 'p') THEN
@@ -217,4 +220,6 @@ END;
 $$;
 
 COMMENT ON PROCEDURE ddl_utils.ensure_not_null IS
-    'Makes a column NOT NULL without holding ACCESS EXCLUSIVE across the scan.';
+    'Makes a column NOT NULL without holding ACCESS EXCLUSIVE across the scan. '
+        'For a partitioned table the operation recurses to every partition and '
+        'the lock/retry settings bound only the parent statement.';

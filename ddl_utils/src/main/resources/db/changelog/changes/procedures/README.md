@@ -129,6 +129,13 @@ call on an already-`NOT NULL` column performs no `ALTER TABLE` at all, so a
 re-applied migration does not re-take an `ACCESS EXCLUSIVE` lock or re-scan the
 table.
 
+A partitioned parent (`relkind` `p`) is accepted, but `ADD CONSTRAINT`,
+`VALIDATE CONSTRAINT`, `SET NOT NULL` and `DROP CONSTRAINT` recurse to every
+partition and each partition is locked `ACCESS EXCLUSIVE` for its statement.
+The lock/retry settings bound only the parent statement, so the
+no-long-`ACCESS EXCLUSIVE` guarantee does not cover the partitions; account for
+them in the maintenance window.
+
 ### `ddl_utils.ensure_check_constraint(i_schema_name, i_table_name, i_constraint_name, i_check_expression)`
 
 ```sql
@@ -141,7 +148,9 @@ i_check_expression ddl_utils.non_null_text
 Add a `CHECK` constraint and validate it in two committed steps, so the `ACCESS
 EXCLUSIVE` lock of `ADD CONSTRAINT` is released before the scan. The constraint
 name must be at most 63 bytes (`22023`); PostgreSQL would otherwise truncate it
-and the validation/recovery guard would not find it.
+and the validation/recovery guard would not find it. The source relation must be
+an ordinary or partitioned table (`relkind` `r`/`p`), otherwise the procedure
+raises `42809` before any DDL.
 
 1. `ddl_utils_lib.add_check_constraint(<name>, <expr>)` — `NOT VALID`, instant.
 2. `ddl_utils_lib.validate_constraint(<name>)` — scans under `SHARE UPDATE
@@ -174,7 +183,9 @@ Same two committed steps as `ensure_check_constraint`, for a foreign key:
 `ddl_utils_lib.add_foreign_key` (NOT VALID, `SHARE ROW EXCLUSIVE` on both
 tables) then `ddl_utils_lib.validate_constraint`. Idempotent and recoverable the
 same way. The constraint name must be at most 63 bytes (`22023`), as for
-`ensure_check_constraint`.
+`ensure_check_constraint`; the source and referenced relations must be ordinary
+or partitioned tables (`relkind` `r`/`p`), otherwise the procedure raises
+`42809`.
 
 Unlike a `CHECK`, a foreign key can be compared exactly, so a same-named key
 that references different columns or a different table is not silently accepted:

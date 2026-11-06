@@ -37,6 +37,16 @@ BEGIN
 
     l_relation := pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass;
 
+    -- regclass only proves the relation exists; a view, sequence or index would
+    -- pass the catalog checks below and fail later inside ALTER TABLE.
+    IF (SELECT c.relkind
+        FROM pg_catalog.pg_class AS c
+        WHERE c.oid = l_relation) NOT IN ('r', 'p') THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: %.% is not a table',
+            i_schema_name, i_table_name
+            USING ERRCODE = '42809';
+    END IF;
+
     -- The definitions are compared as a column mapping, which only makes sense
     -- for equal-length lists; reject mismatched lengths up front instead of
     -- silently dropping the surplus when they are zipped.
@@ -73,6 +83,14 @@ BEGIN
         RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: referenced table %.% does not exist',
             i_referenced_schema_name, i_referenced_table_name
             USING ERRCODE = '42P01';
+    END IF;
+
+    IF (SELECT c.relkind
+        FROM pg_catalog.pg_class AS c
+        WHERE c.oid = l_referenced_relation) NOT IN ('r', 'p') THEN
+        RAISE EXCEPTION 'ddl_utils.ensure_foreign_key: referenced relation %.% is not a table',
+            i_referenced_schema_name, i_referenced_table_name
+            USING ERRCODE = '42809';
     END IF;
 
     -- A named column that does not resolve must fail loudly. Otherwise the

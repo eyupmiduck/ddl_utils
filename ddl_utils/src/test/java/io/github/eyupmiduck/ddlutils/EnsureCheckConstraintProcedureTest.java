@@ -62,6 +62,21 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
     }
 
     /**
+     * A view is not a table; the relation-kind guard rejects it before any DDL.
+     */
+    @Test
+    void rejectsNonTableRelation() {
+        dsl.execute("CREATE VIEW " + PUBLIC_SCHEMA + ".ensure_check_constraint_view AS SELECT 1 AS value");
+        try {
+            assertSqlState("42809", () -> dsl.execute(
+                    "CALL ddl_utils.ensure_check_constraint(?, ?, ?, ?)",
+                    PUBLIC_SCHEMA, "ensure_check_constraint_view", "positive", "value > 0"));
+        } finally {
+            dsl.execute("DROP VIEW IF EXISTS " + PUBLIC_SCHEMA + ".ensure_check_constraint_view");
+        }
+    }
+
+    /**
      * A second call on an already valid constraint is a no-op.
      */
     @Test

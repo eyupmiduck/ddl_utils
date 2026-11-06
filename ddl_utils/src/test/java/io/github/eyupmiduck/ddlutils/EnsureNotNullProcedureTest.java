@@ -214,6 +214,21 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
     }
 
     /**
+     * A view is not a table; the relation-kind guard rejects it before any DDL.
+     */
+    @Test
+    void rejectsNonTableRelation() {
+        dsl.execute("CREATE VIEW " + PUBLIC_SCHEMA + ".ensure_not_null_view AS SELECT 1 AS note");
+        try {
+            assertSqlState("42809", () -> dsl.execute(
+                    "CALL ddl_utils.ensure_not_null(?, ?, ?)",
+                    PUBLIC_SCHEMA, "ensure_not_null_view", "note"));
+        } finally {
+            dsl.execute("DROP VIEW IF EXISTS " + PUBLIC_SCHEMA + ".ensure_not_null_view");
+        }
+    }
+
+    /**
      * An unknown column is rejected with undefined_column; the procedure never
      * silently succeeds with a NULL state flag.
      */

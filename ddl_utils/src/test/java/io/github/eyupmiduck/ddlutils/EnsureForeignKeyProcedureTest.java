@@ -255,6 +255,28 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * The source and referenced relations must be tables; a view is rejected
+     * with 42809 before any DDL.
+     */
+    @Test
+    void rejectsNonTableSourceAndReferencedRelations() {
+        dsl.execute("CREATE VIEW " + PUBLIC_SCHEMA + ".ensure_foreign_key_view AS SELECT 1 AS id");
+        try {
+            assertSqlState("42809", () -> dsl.execute(
+                    "CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                    PUBLIC_SCHEMA, "ensure_foreign_key_view", "fk_view", new String[]{"id"},
+                    PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+
+            assertSqlState("42809", () -> dsl.execute(
+                    "CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                    PUBLIC_SCHEMA, TARGET, "fk_view", new String[]{"parent_id"},
+                    PUBLIC_SCHEMA, "ensure_foreign_key_view", new String[]{"id"}));
+        } finally {
+            dsl.execute("DROP VIEW IF EXISTS " + PUBLIC_SCHEMA + ".ensure_foreign_key_view");
+        }
+    }
+
+    /**
      * An orphan row makes validation fail with a foreign-key violation, leaving
      * the constraint NOT VALID; the same call succeeds after the data is fixed.
      */
