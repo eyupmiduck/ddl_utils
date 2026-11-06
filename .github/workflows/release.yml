@@ -8,12 +8,14 @@ name: Release
 on:
   push:
     tags:
-      # A digit must follow the "v", so a bare "v" or a typo like "vfoo"
-      # cannot trigger a release.
-      - "v[0-9]*"
+      # Only a <major>.<minor>.<patch> tag releases; v1foo, v1beta, v1-test or
+      # a bare v1 would otherwise derive an invalid -Drevision from the tag.
+      - "v[0-9]*.[0-9]*.[0-9]*"
 
 concurrency:
-  group: release-${{ github.ref }}
+  # Serialize all releases, not just runs of the same tag: two tags pushed close
+  # together must not race the publish and bump-snapshot flow.
+  group: release
   cancel-in-progress: false
 
 permissions:

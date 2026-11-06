@@ -13,11 +13,12 @@ on:
   schedule:
     - cron: "27 3 * * 1"
 
-# Superseded pull-request runs on the same ref are useless once a newer run
-# starts; push and scheduled runs are left to finish so main always gets a
-# complete analysis.
+# All analyses on a given ref are serialized: push and scheduled runs publish
+# SARIF under the same ref/category, so they must not overlap. Superseded
+# pull-request runs on the same ref are cancelled; push and scheduled runs are
+# left to finish so main always gets a complete analysis.
 concurrency:
-  group: codeql-${{ github.event_name }}-${{ github.ref }}
+  group: codeql-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

@@ -16,6 +16,8 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+.settings/
+.factorypath
 
 # IntelliJ
 .idea/
@@ -34,8 +36,16 @@ __pycache__/
 
 # Local secrets
 .env
+.env.*
+!.env.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+credentials.json
 
 # Beads / Dolt files
 .beads/

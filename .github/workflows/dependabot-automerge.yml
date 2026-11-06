@@ -19,10 +19,15 @@ permissions:
 # cannot race the auto-merge API calls.
 concurrency:
   group: dependabot-automerge-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   auto-merge:
+    # Defense in depth: the called workflow also checks the actor, but keep the
+    # write token scoped to the Dependabot bot and the main branch here too.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]'
+      && github.event.pull_request.base.ref == 'main'
     uses: eyupmiduck/workflow_library/.github/workflows/dependabot-automerge.yml@2499e14a4533396c8318abecaa35dd2477be1f41 # main
     with:
       grouped-only: true
