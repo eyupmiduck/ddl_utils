@@ -9,6 +9,13 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'ddl_utils/src/main/resources/db/changelog/**'
+      - 'ddl_utils/.liquibase-linter.yml'
+      - 'ddl_utils/.liquibase-linter-whitelist.yml'
+      - 'pom.xml'
+      - 'ddl_utils/pom.xml'
+      - '.github/workflows/changelog-linter.yml'
 
 concurrency:
   group: changelog-linter-${{ github.ref }}
@@ -22,12 +29,9 @@ permissions:
 jobs:
   lint:
     # Pinned to the workflow_library commit; bump the SHA deliberately when
-    # upgrading the library.
-    permissions:
-      contents: read
-      packages: read
-      security-events: write
-    uses: eyupmiduck/workflow_library/.github/workflows/liquibase-changelog-linter.yml@83d3de534b94b63f7876709f2e969621136caaf8
+    # upgrading the library. The caller-level permissions above are the source
+    # of truth: a called workflow can only keep or reduce them.
+    uses: eyupmiduck/workflow_library/.github/workflows/liquibase-changelog-linter.yml@83d3de534b94b63f7876709f2e969621136caaf8 # main, verified 2026-11-06
     with:
       maven-module: ddl_utils
       changelog-root: ddl_utils/src/main/resources/db/changelog

@@ -19,7 +19,7 @@ jobs:
   build:
     # Pinned to the workflow_library commit; bump the SHA deliberately when
     # upgrading the library. Keep it in step with the scripts/ submodule.
-    uses: eyupmiduck/workflow_library/.github/workflows/maven.yml@593fcd4bd1fe5a5cb9921360d7365747fc249b62
+    uses: eyupmiduck/workflow_library/.github/workflows/maven.yml@593fcd4bd1fe5a5cb9921360d7365747fc249b62 # main, verified 2026-11-06
     with:
       java-version: "25"
       # 19 is a release candidate until its scheduled GA on 2026-11-19; the
