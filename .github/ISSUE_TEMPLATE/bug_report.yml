@@ -19,7 +19,7 @@ body:
       options:
         - label: I searched existing issues and could not find this bug.
           required: true
-        - label: I am running a supported PostgreSQL version (16, 17, or 18).
+        - label: I understand that only PostgreSQL 16, 17, 18 and 19 are officially supported.
           required: true
   - type: textarea
     id: what-happened
@@ -53,6 +53,7 @@ body:
         - "16"
         - "17"
         - "18"
+        - "19"
         - Other / not sure
     validations:
       required: true
@@ -67,7 +68,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, JDK, and Docker version.
+      description: OS, JDK, and Docker version. Do not include credentials, connection strings, or other secrets.
       placeholder: |
         OS: Ubuntu 24.04
         JDK: Temurin 25
@@ -76,5 +77,5 @@ body:
     id: logs
     attributes:
       label: Relevant output
-      description: Maven, Liquibase, or stack trace output.
+      description: Maven, Liquibase, or stack trace output. Mask or remove credentials, connection strings, hostnames, and other secrets before pasting.
       render: shell

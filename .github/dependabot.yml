@@ -6,6 +6,11 @@
 # change to validate, not to merge blindly. The Maven build and integration tests
 # run on every Dependabot PR, so a broken update fails CI before it can reach
 # main.
+#
+# The open-PR limit is shared by every PR Dependabot opens for an ecosystem.
+# Only the grouped minor/patch PR is auto-merged, so leave room for ungrouped
+# majors, the excluded testcontainers/jOOQ updates and security PRs to wait for
+# a human without starving the group PR.
 version: 2
 updates:
   - package-ecosystem: maven
@@ -13,7 +18,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels:
       - dependencies
     reviewers:
@@ -38,7 +43,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels:
       - dependencies
     reviewers:
