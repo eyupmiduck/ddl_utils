@@ -1,6 +1,8 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,6 +48,59 @@ class AddDropIdentityTest extends SingleTableTest {
 
         assertEquals(251, dsl.fetchOne(
                 "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note = 'c'").get(0, Integer.class));
+    }
+
+    /**
+     * A zero maximum is below the identity sequence's MINVALUE 1; the sequence
+     * starts at 1 instead of failing setval after the ALTER has run.
+     */
+    @Test
+    void addIdentityWithZeroMaximumStartsAtOne() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (0, 'a')");
+
+        addIdentity("id", "BY DEFAULT");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('b')");
+
+        assertEquals(1, dsl.fetchOne(
+                "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note = 'b'").get(0, Integer.class));
+    }
+
+    /**
+     * A negative maximum is treated like the empty-table case, so setval does
+     * not fail with "out of bounds for sequence".
+     */
+    @Test
+    void addIdentityWithNegativeMaximumStartsAtOne() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (-5, 'a')");
+
+        addIdentity("id", "BY DEFAULT");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (note) VALUES ('b')");
+
+        assertEquals(1, dsl.fetchOne(
+                "SELECT id FROM " + PUBLIC_SCHEMA + "." + target() + " WHERE note = 'b'").get(0, Integer.class));
+    }
+
+    /**
+     * The routine emits the built-in upper(), not a search_path-shadowing
+     * function, so a caller cannot change the generated-mode keyword.
+     */
+    @Test
+    void usesTheBuiltInUpperWhenSearchPathShadowsIt() {
+        dsl.execute("CREATE OR REPLACE FUNCTION public.upper(text) RETURNS text "
+                + "LANGUAGE sql IMMUTABLE AS $$ SELECT 'ALWAYS'::text $$");
+        try {
+            dsl.transaction(configuration -> {
+                DSLContext tx = DSL.using(configuration);
+                tx.execute("SET LOCAL search_path = public, pg_catalog");
+                Routines.addIdentity(tx.configuration(), PUBLIC_SCHEMA, target(), "id", "by default",
+                        DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+            });
+
+            assertEquals("d", columnIdentity(PUBLIC_SCHEMA, target(), "id"),
+                    "the built-in upper must be used, not public.upper");
+        } finally {
+            dsl.execute("DROP FUNCTION IF EXISTS public.upper(text)");
+        }
     }
 
     /**

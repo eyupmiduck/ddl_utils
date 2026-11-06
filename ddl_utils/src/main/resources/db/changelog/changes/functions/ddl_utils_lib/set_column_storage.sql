@@ -28,7 +28,7 @@ BEGIN
             i_alter_table_fragment => pg_catalog.format(
                     'ALTER COLUMN %I SET STORAGE %s',
                     i_column_name,
-                    lower(i_storage)
+                    pg_catalog.lower(i_storage)
                                       ),
             i_ddl_lock_timeout => i_ddl_lock_timeout,
             i_sleep_time => i_sleep_time,

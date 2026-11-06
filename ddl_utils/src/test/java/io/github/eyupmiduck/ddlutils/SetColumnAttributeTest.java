@@ -1,6 +1,8 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,6 +73,29 @@ class SetColumnAttributeTest extends SingleTableTest {
     @Test
     void rejectsUnknownCompression() {
         assertSqlState("22023", () -> setCompression("note", "zip"));
+    }
+
+    /**
+     * The compression fragment uses pg_catalog.lower, not a search_path-
+     * shadowing lower(), so a caller cannot change the emitted keyword.
+     */
+    @Test
+    void usesTheBuiltInLowerWhenSearchPathShadowsIt() {
+        dsl.execute("CREATE OR REPLACE FUNCTION public.lower(text) RETURNS text "
+                + "LANGUAGE sql IMMUTABLE AS $$ SELECT 'pglz'::text $$");
+        try {
+            dsl.transaction(configuration -> {
+                DSLContext tx = DSL.using(configuration);
+                tx.execute("SET LOCAL search_path = public, pg_catalog");
+                Routines.setColumnCompression(tx.configuration(), PUBLIC_SCHEMA, target(), "note", "lz4",
+                        DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+            });
+
+            assertEquals("lz4", columnCompression(PUBLIC_SCHEMA, target(), "note"),
+                    "the built-in lower must be used, not public.lower");
+        } finally {
+            dsl.execute("DROP FUNCTION IF EXISTS public.lower(text)");
+        }
     }
 
     /**
