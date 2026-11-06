@@ -12,8 +12,9 @@ CREATE OR REPLACE FUNCTION ddl_utils.add_column(
 AS
 $$
 BEGIN
-    -- Delegates to add_columns, which validates the raw type/default SQL; see
-    -- ddl_utils_lib.add_columns for the rules.
+    -- ddl_utils.add_columns resolves the lock settings and delegates to
+    -- ddl_utils_lib.add_columns, which validates the raw type/default SQL; see
+    -- that function for the rules.
     PERFORM ddl_utils.add_columns(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -26,4 +27,6 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.add_column IS
-    'Lock-aware wrapper: adds one column, with an optional default.';
+    'Lock-aware wrapper: adds one column. A NULL i_default_value means no '
+        'DEFAULT clause; a non-null value is raw SQL (quoted literals must '
+        'include their quotes) and must not come from untrusted input.';

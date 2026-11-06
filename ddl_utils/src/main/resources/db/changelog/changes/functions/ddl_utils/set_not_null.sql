@@ -36,4 +36,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.set_not_null IS
-    'Lock-aware wrapper: sets NOT NULL on a column.';
+    'Lock-aware wrapper: sets NOT NULL on a column. Unless a valid CHECK already '
+        'proves the column non-null, this takes ACCESS EXCLUSIVE and scans the '
+        'table; use ddl_utils.ensure_not_null for the scan-avoiding, resumable '
+        'form.';

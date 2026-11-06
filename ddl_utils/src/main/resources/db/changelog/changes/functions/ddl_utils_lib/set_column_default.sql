@@ -36,4 +36,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.set_column_default IS
-    'Sets a column default, taking the lock settings explicitly.';
+    'Sets a column default from a raw SQL expression, taking the lock settings '
+        'explicitly; literal defaults must include their quotes.';

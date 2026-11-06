@@ -38,4 +38,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.set_column_default IS
-    'Lock-aware wrapper: sets a column default.';
+    'Lock-aware wrapper: sets a column default from a raw SQL expression; '
+        'literal defaults must include their quotes.';

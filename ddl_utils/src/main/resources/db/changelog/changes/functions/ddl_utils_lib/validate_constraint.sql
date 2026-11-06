@@ -18,6 +18,10 @@ BEGIN
     -- on the referenced table, which does block DML on it. Pair it with
     -- add_check_constraint/add_foreign_key ... NOT VALID to enforce a
     -- constraint without holding ACCESS EXCLUSIVE for the scan.
+    --
+    -- i_ddl_lock_timeout, i_sleep_time and i_statement_duration bound only the
+    -- lock-acquisition retry loop in alter_table; they do not cap the duration of
+    -- the validation scan itself.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
