@@ -6,7 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * Verifies {@code ddl_utils_lib.assert_equal_cardinality}: it accepts arrays of
- * equal length and rejects a mismatch, including a NULL array.
+ * equal cardinality, including two empty arrays, and rejects a mismatch, a
+ * single NULL array and two NULL arrays.
  */
 class AssertEqualCardinalityTest extends PostgresTestBase {
 
@@ -15,7 +16,8 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
      */
     @Test
     void acceptsEqualLengths() {
-        assertDoesNotThrow(() -> assertEqualCardinality("ARRAY['a', 'b']", "ARRAY['c', 'd']"));
+        assertDoesNotThrow(() -> assertEqualCardinality(
+                "ARRAY['a', 'b']::text[]", "ARRAY['c', 'd']::text[]"));
     }
 
     /**
@@ -23,7 +25,8 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
      */
     @Test
     void rejectsDifferentLengths() {
-        assertSqlState("22023", () -> assertEqualCardinality("ARRAY['a', 'b']", "ARRAY['c']"));
+        assertSqlState("22023", () -> assertEqualCardinality(
+                "ARRAY['a', 'b']::text[]", "ARRAY['c']::text[]"));
     }
 
     /**
@@ -32,7 +35,8 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
      */
     @Test
     void rejectsNullArray() {
-        assertSqlState("22023", () -> assertEqualCardinality("NULL::text[]", "ARRAY['c']"));
+        assertSqlState("22023", () -> assertEqualCardinality(
+                "NULL::text[]", "ARRAY['c']::text[]"));
     }
 
     /**
@@ -44,9 +48,34 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
         assertSqlState("22023", () -> assertEqualCardinality("NULL::text[]", "NULL::text[]"));
     }
 
+    /**
+     * Two empty arrays have the same cardinality (0) and are accepted.
+     */
+    @Test
+    void acceptsTwoEmptyArrays() {
+        assertDoesNotThrow(() -> assertEqualCardinality("ARRAY[]::text[]", "ARRAY[]::text[]"));
+    }
+
+    /**
+     * An empty array and a NULL array do not have equal cardinality.
+     */
+    @Test
+    void rejectsEmptyAgainstNull() {
+        assertSqlState("22023", () -> assertEqualCardinality("ARRAY[]::text[]", "NULL::text[]"));
+    }
+
+    /**
+     * Cardinality is the total element count, so equal-size multidimensional
+     * arrays are accepted.
+     */
+    @Test
+    void acceptsEqualCardinalityMultidimensionalArrays() {
+        assertDoesNotThrow(() -> assertEqualCardinality(
+                "ARRAY[['a', 'b']]::text[]", "ARRAY[['c', 'd']]::text[]"));
+    }
+
     private void assertEqualCardinality(String a, String b) {
-        dsl.fetchOne(
-                "SELECT ddl_utils_lib.assert_equal_cardinality(" + a + "::text[], " + b
-                        + "::text[], ?)", "ctx");
+        // Both arguments are compile-time SQL literals supplied by the test.
+        dsl.fetchOne("SELECT ddl_utils_lib.assert_equal_cardinality(" + a + ", " + b + ", ?)", "ctx");
     }
 }

@@ -150,6 +150,21 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The array cast preserves element values and positions, not only the
+     * cardinality.
+     */
+    @Test
+    void nonEmptyNonNullArrayDomainsPreserveElements() {
+        assertEquals("{a,b}", evaluate(
+                "(ARRAY['a', 'b']::ddl_utils.non_empty_non_null_text_array)::text[]::text", String.class));
+        assertEquals("{a,NULL}", evaluate(
+                "(ARRAY['a', NULL]::ddl_utils.non_empty_text_array)::text[]::text", String.class));
+        assertEquals("{t,f}", evaluate(
+                "(ARRAY[true, false]::ddl_utils.non_empty_non_null_boolean_array)::boolean[]::text",
+                String.class));
+    }
+
+    /**
      * The non-empty, non-null-element text-array domain rejects an array with a
      * null element, an empty array, and a null array.
      */

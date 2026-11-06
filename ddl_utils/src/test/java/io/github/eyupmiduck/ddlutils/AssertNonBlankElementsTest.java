@@ -44,6 +44,8 @@ class AssertNonBlankElementsTest extends PostgresTestBase {
     void rejectsNonSpaceWhitespace() {
         assertSqlState("22023", () -> assertNonBlank("ARRAY[E'\\t']::ddl_utils.non_empty_text_array"));
         assertSqlState("22023", () -> assertNonBlank("ARRAY[E'\\n']::ddl_utils.non_empty_text_array"));
+        assertSqlState("22023", () -> assertNonBlank("ARRAY[E'\\r']::ddl_utils.non_empty_text_array"));
+        assertSqlState("22023", () -> assertNonBlank("ARRAY[E'\\f']::ddl_utils.non_empty_text_array"));
         assertSqlState("22023", () -> assertNonBlank("ARRAY[E'\\013']::ddl_utils.non_empty_text_array"));
     }
 

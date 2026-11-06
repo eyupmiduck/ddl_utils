@@ -20,7 +20,7 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
     private static final long GIVE_UP_MILLIS = 2000;
 
     DropRenameColumnSettingsTest() {
-        super("drop_rename_column_settings_target", "id int, keep int, old_name int", true);
+        super("drop_rename_column_settings_target", "id int, keep int, old_name int");
     }
 
     /**

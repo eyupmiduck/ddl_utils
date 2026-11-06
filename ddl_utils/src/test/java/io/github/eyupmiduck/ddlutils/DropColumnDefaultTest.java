@@ -21,6 +21,8 @@ class DropColumnDefaultTest extends SingleTableTest {
      */
     @Test
     void dropsDefault() {
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'none'");
+
         dropColumnDefault("note");
 
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
@@ -32,6 +34,8 @@ class DropColumnDefaultTest extends SingleTableTest {
      */
     @Test
     void dropsDefaultWhenAbsent() {
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "id");
+
         dropColumnDefault("id");
 
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "id");

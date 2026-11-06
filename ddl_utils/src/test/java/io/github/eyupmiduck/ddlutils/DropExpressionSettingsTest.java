@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DropExpressionSettingsTest extends SingleTableTest {
 
     DropExpressionSettingsTest() {
-        super("drop_expression_settings_target", "a int, b int GENERATED ALWAYS AS (a * 2) STORED", true);
+        super("drop_expression_settings_target", "a int, b int GENERATED ALWAYS AS (a * 2) STORED");
     }
 
     /**
@@ -24,6 +24,7 @@ class DropExpressionSettingsTest extends SingleTableTest {
     void dropExpressionUsesDatabaseDefaults() {
         Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), "b");
 
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "b"));
         assertFalse(isGenerated(PUBLIC_SCHEMA, target(), "b"));
     }
 
@@ -37,7 +38,8 @@ class DropExpressionSettingsTest extends SingleTableTest {
         assertUsesTableLockSettings(
                 () -> Routines.dropExpression(dsl.configuration(), PUBLIC_SCHEMA, target(), "b"));
 
-        assertTrue(isGenerated(PUBLIC_SCHEMA, target(), "b"));
+        assertTrue(isGenerated(PUBLIC_SCHEMA, target(), "b"),
+                "a call that gave up must not have dropped the generated expression");
     }
 
 }

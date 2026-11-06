@@ -97,6 +97,10 @@ class AlterTableTest extends SingleTableTest {
         assertSqlState("22023", () -> alterTable(
                 PUBLIC_SCHEMA, target(), "ADD COLUMN commented int -- trailing", 1000, 10, 5000));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "commented"));
+
+        assertSqlState("22023", () -> alterTable(
+                PUBLIC_SCHEMA, target(), "ADD COLUMN blocked int /* comment */", 1000, 10, 5000));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked"));
     }
 
     /**
@@ -153,9 +157,14 @@ class AlterTableTest extends SingleTableTest {
      */
     @Test
     void retriesUntilTheLockIsAvailable() {
+        long started = System.nanoTime();
+
         runWhileTableLocked(target(), 1000,
                 () -> alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN retried int", 200, 200, 30000));
 
+        long elapsedMillis = (System.nanoTime() - started) / 1_000_000;
+        assertTrue(elapsedMillis >= 800,
+                () -> "the call should have retried at least once; elapsed=" + elapsedMillis + "ms");
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "retried"));
     }
 
@@ -182,6 +191,7 @@ class AlterTableTest extends SingleTableTest {
             tx.execute("SET LOCAL lock_timeout = '7s'");
             String before = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
                     .get("value", String.class);
+            assertNotEquals("0", before, "the test must start from a non-default lock_timeout");
 
             tx.fetch("SELECT ddl_utils_lib.alter_table(?, ?, ?, ?, ?, ?)",
                     PUBLIC_SCHEMA, target(), "ADD COLUMN tuned int", 1000, 10, 5000);
@@ -190,6 +200,20 @@ class AlterTableTest extends SingleTableTest {
                     .get("value", String.class);
             assertEquals(before, after);
         });
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "tuned"),
+                "the ALTER must have applied, so the restore assertion is meaningful");
+    }
+
+    /**
+     * A zero statement budget still allows the first attempt to succeed when no
+     * lock conflict occurs; the budget is checked only after a failed attempt.
+     */
+    @Test
+    void acceptsZeroStatementDurationOnFirstAttempt() {
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN zero_budget int", 100, 10, 0);
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "zero_budget"));
     }
 
     /**

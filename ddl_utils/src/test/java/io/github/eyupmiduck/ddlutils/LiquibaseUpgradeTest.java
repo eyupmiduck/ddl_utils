@@ -21,12 +21,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class LiquibaseUpgradeTest extends UpgradeContract {
 
+    /**
+     * The published coordinates and the current version used to find the
+     * previous release. The version is supplied by the Maven build through the
+     * {@code upgrade.current.version} system property; running this test outside
+     * Maven fails fast rather than silently using an unresolvable snapshot.
+     *
+     * @return the release coordinates
+     */
     @Override
     protected PublishedRelease.Coordinates releaseCoordinates() {
+        String currentVersion = System.getProperty("upgrade.current.version");
+        if (currentVersion == null || currentVersion.isBlank()) {
+            throw new IllegalStateException(
+                    "upgrade.current.version is not set; run through Maven or pass "
+                            + "-Dupgrade.current.version=<version>");
+        }
         return new PublishedRelease.Coordinates(
                 "https://maven.pkg.github.com/eyupmiduck/ddl_utils",
-                "io.github.eyupmiduck", "ddl_utils",
-                System.getProperty("upgrade.current.version", "0.0.0-SNAPSHOT"));
+                "io.github.eyupmiduck", "ddl_utils", currentVersion);
     }
 
     /**
@@ -37,7 +50,7 @@ class LiquibaseUpgradeTest extends UpgradeContract {
      */
     @Override
     protected Collection<String> managedSchemas() {
-        return List.of("ddl_utils", "ddl_utils_lib");
+        return List.of(PostgresTestBase.DDL_UTILS_SCHEMA, PostgresTestBase.DDL_UTILS_LIB_SCHEMA);
     }
 
     /**
@@ -56,7 +69,7 @@ class LiquibaseUpgradeTest extends UpgradeContract {
      */
     @Override
     protected void assertUpgradedDatabase() {
-        assertEquals(2, upgradeDsl().fetchOne(
+        assertEquals(managedSchemas().size(), upgradeDsl().fetchOne(
                                 "SELECT count(*) FROM pg_namespace WHERE nspname IN ('ddl_utils', 'ddl_utils_lib')")
                         .get(0, Integer.class),
                 "the upgraded database should have the ddl_utils schemas");

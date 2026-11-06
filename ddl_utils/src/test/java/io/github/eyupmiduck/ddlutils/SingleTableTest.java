@@ -9,38 +9,25 @@ import java.sql.SQLException;
 /**
  * Base for tests that exercise one target table. The subclass supplies the
  * table name and column list; the base creates the table before each test and
- * drops it after, clearing the table-level lock settings first when the
- * subclass sets them.
+ * drops it after, always clearing the table-level lock settings first (the
+ * clear is a no-op when the test never wrote them).
  */
 abstract class SingleTableTest extends PostgresTestBase {
 
     private final String targetName;
     private final String columns;
-    private final boolean clearLockSettings;
+    private boolean tableCreated;
 
     /**
-     * Creates a fixture whose target table has no table-level lock settings to
-     * clear.
+     * Creates a fixture whose target table is created and dropped around each
+     * test.
      *
      * @param targetName the target table name
      * @param columns    the column list for the target table
      */
     protected SingleTableTest(String targetName, String columns) {
-        this(targetName, columns, false);
-    }
-
-    /**
-     * Creates a fixture, clearing the target table's lock settings on teardown
-     * when {@code clearLockSettings} is set.
-     *
-     * @param targetName        the target table name
-     * @param columns           the column list for the target table
-     * @param clearLockSettings whether to clear the table's lock settings on teardown
-     */
-    protected SingleTableTest(String targetName, String columns, boolean clearLockSettings) {
         this.targetName = targetName;
         this.columns = columns;
-        this.clearLockSettings = clearLockSettings;
     }
 
     /**
@@ -81,6 +68,9 @@ abstract class SingleTableTest extends PostgresTestBase {
      */
     protected void assertUsesTableLockSettings(int lockTimeout, int sleepTime, int statementDuration,
                                                long giveUpMillis, Executable... wrapperCalls) throws SQLException, InterruptedException {
+        if (wrapperCalls.length == 0) {
+            throw new IllegalArgumentException("at least one wrapper call is required");
+        }
         setTableLockSettings(PUBLIC_SCHEMA, targetName, lockTimeout, sleepTime, statementDuration);
         for (Executable wrapperCall : wrapperCalls) {
             assertGivesUpWhileTableLocked(targetName, giveUpMillis, wrapperCall);
@@ -90,18 +80,34 @@ abstract class SingleTableTest extends PostgresTestBase {
     @BeforeEach
     void createTargetTable() {
         createTestTable(targetName, columns);
+        tableCreated = true;
     }
 
     @AfterEach
     void dropTargetTable() {
-        if (clearLockSettings) {
+        // Clear unconditionally: the helper is a no-op when no row exists, and
+        // assertUsesTableLockSettings may have written one regardless of how the
+        // test was constructed. Preserve the first cleanup failure and attach the
+        // second as suppressed so neither hides the other.
+        RuntimeException failure = null;
+        try {
+            clearTableLockSettings(PUBLIC_SCHEMA, targetName);
+        } catch (RuntimeException e) {
+            failure = e;
+        }
+        if (tableCreated) {
             try {
-                clearTableLockSettings(PUBLIC_SCHEMA, targetName);
-            } finally {
                 dropTestTable(targetName);
+            } catch (RuntimeException e) {
+                if (failure != null) {
+                    failure.addSuppressed(e);
+                } else {
+                    failure = e;
+                }
             }
-        } else {
-            dropTestTable(targetName);
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 }

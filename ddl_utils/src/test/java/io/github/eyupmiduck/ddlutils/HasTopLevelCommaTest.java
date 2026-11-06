@@ -3,6 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -112,6 +113,42 @@ class HasTopLevelCommaTest extends PostgresTestBase {
     }
 
     /**
+     * In a standard literal a backslash is data, so the quote after it closes the
+     * literal and the following comma is top-level. E-string escaping must not be
+     * applied to standard literals.
+     */
+    @Test
+    void treatsStandardLiteralBackslashAsData() {
+        assertTrue(hasTopLevelComma("'a\\', x"));
+        assertFalse(hasTopLevelComma("E'a\\', x'"));
+    }
+
+    /**
+     * A stray closing delimiter at depth 0 is clamped, so the following comma is
+     * still detected as top-level. Unterminated constructs are conservatively
+     * treated as swallowing the rest of the value (the SQL is invalid anyway).
+     */
+    @Test
+    void handlesUnbalancedDelimitersAndUnterminatedConstructs() {
+        assertTrue(hasTopLevelComma("1), x"));
+        assertTrue(hasTopLevelComma("1], x"));
+        assertFalse(hasTopLevelComma("'a,b"));
+        assertFalse(hasTopLevelComma("/* a,b"));
+        assertFalse(hasTopLevelComma("$q$a,b"));
+    }
+
+    /**
+     * A dollar tag only closes on the exact opening tag; a body containing a
+     * shorter or longer overlapping tag does not end the literal early.
+     */
+    @Test
+    void matchesTheExactDollarTag() {
+        assertFalse(hasTopLevelComma("$tag$a,b$ta$, c$tag$"));
+        assertFalse(hasTopLevelComma("$tag$a,b$tags$, c$tag$"));
+        assertTrue(hasTopLevelComma("$tag$a,b$tag$, c"));
+    }
+
+    /**
      * An unbalanced group keeps its commas nested (conservative), while a
      * comma before the group is still top-level. A lone dollar sign (for
      * example a parameter) is not mistaken for a dollar quote.
@@ -123,8 +160,10 @@ class HasTopLevelCommaTest extends PostgresTestBase {
         assertTrue(hasTopLevelComma("$1, x"));
     }
 
-    private Boolean hasTopLevelComma(String value) {
-        return dsl.fetchOne("SELECT ddl_utils_lib.has_top_level_comma(?)", (Object) value)
+    private boolean hasTopLevelComma(String value) {
+        Boolean result = dsl.fetchOne("SELECT ddl_utils_lib.has_top_level_comma(?)", (Object) value)
                 .get(0, Boolean.class);
+        assertNotNull(result, "has_top_level_comma must not return SQL NULL");
+        return result;
     }
 }

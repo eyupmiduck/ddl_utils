@@ -1,6 +1,8 @@
 package io.github.eyupmiduck.ddlutils;
 
+import io.github.eyupmiduck.changelogvalidator.AuditColumnsCheck;
 import io.github.eyupmiduck.changelogvalidator.testing.RoutineAssertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -15,6 +17,33 @@ import java.util.List;
  * {@code updated_at}, and the trigger preserves {@code created_at}.
  */
 class AuditColumnsTest extends PostgresTestBase {
+
+    /**
+     * Removes the rows the behavioral probe seeds, even when the test fails.
+     * Both cleanups are attempted; the first failure is preserved and the second
+     * is attached as suppressed.
+     */
+    @AfterEach
+    void clearAuditFixtures() {
+        RuntimeException failure = null;
+        try {
+            clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
+        } catch (RuntimeException e) {
+            failure = e;
+        }
+        try {
+            clearSchemaLockSettings("audit_columns_test_schema");
+        } catch (RuntimeException e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+            } else {
+                failure = e;
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
 
     /**
      * Every table in the {@code ddl_utils} schema satisfies the catalog
@@ -34,22 +63,11 @@ class AuditColumnsTest extends PostgresTestBase {
      */
     @Test
     void updateTriggerRefreshesUpdatedAtAndPreservesCreatedAt() throws SQLException {
-        try {
-            setSchemaLockSettings("audit_columns_test_schema", 100, 1000, 30);
-            setTableLockSettings("audit_columns_test_schema", "audit_columns_test_table", 100, 1000, 30);
-            try (Connection owner = openOwnerConnection()) {
-                RoutineAssertions.assertUpdateTriggerRefreshesAuditColumns(owner, "ddl_utils",
-                        List.of("database_lock_settings", "schema_lock_settings", "table_lock_settings"));
-            }
-        } finally {
-            // The seeded rows above are committed and shared with the other test
-            // in this class, so remove them. Run both cleanups even if the first
-            // throws, and keep any primary failure primary.
-            try {
-                clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
-            } finally {
-                clearSchemaLockSettings("audit_columns_test_schema");
-            }
+        setSchemaLockSettings("audit_columns_test_schema", 100, 1000, 30);
+        setTableLockSettings("audit_columns_test_schema", "audit_columns_test_table", 100, 1000, 30);
+        try (Connection owner = openOwnerConnection()) {
+            RoutineAssertions.assertUpdateTriggerRefreshesAuditColumns(owner, "ddl_utils",
+                    List.of("database_lock_settings", "schema_lock_settings", "table_lock_settings"));
         }
     }
 }

@@ -3,6 +3,7 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,7 +34,8 @@ class SetColumnDefaultTest extends SingleTableTest {
     void setsExpressionDefault() {
         setColumnDefault("note", "upper('a')");
 
-        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "upper");
+        assertEquals("upper('a'::text)",
+                columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
     }
 
     /**
@@ -65,7 +67,8 @@ class SetColumnDefaultTest extends SingleTableTest {
     void acceptsCommaInsideFunctionCall() {
         setColumnDefault("note", "concat('a', 'b')");
 
-        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "concat");
+        assertEquals("concat('a', 'b')",
+                columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
     }
 
     /**
@@ -74,6 +77,7 @@ class SetColumnDefaultTest extends SingleTableTest {
      */
     @Test
     void rejectsNullAndBlankArguments() {
+        assertDomainViolation(() -> setColumnDefault("   ", "'x'"));
         assertDomainViolation(() -> setColumnDefault(null, "'x'"));
         assertDomainViolation(() -> setColumnDefault("note", null));
         assertDomainViolation(() -> setColumnDefault("note", "   "));

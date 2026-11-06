@@ -2,7 +2,10 @@ package io.github.eyupmiduck.ddlutils;
 
 import org.jooq.Record;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code set_database_lock_settings} updates it (SECURITY DEFINER, since the caller has
  * only SELECT on the table).
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class LockSettingsTest extends PostgresTestBase {
 
     private static final int DEFAULT_DDL_LOCK_TIMEOUT = 100;
@@ -30,13 +34,14 @@ class LockSettingsTest extends PostgresTestBase {
      */
     @AfterEach
     void resetLockSettings() {
-        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+        restoreDatabaseDefaults(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
     }
 
     /**
      * The lock settings table holds the seeded row.
      */
     @Test
+    @Order(1)
     void lockSettingsRowIsSeeded() {
         Record row = tableRow();
 
@@ -72,13 +77,22 @@ class LockSettingsTest extends PostgresTestBase {
         assertEquals(1, dsl.fetchOne("SELECT count(*)::int FROM ddl_utils.database_lock_settings")
                 .get(0, Integer.class));
 
-        try (Connection owner = openOwnerConnection();
-             Statement statement = owner.createStatement()) {
-            SQLException failure = assertThrows(SQLException.class, () -> statement.execute("""
-                    INSERT INTO ddl_utils.database_lock_settings (id, ddl_lock_timeout, sleep_time, statement_duration)
-                    VALUES (2, 1, 1, 1)
-                    """));
-            assertEquals("23514", failure.getSQLState());
+        try {
+            try (Connection owner = openOwnerConnection();
+                 Statement statement = owner.createStatement()) {
+                SQLException failure = assertThrows(SQLException.class, () -> statement.execute("""
+                        INSERT INTO ddl_utils.database_lock_settings (id, ddl_lock_timeout, sleep_time, statement_duration)
+                        VALUES (2, 1, 1, 1)
+                        """));
+                assertEquals("23514", failure.getSQLState());
+            }
+        } finally {
+            // A regression that lets the insert succeed must not leave a second
+            // row behind for the rest of the class.
+            try (Connection owner = openOwnerConnection();
+                 Statement statement = owner.createStatement()) {
+                statement.execute("DELETE FROM ddl_utils.database_lock_settings WHERE id = 2");
+            }
         }
     }
 
@@ -94,6 +108,21 @@ class LockSettingsTest extends PostgresTestBase {
     }
 
     /**
+     * get_database_lock_settings raises no_data_found when the singleton row is
+     * missing, rather than returning an empty result.
+     */
+    @Test
+    void getDatabaseLockSettingsRaisesWhenRowMissing() {
+        deleteDatabaseDefaults();
+        try {
+            assertSqlState("P0002",
+                    () -> dsl.fetch("SELECT * FROM ddl_utils.get_database_lock_settings()"));
+        } finally {
+            restoreDatabaseDefaults(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+        }
+    }
+
+    /**
      * set_database_lock_settings updates the row, and the change is visible to both the
      * table and get_database_lock_settings.
      */
@@ -101,8 +130,12 @@ class LockSettingsTest extends PostgresTestBase {
     void setLockSettingsUpdatesValues() {
         setDatabaseLockSettings(250, 500, 60);
 
-        assertLockSettings(tableRow(), 250, 500, 60);
-        assertLockSettings(getDatabaseLockSettings(), 250, 500, 60);
+        Record row = tableRow();
+        assertNotNull(row);
+        assertLockSettings(row, 250, 500, 60);
+        Record accessorRow = getDatabaseLockSettings();
+        assertNotNull(accessorRow);
+        assertLockSettings(accessorRow, 250, 500, 60);
     }
 
     /**
@@ -112,8 +145,12 @@ class LockSettingsTest extends PostgresTestBase {
     void setLockSettingsAcceptsZero() {
         setDatabaseLockSettings(0, 0, 0);
 
-        assertLockSettings(tableRow(), 0, 0, 0);
-        assertLockSettings(getDatabaseLockSettings(), 0, 0, 0);
+        Record row = tableRow();
+        assertNotNull(row);
+        assertLockSettings(row, 0, 0, 0);
+        Record accessorRow = getDatabaseLockSettings();
+        assertNotNull(accessorRow);
+        assertLockSettings(accessorRow, 0, 0, 0);
     }
 
     /**

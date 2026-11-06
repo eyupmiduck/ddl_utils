@@ -24,12 +24,20 @@ class AssertAllowedKeywordTest extends PostgresTestBase {
 
     /**
      * A keyword outside the allow-list is rejected with an invalid-parameter
-     * error.
+     * error. Near-miss values ensure the comparison is whole-token equality, not
+     * a prefix/substring match: a trailing space survives non_null_text and must
+     * not be trimmed away by the allow-list check.
      */
     @Test
     void rejectsDisallowedKeyword() {
         assertSqlState("22023",
                 () -> assertAllowedKeyword("sometimes", "ARRAY['always', 'by default']"));
+        assertSqlState("22023",
+                () -> assertAllowedKeyword("alwaysx", "ARRAY['always', 'by default']"));
+        assertSqlState("22023",
+                () -> assertAllowedKeyword("alway", "ARRAY['always', 'by default']"));
+        assertSqlState("22023",
+                () -> assertAllowedKeyword("always ", "ARRAY['always', 'by default']"));
     }
 
     /**

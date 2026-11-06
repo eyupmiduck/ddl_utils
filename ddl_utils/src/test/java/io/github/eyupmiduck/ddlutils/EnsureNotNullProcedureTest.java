@@ -159,6 +159,8 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
     void recoversFromPartialFailureAfterAdd() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
         simulateNotNullCheckAdded(PUBLIC_SCHEMA, target(), "note");
+        assertNotValidated(PUBLIC_SCHEMA, target(),
+                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note"));
 
         callEnsureNotNull();
 
@@ -174,6 +176,8 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
     void recoversFromPartialFailureAfterValidate() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
         simulateNotNullCheckValidated(PUBLIC_SCHEMA, target(), "note");
+        assertValidated(PUBLIC_SCHEMA, target(),
+                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note"));
 
         callEnsureNotNull();
 
@@ -194,6 +198,8 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         assertNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(1, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
+        assertNotValidated(PUBLIC_SCHEMA, target(),
+                notNullCheckConstraintName(PUBLIC_SCHEMA, target(), "note"));
 
         dsl.execute("UPDATE " + PUBLIC_SCHEMA + "." + target() + " SET note = 'fixed' WHERE note IS NULL");
         callEnsureNotNull();

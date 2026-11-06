@@ -82,6 +82,20 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
+     * A comma nested in a parenthesised list is a legitimate CHECK expression,
+     * not a second ALTER TABLE action.
+     */
+    @Test
+    void acceptsNestedCommaInCheckExpression() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (1)");
+
+        addCheckConstraint("value_in", "value IN (1, 2)");
+        validateConstraint("value_in");
+
+        assertValidated(PUBLIC_SCHEMA, TARGET, "value_in");
+    }
+
+    /**
      * add_foreign_key creates the FK as NOT VALID, so existing orphan rows do
      * not fail the call.
      */

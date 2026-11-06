@@ -233,6 +233,69 @@ class AddColumnsTest extends SingleTableTest {
         assertTrue(tableExists(target()), "the injected DROP must not have run");
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), hostile),
                 "the hostile name must be created verbatim as one identifier");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"),
+                "the pre-existing column must survive");
+    }
+
+    /**
+     * The clauses are applied as one ALTER TABLE: when the second clause fails,
+     * the first column is not left behind.
+     */
+    @Test
+    void appliesAllClausesAtomically() {
+        assertSqlState("42701", () -> addColumns(
+                new String[]{"fresh", "id"},
+                new String[]{"int", "int"},
+                new String[]{null, null},
+                new Boolean[]{true, true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "fresh"),
+                "a failed multi-column ALTER must not leave the first column behind");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
+    }
+
+    /**
+     * A 0-based nullable array is rejected by the dedicated guard; without it,
+     * the loop would read a missing element as NULL and silently create a
+     * nullable column instead of the requested NOT NULL one.
+     */
+    @Test
+    void rejectsNonOneBasedNullableArray() {
+        assertSqlState("22023", () -> dsl.execute(
+                "SELECT ddl_utils_lib.add_columns(?, ?, ARRAY['first'], ARRAY['int'], "
+                        + "ARRAY[NULL::text], '[0:1]={true,false}'::boolean[], ?, ?, ?)",
+                PUBLIC_SCHEMA, target(), DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
+    }
+
+    /**
+     * The three lock settings reject null and negative values through the
+     * non_negative_integer domain, before any DDL.
+     */
+    @Test
+    void rejectsInvalidSettingsThroughDomains() {
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                null, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> addColumns(
+                new String[]{"first"}, new String[]{"int"}, new String[]{null}, new Boolean[]{true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
     }
 
     /**

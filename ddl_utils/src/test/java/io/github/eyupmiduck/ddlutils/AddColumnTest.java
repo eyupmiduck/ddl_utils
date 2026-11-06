@@ -22,9 +22,10 @@ class AddColumnTest extends SingleTableTest {
      */
     @Test
     void addsNullableColumnWithoutDefault() {
-        addColumn("note", "text", true, null, 1000, 10, 5000);
+        addColumn("note", "text", true, null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
+        assertEquals("text", columnAttribute(PUBLIC_SCHEMA, target(), "note", "data_type"));
         assertNullable(PUBLIC_SCHEMA, target(), "note");
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
     }
@@ -35,9 +36,11 @@ class AddColumnTest extends SingleTableTest {
      */
     @Test
     void addsColumnWithDefaultExpression() {
-        addColumn("created", "timestamptz", true, "now()", 1000, 10, 5000);
+        addColumn("created", "timestamptz", true, "now()", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "created"));
+        assertEquals("timestamp with time zone",
+                columnAttribute(PUBLIC_SCHEMA, target(), "created", "data_type"));
         assertNullable(PUBLIC_SCHEMA, target(), "created");
         assertEquals("now()", columnAttribute(PUBLIC_SCHEMA, target(), "created", "column_default"),
                 "the default must be exactly now(), not merely contain it");
@@ -48,10 +51,37 @@ class AddColumnTest extends SingleTableTest {
      */
     @Test
     void addsNotNullColumnWithDefault() {
-        addColumn("count", "int", false, "0", 1000, 10, 5000);
+        addColumn("count", "int", false, "0", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "count");
+        assertEquals("integer", columnAttribute(PUBLIC_SCHEMA, target(), "count", "data_type"));
         assertColumnDefault(PUBLIC_SCHEMA, target(), "count", "0");
+    }
+
+    /**
+     * A quoted literal default must carry its own quotes; the stored default is
+     * the text literal, not the identifier {@code none}.
+     */
+    @Test
+    void addsQuotedLiteralDefault() {
+        addColumn("status", "text", true, "'none'", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+
+        assertEquals("'none'::text",
+                columnAttribute(PUBLIC_SCHEMA, target(), "status", "column_default"));
+    }
+
+    /**
+     * A default that tries to append another ALTER TABLE action is rejected by
+     * the top-level-comma guard, leaving the table unchanged.
+     */
+    @Test
+    void rejectsInjectedDefault() {
+        assertSqlState("22023", () -> addColumn(
+                "note", "text", true, "'a', DROP COLUMN id",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "note"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**
@@ -62,9 +92,11 @@ class AddColumnTest extends SingleTableTest {
     void rejectsNotNullColumnWithoutDefaultOnPopulatedTable() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id) VALUES (1)");
 
-        assertSqlState("23502", () -> addColumn("required", "int", false, null, 1000, 10, 5000));
+        assertSqlState("23502", () -> addColumn("required", "int", false, null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "required"));
+        assertEquals(1, dsl.fetchOne("SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + target())
+                .get(0, Integer.class));
     }
 
     /**
@@ -93,7 +125,6 @@ class AddColumnTest extends SingleTableTest {
     void rejectsNullAndNegativeArguments() {
         // nullable is null
         assertDomainViolation(() -> addColumn("note", "text", null, null, 100, 100, 1000));
-        // nullable then default, matching ddl_utils_lib.add_column
         // ddl_lock_timeout is null / negative
         assertDomainViolation(() -> addColumn("note", "text", true, null, null, 100, 1000));
         assertDomainViolation(() -> addColumn("note", "text", true, null, -1, 100, 1000));

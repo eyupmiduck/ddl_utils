@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
+import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +18,7 @@ class AddDropIdentitySettingsTest extends SingleTableTest {
     private static final boolean DROP_IDENTITY_IF_EXISTS = true;
 
     AddDropIdentitySettingsTest() {
-        super("add_drop_identity_settings_target", "id int NOT NULL, note text", true);
+        super("add_drop_identity_settings_target", "id int NOT NULL, note text");
     }
 
     /**
@@ -29,8 +30,9 @@ class AddDropIdentitySettingsTest extends SingleTableTest {
      */
     @Test
     void usesDatabaseDefaults() throws Exception {
-        setDatabaseLockSettings(50, 10, 300);
+        Record previous = getDatabaseLockSettings();
         try {
+            setDatabaseLockSettings(50, 10, 300);
             assertGivesUpWhileTableLocked(target(), 2000,
                     () -> Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id",
                             IDENTITY_ALWAYS));
@@ -43,11 +45,16 @@ class AddDropIdentitySettingsTest extends SingleTableTest {
             assertGivesUpWhileTableLocked(target(), 2000,
                     () -> Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id",
                             DROP_IDENTITY_IF_EXISTS));
+            assertEquals("a", columnIdentity(PUBLIC_SCHEMA, target(), "id"),
+                    "a timed-out drop must leave the identity in place");
 
             Routines.dropIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), "id", DROP_IDENTITY_IF_EXISTS);
             assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"));
         } finally {
-            setDatabaseLockSettings(100, 1000, 30000);
+            restoreDatabaseDefaults(
+                    previous.get("ddl_lock_timeout", Integer.class),
+                    previous.get("sleep_time", Integer.class),
+                    previous.get("statement_duration", Integer.class));
         }
     }
 

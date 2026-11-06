@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class SetColumnDefaultSettingsTest extends SingleTableTest {
 
     SetColumnDefaultSettingsTest() {
-        super("set_column_default_settings_target", "id int, note text", true);
+        super("set_column_default_settings_target", "id int, note text");
     }
 
     /**
@@ -34,5 +34,7 @@ class SetColumnDefaultSettingsTest extends SingleTableTest {
     void setColumnDefaultUsesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
                 () -> Routines.setColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "'none'"));
+
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
     }
 }

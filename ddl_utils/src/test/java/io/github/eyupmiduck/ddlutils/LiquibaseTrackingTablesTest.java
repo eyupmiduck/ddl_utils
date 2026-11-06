@@ -31,6 +31,6 @@ class LiquibaseTrackingTablesTest extends TrackingTablesContract {
      */
     @Override
     protected Collection<String> applicationSchemas() {
-        return List.of(PUBLIC_SCHEMA, "ddl_utils", "ddl_utils_lib");
+        return List.of(PUBLIC_SCHEMA, PostgresTestBase.DDL_UTILS_SCHEMA, PostgresTestBase.DDL_UTILS_LIB_SCHEMA);
     }
 }

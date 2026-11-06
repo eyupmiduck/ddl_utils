@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class DropNotNullSettingsTest extends SingleTableTest {
 
     DropNotNullSettingsTest() {
-        super("drop_not_null_settings_target", "id int NOT NULL, note text NOT NULL", true);
+        super("drop_not_null_settings_target", "id int NOT NULL, note text NOT NULL");
     }
 
     /**
@@ -22,6 +22,7 @@ class DropNotNullSettingsTest extends SingleTableTest {
         Routines.dropNotNull(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
         assertNullable(PUBLIC_SCHEMA, target(), "note");
+        assertNotNullable(PUBLIC_SCHEMA, target(), "id");
     }
 
     /**

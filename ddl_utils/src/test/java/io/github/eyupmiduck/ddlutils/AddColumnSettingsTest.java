@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AddColumnSettingsTest extends SingleTableTest {
 
     AddColumnSettingsTest() {
-        super("add_column_settings_target", "id int", true);
+        super("add_column_settings_target", "id int");
     }
 
     /**
@@ -24,7 +24,7 @@ class AddColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void addColumnUsesDatabaseDefaults() {
-        addColumn("note", "text", "'none'", false);
+        addColumn("note", "text", false, "'none'");
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
@@ -32,14 +32,12 @@ class AddColumnSettingsTest extends SingleTableTest {
     }
 
     /**
-     * add_column can omit the default value, falling back to the argument's
-     * NULL default. jOOQ does not expose overloads for defaulted routine
-     * parameters, so this calls the function directly.
+     * add_column can omit the default value: an explicit typed NULL binds the
+     * argument's NULL default, so no DEFAULT clause is emitted.
      */
     @Test
     void addColumnOmitsDefaultWhenNotGiven() {
-        dsl.execute("SELECT ddl_utils.add_column(?, ?, ?, ?, ?)",
-                PUBLIC_SCHEMA, target(), "blank", "int", true);
+        addColumn("blank", "int", true, null);
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "blank"));
         assertNullable(PUBLIC_SCHEMA, target(), "blank");
@@ -73,7 +71,7 @@ class AddColumnSettingsTest extends SingleTableTest {
     @Test
     void usesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
-                () -> addColumn("blocked", "int", null, true),
+                () -> addColumn("blocked", "int", true, null),
                 () -> addColumns(
                         new String[]{"blocked_multi"}, new String[]{"int"}, new String[]{null},
                         new Boolean[]{true}));
@@ -88,8 +86,8 @@ class AddColumnSettingsTest extends SingleTableTest {
      */
     @Test
     void addColumnRejectsNullArguments() {
-        assertDomainViolation(() -> addColumn(null, "text", null, true));
-        assertDomainViolation(() -> addColumn("note", null, null, true));
+        assertDomainViolation(() -> addColumn(null, "text", true, null));
+        assertDomainViolation(() -> addColumn("note", null, true, null));
         assertDomainViolation(() -> addColumn("note", "text", null, null));
     }
 
@@ -117,7 +115,7 @@ class AddColumnSettingsTest extends SingleTableTest {
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "second"));
     }
 
-    private void addColumn(String column, String type, String defaultValue, Boolean nullable) {
+    private void addColumn(String column, String type, Boolean nullable, String defaultValue) {
         Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, type, nullable, defaultValue);
     }
 

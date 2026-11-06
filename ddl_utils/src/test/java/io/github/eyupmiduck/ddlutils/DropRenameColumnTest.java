@@ -73,6 +73,8 @@ class DropRenameColumnTest extends SingleTableTest {
         assertTrue(failure.getMessage().contains("old_name"),
                 () -> "the error should name the duplicate: " + failure.getMessage());
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -87,6 +89,7 @@ class DropRenameColumnTest extends SingleTableTest {
                 new String[]{base + "x", base + "y"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
 
     /**
@@ -97,6 +100,10 @@ class DropRenameColumnTest extends SingleTableTest {
     void dropColumnsRejectsNullArrayAndElements() {
         assertDomainViolation(() -> dropColumns(null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> dropColumns(new String[]{null}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "id"));
     }
 
     /**

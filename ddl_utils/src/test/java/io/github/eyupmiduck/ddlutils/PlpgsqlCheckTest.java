@@ -12,7 +12,7 @@ import java.util.List;
  *
  * <p>The extension is compiled into the custom image and installed into the
  * template database, so each cloned test database (and the dev database, via
- * {@code docker/postgres/roles.sql}) has it.
+ * {@code scripts/postgres/roles.sql}) has it.
  */
 class PlpgsqlCheckTest extends PlpgsqlCheckContract {
 

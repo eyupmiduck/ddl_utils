@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class SetNotNullSettingsTest extends SingleTableTest {
 
     SetNotNullSettingsTest() {
-        super("set_not_null_settings_target", "id int, note text", true);
+        super("set_not_null_settings_target", "id int, note text");
     }
 
     /**

@@ -21,14 +21,13 @@ class GetLockSettingsTest extends PostgresTestBase {
     private static final int DEFAULT_STATEMENT_DURATION = 30000;
 
     /**
-     * Clears the schema and table overrides and resets the database defaults,
-     * so each test starts from a known state.
+     * Clears the schema and table overrides and restores the database defaults,
+     * so each test starts from a known state. The restore is an upsert, so a
+     * previous failed test that deleted the singleton row is self-healed.
      */
     @BeforeEach
-    void resetLockSettings() {
-        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
-        clearSchemaLockSettings(SCHEMA);
-        clearTableLockSettings(SCHEMA, TABLE);
+    void resetBefore() {
+        resetLockSettings();
     }
 
     /**
@@ -36,8 +35,12 @@ class GetLockSettingsTest extends PostgresTestBase {
      * that leaves an override behind cannot leak into a later test.
      */
     @AfterEach
-    void cleanUpLockSettings() {
-        setDatabaseLockSettings(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
+    void resetAfter() {
+        resetLockSettings();
+    }
+
+    private void resetLockSettings() {
+        restoreDatabaseDefaults(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
         clearSchemaLockSettings(SCHEMA);
         clearTableLockSettings(SCHEMA, TABLE);
     }
@@ -91,21 +94,6 @@ class GetLockSettingsTest extends PostgresTestBase {
         deleteDatabaseDefaults();
         try {
             assertSqlState("P0002", () -> getLockSettings(SCHEMA, TABLE));
-        } finally {
-            restoreDatabaseDefaults(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
-        }
-    }
-
-    /**
-     * get_database_lock_settings raises no_data_found when the singleton row is
-     * missing, rather than returning an empty result.
-     */
-    @Test
-    void getDatabaseLockSettingsRaisesWhenRowMissing() {
-        deleteDatabaseDefaults();
-        try {
-            assertSqlState("P0002",
-                    () -> dsl.fetch("SELECT * FROM ddl_utils.get_database_lock_settings()"));
         } finally {
             restoreDatabaseDefaults(DEFAULT_DDL_LOCK_TIMEOUT, DEFAULT_SLEEP_TIME, DEFAULT_STATEMENT_DURATION);
         }

@@ -3,6 +3,9 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Verifies {@code ddl_utils_lib.set_not_null}: it builds an
  * {@code ALTER COLUMN ... SET NOT NULL} fragment and applies it through
@@ -48,6 +51,8 @@ class SetNotNullTest extends SingleTableTest {
         assertSqlState("23502", () -> setNotNull("note"));
 
         assertNullable(PUBLIC_SCHEMA, target(), "note");
+        assertEquals(1, dsl.fetchOne("SELECT count(*)::int FROM " + PUBLIC_SCHEMA + "." + target())
+                .get(0, Integer.class));
     }
 
     /**
@@ -65,6 +70,34 @@ class SetNotNullTest extends SingleTableTest {
         setNotNull("note");
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertTrue(constraintExists(PUBLIC_SCHEMA, target(), "note_nn"),
+                "set_not_null must not drop the caller's valid CHECK constraint");
+    }
+
+    /**
+     * An identifier that needs quoting is emitted with %I and the requested
+     * column, not a truncated or lowercased name, is made NOT NULL.
+     */
+    @Test
+    void setsNotNullOnQuotedIdentifier() {
+        String column = "Mixed Name";
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN \"" + column + "\" text");
+
+        setNotNull(column);
+
+        assertNotNullable(PUBLIC_SCHEMA, target(), column);
+    }
+
+    /**
+     * The non_null_text domain rejects a blank column name and the
+     * non_negative_integer domain rejects negative settings, both with 23514.
+     */
+    @Test
+    void rejectsBlankAndNegativeArguments() {
+        assertDomainViolation(() -> setNotNull("   "));
+        assertDomainViolation(() -> setNotNull("note", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setNotNull("note", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> setNotNull("note", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
     }
 
     /**

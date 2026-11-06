@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SetColumnAttributeSettingsTest extends SingleTableTest {
 
     SetColumnAttributeSettingsTest() {
-        super("set_column_attribute_settings_target", "id int, note text", true);
+        super("set_column_attribute_settings_target", "id int, note text");
     }
 
     /**

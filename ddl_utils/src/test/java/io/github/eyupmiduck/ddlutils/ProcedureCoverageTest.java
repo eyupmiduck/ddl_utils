@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,6 +42,7 @@ class ProcedureCoverageTest extends PostgresTestBase {
      */
     @Test
     void plpgsqlCheckReportsBrokenProcedure() throws Exception {
+        dsl.execute("DROP PROCEDURE IF EXISTS " + PUBLIC_SCHEMA + ".broken_procedure_probe()");
         dsl.execute("CREATE OR REPLACE PROCEDURE " + PUBLIC_SCHEMA + ".broken_procedure_probe()"
                 + " LANGUAGE plpgsql AS $$\n"
                 + "DECLARE l_x int;\n"
@@ -53,14 +55,21 @@ class ProcedureCoverageTest extends PostgresTestBase {
                     PlpgsqlCheck.findFindings(owner, List.of(PUBLIC_SCHEMA));
 
             PlpgsqlCheck.Finding broken = findings.stream()
-                    .filter(finding -> "broken_procedure_probe".equals(finding.function()))
+                    .filter(finding -> finding.function() != null
+                            && finding.function().contains("broken_procedure_probe"))
                     .findFirst()
                     .orElseThrow(() -> new AssertionError(
                             "no plpgsql_check finding for the deliberately broken procedure; findings: " + findings));
-            assertTrue(broken.message().contains("nonexistent_col"),
-                    () -> "the finding should name the missing column: " + broken.message());
+            String message = broken.message();
+            assertNotNull(message, "the finding must carry a message");
+            assertTrue(message.contains("nonexistent_col"),
+                    () -> "the finding should name the missing column: " + message);
         } finally {
-            dsl.execute("DROP PROCEDURE IF EXISTS " + PUBLIC_SCHEMA + ".broken_procedure_probe()");
+            try {
+                dsl.execute("DROP PROCEDURE IF EXISTS " + PUBLIC_SCHEMA + ".broken_procedure_probe()");
+            } catch (RuntimeException ignored) {
+                // Do not let a cleanup failure replace the primary assertion.
+            }
         }
     }
 }

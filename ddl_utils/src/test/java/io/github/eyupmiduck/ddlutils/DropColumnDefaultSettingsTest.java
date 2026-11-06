@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class DropColumnDefaultSettingsTest extends SingleTableTest {
 
     DropColumnDefaultSettingsTest() {
-        super("drop_column_default_settings_target", "id int, note text DEFAULT 'none'", true);
+        super("drop_column_default_settings_target", "id int, note text DEFAULT 'none'");
     }
 
     /**

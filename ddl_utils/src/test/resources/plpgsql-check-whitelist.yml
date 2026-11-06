@@ -21,8 +21,10 @@
   message: routine is marked as IMMUTABLE, but expression is STABLE
   reason: >-
     quote_identifiers performs no database access; it only validates and
-    formats its argument with unnest/format/string_agg, all immutable.
-    plpgsql_check cannot prove the aggregate subquery immutable.
+    formats its argument with unnest/format/string_agg. format() is STABLE
+    (it invokes type output functions), which is why plpgsql_check reports the
+    STABLE expression; the routine is intentionally kept IMMUTABLE, and the
+    aggregate subquery is what plpgsql_check cannot prove immutable.
 
 - schema: ddl_utils_lib
   function: assert_one_based

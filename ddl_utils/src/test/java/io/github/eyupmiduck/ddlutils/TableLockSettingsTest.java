@@ -78,6 +78,10 @@ class TableLockSettingsTest extends PostgresTestBase {
      */
     @Test
     void callerCannotWriteTableLockSettings() {
+        // Positive control: the caller can still read the table; the failures
+        // below are about write privilege, not a total lack of access.
+        assertDoesNotThrow(() -> dsl.fetch("SELECT * FROM ddl_utils.table_lock_settings"));
+
         assertSqlState("42501", () -> dsl.execute(
                 "UPDATE ddl_utils.table_lock_settings SET sleep_time = 1 WHERE schema_name = 'x'"));
         assertSqlState("42501", () -> dsl.execute("""
@@ -102,7 +106,9 @@ class TableLockSettingsTest extends PostgresTestBase {
         clearTableLockSettings(SCHEMA, CLEAR_TABLE);
 
         assertNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
-        assertNotNull(getTableLockSettings(SCHEMA, KEEP_TABLE));
+        Record kept = getTableLockSettings(SCHEMA, KEEP_TABLE);
+        assertNotNull(kept);
+        assertLockSettings(kept, 200, 300, 40);
 
         clearTableLockSettings(SCHEMA, KEEP_TABLE);
         assertDoesNotThrow(() -> clearTableLockSettings(SCHEMA, CLEAR_TABLE));
@@ -120,8 +126,9 @@ class TableLockSettingsTest extends PostgresTestBase {
         clearTableLockSettings(SCHEMA, CLEAR_TABLE);
 
         assertNull(getTableLockSettings(SCHEMA, CLEAR_TABLE));
-        assertNotNull(getTableLockSettings(OTHER_SCHEMA, CLEAR_TABLE),
-                "a same-named table in another schema must keep its settings");
+        Record other = getTableLockSettings(OTHER_SCHEMA, CLEAR_TABLE);
+        assertNotNull(other, "a same-named table in another schema must keep its settings");
+        assertLockSettings(other, 444, 555, 66);
     }
 
     /**

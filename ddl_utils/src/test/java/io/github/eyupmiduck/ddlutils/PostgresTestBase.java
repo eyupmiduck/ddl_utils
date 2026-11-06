@@ -43,10 +43,12 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     protected static final int STATEMENT_DURATION = 5000;
 
     /**
-     * The schema Liquibase keeps its tracking tables in, so they stay out of the
-     * application schemas.
+     * The application schemas managed by this changelog, shared by the tests that
+     * enumerate them.
      */
-    static final String LIQUIBASE_SCHEMA = "liquibase";
+    static final String DDL_UTILS_SCHEMA = "ddl_utils";
+    static final String DDL_UTILS_LIB_SCHEMA = "ddl_utils_lib";
+
     static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
     static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
 

@@ -103,14 +103,25 @@ class SetColumnAttributeTest extends SingleTableTest {
      */
     @Test
     void rejectsNullArguments() {
+        assertDomainViolation(() -> setStorage(null, "EXTERNAL"));
+        assertDomainViolation(() -> setStorage("   ", "EXTERNAL"));
         assertDomainViolation(() -> setStorage("note", null));
         assertDomainViolation(() -> setStorage("note", "EXTERNAL", null, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> setStorage("note", "EXTERNAL", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
+
+        assertDomainViolation(() -> setCompression(null, "pglz"));
+        assertDomainViolation(() -> setCompression("   ", "pglz"));
         assertDomainViolation(() -> setCompression("note", null));
         assertDomainViolation(() -> setCompression("note", "pglz", null, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+        assertDomainViolation(() -> setCompression("note", "pglz", -1, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, -1, STATEMENT_DURATION));
+        assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
     }
 
     private void setStorage(String column, String storage) {

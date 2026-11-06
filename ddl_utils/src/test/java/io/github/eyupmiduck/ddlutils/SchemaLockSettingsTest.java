@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import org.jooq.Record;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -21,6 +22,16 @@ class SchemaLockSettingsTest extends PostgresTestBase {
 
     private static final String SCHEMA = "lock_settings_test_schema";
     private static final String CLEAR_SCHEMA = "lock_settings_clear_schema";
+
+    /**
+     * Removes the rows this class writes, so no test depends on another test's
+     * writes or on JUnit's method order.
+     */
+    @AfterEach
+    void clearSchemaRows() {
+        clearSchemaLockSettings(SCHEMA);
+        clearSchemaLockSettings(CLEAR_SCHEMA);
+    }
 
     /**
      * get_schema_lock_settings returns no row for a schema that has no settings.
@@ -70,15 +81,15 @@ class SchemaLockSettingsTest extends PostgresTestBase {
     @Test
     void concurrentFirstWritesLeaveAConsistentRow() throws Exception {
         int writers = 4;
-        ExecutorService pool = Executors.newFixedThreadPool(writers);
         CyclicBarrier barrier = new CyclicBarrier(writers);
         List<Future<?>> futures = new ArrayList<>();
-        Record row = null;
-        try {
+        Record row;
+        clearSchemaLockSettings(SCHEMA);
+        try (ExecutorService pool = Executors.newFixedThreadPool(writers)) {
             for (int i = 0; i < writers; i++) {
                 int offset = i;
                 futures.add(pool.submit(() -> {
-                    barrier.await();
+                    barrier.await(10, TimeUnit.SECONDS);
                     try (Connection connection = openTestConnection();
                          PreparedStatement statement = connection.prepareStatement(
                                  "SELECT ddl_utils.set_schema_lock_settings(?, ?, ?, ?)")) {
@@ -95,9 +106,6 @@ class SchemaLockSettingsTest extends PostgresTestBase {
                 future.get(30, TimeUnit.SECONDS);
             }
             row = getSchemaLockSettings(SCHEMA);
-        } finally {
-            pool.shutdownNow();
-            clearSchemaLockSettings(SCHEMA);
         }
 
         assertNotNull(row);

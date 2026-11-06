@@ -27,11 +27,32 @@ class ConstraintSettingsTest extends PostgresTestBase {
 
     @AfterEach
     void cleanUp() {
+        RuntimeException failure = null;
         try {
             clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
+        } catch (RuntimeException e) {
+            failure = e;
+        }
+        try {
             dropTestTable(TARGET);
+        } catch (RuntimeException e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+            } else {
+                failure = e;
+            }
+        }
+        try {
             dropTestTable(REFERENCED);
+        } catch (RuntimeException e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+            } else {
+                failure = e;
+            }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 
