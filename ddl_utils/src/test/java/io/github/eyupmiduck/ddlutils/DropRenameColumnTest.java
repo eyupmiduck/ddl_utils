@@ -121,6 +121,21 @@ class DropRenameColumnTest extends SingleTableTest {
     }
 
     /**
+     * rename_column rejects an identifier over PostgreSQL's 63-byte limit
+     * before the ALTER, leaving the table unchanged.
+     */
+    @Test
+    void renameColumnRejectsOverLongName() {
+        String overLong = "c".repeat(64);
+
+        assertSqlState("22023", () -> renameColumn("old_name", overLong,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), overLong));
+    }
+
+    /**
      * Null identifiers are rejected through the domains.
      */
     @Test
