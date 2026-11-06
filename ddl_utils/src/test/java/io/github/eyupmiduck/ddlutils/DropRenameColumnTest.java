@@ -1,9 +1,12 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -58,14 +61,17 @@ class DropRenameColumnTest extends SingleTableTest {
 
     /**
      * drop_columns rejects duplicate column names with an invalid-parameter
-     * error, leaving the table unchanged.
+     * error that names the duplicate, leaving the table unchanged.
      */
     @Test
     void dropColumnsRejectsDuplicateNames() {
-        assertSqlState("22023",
+        DataAccessException failure = assertThrows(DataAccessException.class,
                 () -> dropColumns(new String[]{"old_name", "old_name"},
                         DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("old_name"),
+                () -> "the error should name the duplicate: " + failure.getMessage());
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
     }
 

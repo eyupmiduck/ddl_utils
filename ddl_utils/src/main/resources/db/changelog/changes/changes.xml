@@ -54,6 +54,16 @@
         </rollback>
     </changeSet>
 
+    <!-- The non_null_text domain trims only ASCII whitespace, so its comment
+         must not promise a broader "not blank" guarantee. -->
+    <changeSet id="007-update-non-null-text-comment" author="lee.horner" dbms="postgresql">
+        <sqlFile path="sql_changes/007-update-non-null-text-comment.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/007-update-non-null-text-comment-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- Stored routines: one changeset each, one file per routine. -->
     <include file="functions.xml" relativeToChangelogFile="true"/>
     <include file="procedures.xml" relativeToChangelogFile="true"/>

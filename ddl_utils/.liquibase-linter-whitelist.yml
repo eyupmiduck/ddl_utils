@@ -8,7 +8,7 @@
 #
 # Example:
 #
-#   - rule: changeset-single-statement
+#   - rule: changeset-prefer-single-statement
 #     changeset: 007-some-index
 #     statement: CREATE INDEX CONCURRENTLY
 #     reason: intentional, the statement list is single after splitting
