@@ -4,6 +4,7 @@ import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Verifies the lock-aware column-attribute wrappers
@@ -22,6 +23,9 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      */
     @Test
     void setColumnStorageUsesDatabaseDefaults() {
+        assertNull(getTableLockSettings(PUBLIC_SCHEMA, target()),
+                "the test must start with no table-level override");
+
         Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL");
 
         assertEquals("external", columnStorage(PUBLIC_SCHEMA, target(), "note"));
@@ -32,6 +36,9 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      */
     @Test
     void setColumnCompressionUsesDatabaseDefaults() {
+        assertNull(getTableLockSettings(PUBLIC_SCHEMA, target()),
+                "the test must start with no table-level override");
+
         Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz");
 
         assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, target(), "note"));
@@ -45,10 +52,12 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      */
     @Test
     void setColumnStorageUsesTableLockSettings() throws Exception {
+        String before = columnStorage(PUBLIC_SCHEMA, target(), "note");
+
         assertUsesTableLockSettings(
                 () -> Routines.setColumnStorage(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "EXTERNAL"));
 
-        assertEquals("extended", columnStorage(PUBLIC_SCHEMA, target(), "note"),
+        assertEquals(before, columnStorage(PUBLIC_SCHEMA, target(), "note"),
                 "a call that gave up must not have changed the storage");
     }
 
@@ -58,10 +67,12 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
      */
     @Test
     void setColumnCompressionUsesTableLockSettings() throws Exception {
+        String before = columnCompression(PUBLIC_SCHEMA, target(), "note");
+
         assertUsesTableLockSettings(
                 () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz"));
 
-        assertEquals("default", columnCompression(PUBLIC_SCHEMA, target(), "note"),
+        assertEquals(before, columnCompression(PUBLIC_SCHEMA, target(), "note"),
                 "a call that gave up must not have changed the compression");
     }
 

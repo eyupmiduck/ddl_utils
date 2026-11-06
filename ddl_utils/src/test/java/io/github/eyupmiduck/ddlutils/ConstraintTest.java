@@ -166,6 +166,24 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
+     * The FK arguments reject null/empty arrays through their domains and a
+     * missing referenced table with undefined_table.
+     */
+    @Test
+    void rejectsNullEmptyAndMissingForeignKeyInputs() {
+        assertDomainViolation(() -> addForeignKey(
+                "fk_parent", null, REFERENCED, new String[]{"id"}));
+        assertDomainViolation(() -> addForeignKey(
+                "fk_parent", new String[0], REFERENCED, new String[]{"id"}));
+        assertDomainViolation(() -> addForeignKey(
+                "fk_parent", new String[]{"parent_id"}, REFERENCED, null));
+        assertDomainViolation(() -> addForeignKey(
+                "fk_parent", new String[]{"parent_id"}, REFERENCED, new String[0]));
+        assertSqlState("42P01", () -> addForeignKey(
+                "fk_parent", new String[]{"parent_id"}, "no_such_table", new String[]{"id"}));
+    }
+
+    /**
      * drop_constraint removes the constraint and a wrong name fails.
      */
     @Test
@@ -189,6 +207,37 @@ class ConstraintTest extends PostgresTestBase {
 
         assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "old_name"));
         assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"));
+
+        assertSqlState("42704", () -> renameConstraint("missing", "other"));
+        addCheckConstraint("other_name", "value > 0");
+        assertSqlState("42710", () -> renameConstraint("new_name", "other_name"));
+    }
+
+    /**
+     * validate_constraint reports a missing constraint and handles a constraint
+     * name that requires %I quoting.
+     */
+    @Test
+    void validateReportsMissingAndQuotedConstraintNames() {
+        assertSqlState("42704", () -> validateConstraint("missing"));
+
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (value) VALUES (1)");
+        addCheckConstraint("Mixed Constraint", "value > 0");
+        validateConstraint("Mixed Constraint");
+        assertValidated(PUBLIC_SCHEMA, TARGET, "Mixed Constraint");
+    }
+
+    /**
+     * The explicit-settings helper respects its lock budget under contention and
+     * leaves no constraint behind.
+     */
+    @Test
+    void addCheckConstraintGivesUpWhileTableLocked() throws Exception {
+        assertGivesUpWhileTableLocked(TARGET, 2000,
+                () -> Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                        "blocked", "value > 0", 100, 100, 300));
+
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "blocked"));
     }
 
     /**

@@ -134,8 +134,8 @@ class UsingIndexConstraintTest extends SingleTableTest {
                 JOIN pg_index i ON i.indexrelid = con.conindid
                 JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY (i.indkey)
                 WHERE con.conname = ?
-                    AND con.connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                """, constraint, PUBLIC_SCHEMA).getValues(0, String.class);
+                    AND con.conrelid = pg_catalog.format('%I.%I', ?, ?)::regclass
+                """, constraint, PUBLIC_SCHEMA, target()).getValues(0, String.class);
         assertEquals(List.of(column), columns);
     }
 

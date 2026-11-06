@@ -91,6 +91,7 @@ class ConstraintSettingsTest extends PostgresTestBase {
     void dropAndRenameUseDatabaseDefaults() {
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "value > 0");
         Routines.renameConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "old_name", "new_name");
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "old_name"));
         assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, "new_name"));
 
         Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "new_name");
