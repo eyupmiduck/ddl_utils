@@ -2,7 +2,7 @@
 <databaseChangeLog
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.22.xsd">
 
     <!-- One changeset per stored procedure, mirroring functions.xml. Each
          procedure lives in its own file under procedures/<schema>/ and is added
@@ -15,7 +15,9 @@
          signature: changing a parameter name or type aborts the deploy or
          silently leaves the old overload behind. When a signature changes, add
          an explicit DROP PROCEDURE IF EXISTS <old signature>; in that
-         procedure's changeset.
+         procedure's changeset. RoutineSignatureTest fails the build if a
+         routine name ends up with more than one signature unless the overload
+         is explicitly allow-listed.
 
          A procedure commits between its ALTER TABLE steps, so a CALL must run
          in autocommit (inside a client transaction block PostgreSQL raises

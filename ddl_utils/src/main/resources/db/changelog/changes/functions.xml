@@ -2,7 +2,7 @@
 <databaseChangeLog
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.22.xsd">
 
     <!-- One changeset per stored function. Each function lives in its own file
          under functions/<schema>/ and is added with createProcedure (Liquibase
@@ -15,6 +15,8 @@
          signature changes, add an explicit
          `DROP FUNCTION IF EXISTS <old signature>;` (for example another sqlFile
          in that routine's changeset) so the deprecated signature is removed.
+         RoutineSignatureTest fails the build if a routine name ends up with
+         more than one signature unless the overload is explicitly allow-listed.
 
          The order of the changesets is not significant (PL/pgSQL resolves called
          routines at first execution); most pairs list the lib helper before the
