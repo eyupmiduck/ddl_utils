@@ -1,3 +1,11 @@
+-- Caller grants for every routine and domain.
+--
+-- This file is applied by a runOnChange changeset, so it is add-only: removing
+-- a GRANT line does not revoke the privilege. Express every removal as an
+-- explicit REVOKE (as done for PUBLIC) and keep the statements idempotent.
+--
+-- Keep this file free of dollar-quoted blocks: Liquibase's default sqlFile
+-- splitter is not dollar-quote aware and would split at an inner semicolon.
 GRANT USAGE ON SCHEMA ddl_utils TO ddl_utils_caller;
 GRANT USAGE ON SCHEMA ddl_utils_lib TO ddl_utils_caller;
 GRANT SELECT ON ddl_utils.database_lock_settings TO ddl_utils_caller;

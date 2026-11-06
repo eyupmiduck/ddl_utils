@@ -64,8 +64,15 @@
     <include file="triggers.xml" relativeToChangelogFile="true"/>
 
     <!-- A single, re-runnable changeset for all caller grants. runOnChange
-         makes Liquibase re-apply it whenever this SQL changes, so new grants
-         reach existing databases. Keep the statements idempotent. -->
+         re-applies it whenever the SQL changes, so new grants reach existing
+         databases. It is add-only: a GRANT removed from the file is not
+         reverted, so removal must always be an explicit REVOKE. Keep the
+         statements idempotent. Keep this changeset physically after every
+         object-creating include (functions.xml, procedures.xml, triggers.xml):
+         Liquibase orders by file position, not by the "999" id, so otherwise a
+         newly created routine keeps PostgreSQL's default EXECUTE TO PUBLIC.
+         The SQL file must stay free of dollar-quoted blocks because the default
+         sqlFile splitter is not dollar-quote aware. -->
     <changeSet id="999-grant-privileges" author="lee.horner" dbms="postgresql" runOnChange="true">
         <sqlFile path="sql_changes/999-grant-privileges.sql" relativeToChangelogFile="true"/>
         <rollback>
