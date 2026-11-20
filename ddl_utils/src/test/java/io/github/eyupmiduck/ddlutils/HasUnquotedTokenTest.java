@@ -79,6 +79,79 @@ class HasUnquotedTokenTest extends PostgresTestBase {
         assertSqlState("22023", () -> hasUnquotedToken("ADD COLUMN x int", new String[]{" "}, false));
     }
 
+    /**
+     * Any SQL whitespace makes a token blank, not just a space.
+     */
+    @Test
+    void rejectsWhitespaceOnlyTokens() {
+        for (String token : new String[]{"\t", "\n", "\r", "\f", "\u000B", " \t\n"}) {
+            assertSqlState("22023", () -> hasUnquotedToken("ADD COLUMN x int", new String[]{token}, false));
+        }
+    }
+
+    /**
+     * A dollar-quote tag may contain non-ASCII letters, so a semicolon inside
+     * the literal is data rather than a token.
+     */
+    @Test
+    void returnsFalseForNonAsciiDollarQuoteTag() {
+        assertFalse(hasUnquotedToken("ADD COLUMN x text DEFAULT $café$;$café$", DDL_TOKENS, false));
+        assertFalse(hasUnquotedToken("ADD COLUMN x text DEFAULT $é$;$é$", DDL_TOKENS, false));
+    }
+
+    /**
+     * A dollar sign and a non-ASCII letter continue an identifier, so the e/E
+     * before a quote is not an E-string prefix: PostgreSQL sees an identifier
+     * followed by a string and the backslash does not escape the closing quote.
+     */
+    @Test
+    void doesNotTreatIdentifierSuffixAsEStringPrefix() {
+        assertTrue(hasUnquotedToken(
+                "ADD COLUMN x int DEFAULT foo$e'\\'; DROP TABLE victim", DDL_TOKENS, false));
+        assertTrue(hasUnquotedToken(
+                "ADD COLUMN x int DEFAULT xée'\\'; DROP TABLE victim", DDL_TOKENS, false));
+    }
+
+    /**
+     * Block comments nest, so a token inside the outer comment is skipped.
+     */
+    @Test
+    void returnsFalseForNestedBlockComment() {
+        assertFalse(hasUnquotedToken("ADD COLUMN x int /* /* ; */ */", new String[]{";"}, false));
+    }
+
+    /**
+     * A bare carriage return ends a line comment, so a following token is in
+     * code state.
+     */
+    @Test
+    void detectsTokenAfterBareCarriageReturn() {
+        assertTrue(hasUnquotedToken("ADD COLUMN x int -- a\r; DROP TABLE victim", DDL_TOKENS, false));
+    }
+
+    /**
+     * A line comment running to the end of the value is valid and reports no
+     * token; it is not an unterminated construct.
+     */
+    @Test
+    void acceptsLineCommentAtEndOfValue() {
+        assertFalse(hasUnquotedToken("ADD COLUMN x int -- trailing", new String[]{";"}, false));
+    }
+
+    /**
+     * Malformed input is classified conservatively: a stray closer keeps the
+     * current depth, and an unterminated construct swallows the rest of the
+     * value. The SQL is invalid and fails when executed, so no token is reported.
+     */
+    @Test
+    void classifiesMalformedInputConservatively() {
+        assertTrue(hasUnquotedToken("f(a) ; )", new String[]{";"}, false));
+        assertFalse(hasUnquotedToken("f(a ; )", new String[]{";"}, true));
+        assertFalse(hasUnquotedToken("a ';", new String[]{";"}, false));
+        assertFalse(hasUnquotedToken("a /* ;", new String[]{";"}, false));
+        assertFalse(hasUnquotedToken("a $q$;", new String[]{";"}, false));
+    }
+
     private Boolean hasUnquotedToken(String value, String[] tokens, boolean topLevelOnly) {
         return dsl.fetchOne("SELECT ddl_utils_lib.has_unquoted_token(?, ?, ?)",
                         (Object) value, tokens, topLevelOnly)
