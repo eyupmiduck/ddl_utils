@@ -214,6 +214,38 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
+     * Constraint names longer than NAMEDATALEN - 1 bytes are rejected instead of
+     * being silently truncated by PostgreSQL. Multibyte names are measured in
+     * bytes, not characters.
+     */
+    @Test
+    void rejectsOverLongConstraintNames() {
+        String tooLong = "c".repeat(64);
+        String multibyte = "\u00E9".repeat(32); // 64 bytes, 32 characters
+
+        assertSqlState("22023", () -> addCheckConstraint(tooLong, "value > 0"));
+        assertSqlState("22023",
+                () -> addForeignKey(tooLong, new String[]{"parent_id"}, REFERENCED, new String[]{"id"}));
+
+        addCheckConstraint("short_name", "value > 0");
+        assertSqlState("22023", () -> renameConstraint("short_name", tooLong));
+        assertSqlState("22023", () -> renameConstraint(tooLong, "other_name"));
+        assertSqlState("22023", () -> renameConstraint("short_name", multibyte));
+    }
+
+    /**
+     * A constraint name of exactly 63 bytes (NAMEDATALEN - 1) is accepted.
+     */
+    @Test
+    void acceptsConstraintNameAtTheLimit() {
+        String name = "c".repeat(63);
+
+        addCheckConstraint(name, "value > 0");
+
+        assertTrue(constraintExists(PUBLIC_SCHEMA, TARGET, name));
+    }
+
+    /**
      * validate_constraint reports a missing constraint and handles a constraint
      * name that requires %I quoting.
      */

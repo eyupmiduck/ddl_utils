@@ -13,6 +13,15 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_check_constraint(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an identifier to NAMEDATALEN - 1 bytes with only a
+    -- NOTICE, so an over-long constraint name would be added under a truncated
+    -- name and a later validate/drop by the requested name would fail.
+    IF pg_catalog.octet_length(i_constraint_name) > 63 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_check_constraint: the constraint name must be at most 63 bytes'
+            USING ERRCODE = '22023';
+    END IF;
+
     -- The expression is arbitrary SQL, so reject only a top-level comma that
     -- could append another ALTER TABLE action. NOT VALID makes the constraint
     -- metadata-only (no scan); call validate_constraint separately to enforce
@@ -37,4 +46,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.add_check_constraint IS
-    'Adds a CHECK constraint as NOT VALID, taking the lock settings explicitly.';
+    'Adds a CHECK constraint as NOT VALID, taking the lock settings explicitly. '
+        'The constraint name must be at most 63 bytes.';

@@ -13,6 +13,16 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.rename_constraint(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an identifier to NAMEDATALEN - 1 bytes with only a
+    -- NOTICE, so a rename to an over-long name would appear to succeed while
+    -- later references to the full name fail.
+    IF pg_catalog.octet_length(i_constraint_name) > 63
+        OR pg_catalog.octet_length(i_new_constraint_name) > 63 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.rename_constraint: an identifier must be at most 63 bytes'
+            USING ERRCODE = '22023';
+    END IF;
+
     -- Metadata-only for the data, but it still requires an ACCESS EXCLUSIVE
     -- lock on the table (hence the alter_table retry). Both names are
     -- identifiers, so they are quoted with %I.
@@ -32,4 +42,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.rename_constraint IS
-    'Renames a constraint, taking the lock settings explicitly.';
+    'Renames a constraint, taking the lock settings explicitly. Both identifiers '
+        'must be at most 63 bytes.';

@@ -19,6 +19,15 @@ DECLARE
     l_columns            text;
     l_referenced_columns text;
 BEGIN
+    -- PostgreSQL truncates an identifier to NAMEDATALEN - 1 bytes with only a
+    -- NOTICE, so an over-long constraint name would be added under a truncated
+    -- name and a later validate/drop by the requested name would fail.
+    IF pg_catalog.octet_length(i_constraint_name) > 63 THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_foreign_key: the constraint name must be at most 63 bytes'
+            USING ERRCODE = '22023';
+    END IF;
+
     PERFORM ddl_utils_lib.assert_equal_cardinality(
             i_a => i_column_names,
             i_b => i_referenced_column_names,
@@ -61,4 +70,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.add_foreign_key IS
-    'Adds a foreign key as NOT VALID, taking the lock settings explicitly.';
+    'Adds a foreign key as NOT VALID, taking the lock settings explicitly. The '
+        'constraint name must be at most 63 bytes.';

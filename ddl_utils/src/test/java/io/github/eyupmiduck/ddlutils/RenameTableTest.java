@@ -91,6 +91,39 @@ class RenameTableTest extends PostgresTestBase {
     }
 
     /**
+     * A new name longer than NAMEDATALEN - 1 bytes is rejected instead of being
+     * silently truncated, and the lock settings stay with the original name.
+     */
+    @Test
+    void rejectsOverLongNewNameWithoutMovingSettings() {
+        setTableLockSettings(PUBLIC_SCHEMA, TARGET, 10, 20, 30);
+        String tooLong = "n".repeat(64);
+
+        assertSqlState("22023", () -> renameTable(TARGET, tooLong));
+        assertSqlState("22023", () -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, tooLong));
+
+        assertTrue(tableExists(TARGET), "a rejected rename must leave the table name in place");
+        Record settings = getTableLockSettings(PUBLIC_SCHEMA, TARGET);
+        assertNotNull(settings, "the original name must keep its settings");
+        assertLockSettings(settings, 10, 20, 30);
+        assertNull(getTableLockSettings(PUBLIC_SCHEMA, tooLong));
+    }
+
+    /**
+     * A qualified new name is rejected instead of creating a table literally
+     * named schema.table in the original schema.
+     */
+    @Test
+    void rejectsQualifiedNewName() {
+        assertSqlState("22023", () -> renameTable(TARGET, "other_schema." + NEW_NAME));
+        assertTrue(tableExists(TARGET), "a rejected rename must leave the table name in place");
+
+        assertSqlState("22023", () -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, "other_schema." + NEW_NAME));
+    }
+
+    /**
      * Rejects null arguments through their domains, including the schema and the
      * three lock settings on the generic helper.
      */
