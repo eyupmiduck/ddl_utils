@@ -150,8 +150,8 @@ the Liquibase CLI at `db.changelog-master.xml`.
 
 ### Prerequisites
 
-- PostgreSQL 16, 17, 18 or 19 (CI builds and tests all four; 19 is tested as
-  `19rc1` until its GA, and 17 is the default).
+- PostgreSQL 16, 17, 18 or 19 (CI builds and tests all four, and 17 is the
+  default).
 - Liquibase 5.0.x on your `PATH` (it needs Java 17+). Liquibase 5 ships without
   database drivers, so add the PostgreSQL driver once:
 
@@ -446,7 +446,7 @@ The `postgres.image` property is derived as
 `ddl-utils-postgres:${postgres.version}` and must be the custom image; the build
 rejects a stock `postgres` image at `validate` (it lacks the application roles
 and `plpgsql_check`). CI builds the custom image and runs the full build against
-PostgreSQL 16, 17, 18 and 19rc1 (see `.github/workflows/maven.yml`).
+PostgreSQL 16, 17, 18 and 19 (see `.github/workflows/maven.yml`).
 
 ## Changelog validation dependency
 

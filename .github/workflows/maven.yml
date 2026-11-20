@@ -22,8 +22,6 @@ jobs:
     uses: eyupmiduck/workflow_library/.github/workflows/maven.yml@593fcd4bd1fe5a5cb9921360d7365747fc249b62 # main, verified 2026-11-06
     with:
       java-version: "25"
-      # 19 is a release candidate until its scheduled GA on 2026-11-19; the
-      # tag is explicit so the leg tests that pre-release.
-      postgres-versions: '["postgres:16-alpine","postgres:17-alpine","postgres:18-alpine","postgres:19rc1-alpine"]'
+      postgres-versions: '["postgres:16-alpine","postgres:17-alpine","postgres:18-alpine","postgres:19-alpine"]'
       project: ddl_utils
       maven-command: ./mvnw --batch-mode clean verify
