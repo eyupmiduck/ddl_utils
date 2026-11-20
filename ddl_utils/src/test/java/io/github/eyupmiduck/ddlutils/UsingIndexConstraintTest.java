@@ -2,6 +2,8 @@ package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
 import org.jooq.Record;
+import org.jooq.exception.DataAccessException;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -185,6 +187,126 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("c".repeat(64), "target_pk_idx"));
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", "i".repeat(64)));
+    }
+
+    /**
+     * A missing table is reported as a controlled undefined_table error rather
+     * than a raw ::regclass cast failure.
+     */
+    @Test
+    void rejectsMissingTable() {
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+
+        assertSqlState("42P01", () -> Routines.addUniqueConstraintUsingIndex(
+                dsl.configuration(), PUBLIC_SCHEMA, "using_index_missing_table", "uq", "target_pk_idx",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+    }
+
+    /**
+     * An index that exists but backs another table is reported as "not on
+     * table", not as an invalid unique index.
+     */
+    @Test
+    void rejectsIndexOnAnotherTable() {
+        dsl.execute("CREATE TABLE " + PUBLIC_SCHEMA + ".using_index_other (id int NOT NULL)");
+        try {
+            dsl.execute("CREATE UNIQUE INDEX using_index_other_idx ON "
+                    + PUBLIC_SCHEMA + ".using_index_other (id)");
+
+            DataAccessException failure = assertThrows(DataAccessException.class,
+                    () -> addUniqueConstraintUsingIndex("uq", "using_index_other_idx"));
+
+            assertEquals("42809", failure.sqlState());
+            assertTrue(failure.getMessage().contains("is not on table"),
+                    () -> "the message should name the wrong table: " + failure.getMessage());
+        } finally {
+            dsl.execute("DROP TABLE IF EXISTS " + PUBLIC_SCHEMA + ".using_index_other");
+        }
+    }
+
+    /**
+     * A non-table relation is reported as "is not a table" rather than as a
+     * missing/misconfigured index.
+     */
+    @Test
+    void rejectsNonTableRelation() {
+        dsl.execute("CREATE VIEW " + PUBLIC_SCHEMA + ".using_index_view AS SELECT 1 AS id");
+        try {
+            assertSqlState("42809", () -> Routines.addUniqueConstraintUsingIndex(
+                    dsl.configuration(), PUBLIC_SCHEMA, "using_index_view", "uq", "missing_idx",
+                    DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        } finally {
+            dsl.execute("DROP VIEW IF EXISTS " + PUBLIC_SCHEMA + ".using_index_view");
+        }
+    }
+
+    /**
+     * A pre-quoted index name is rejected: USING INDEX takes an unquoted
+     * identifier.
+     */
+    @Test
+    void rejectsPreQuotedIndexName() {
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+
+        assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", "\"target_pk_idx\""));
+    }
+
+    /**
+     * A partitioned index cannot be attached by PostgreSQL, so it is reported as
+     * unsupported instead of "index does not exist".
+     */
+    @Test
+    void rejectsPartitionedIndex() {
+        dsl.execute("CREATE TABLE " + PUBLIC_SCHEMA
+                + ".using_index_partitioned (id int NOT NULL) PARTITION BY RANGE (id)");
+        try {
+            dsl.execute("CREATE UNIQUE INDEX using_index_partitioned_idx ON "
+                    + PUBLIC_SCHEMA + ".using_index_partitioned (id)");
+
+            assertSqlState("0A000", () -> addUniqueConstraintUsingIndex(
+                    "uq", "using_index_partitioned_idx"));
+        } finally {
+            dsl.execute("DROP TABLE IF EXISTS " + PUBLIC_SCHEMA + ".using_index_partitioned");
+        }
+    }
+
+    /**
+     * Exactly 63 bytes (NAMEDATALEN - 1) is accepted for both the constraint and
+     * the index name.
+     */
+    @Test
+    void acceptsNamesAtTheLegalBoundary() {
+        dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+        String longIndex = "i".repeat(63);
+        dsl.execute("CREATE UNIQUE INDEX " + longIndex + " ON " + PUBLIC_SCHEMA + "." + target() + " (code)");
+
+        String constraint = "c".repeat(63);
+        addPrimaryKeyUsingIndex(constraint, "target_pk_idx");
+        assertEquals("p", constraintType(PUBLIC_SCHEMA, constraint));
+
+        addUniqueConstraintUsingIndex("target_code", longIndex);
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "target_code"));
+    }
+
+    /**
+     * On PostgreSQL 18+ a catalogued NOT NULL constraint can be NOT VALID while
+     * the column's attnotnull is already true; the primary-key attach must
+     * report that clearly instead of failing inside ALTER TABLE.
+     */
+    @Test
+    void rejectsUnvalidatedNotNullConstraint() {
+        Integer serverVersion = dsl.fetchOne("SELECT current_setting('server_version_num')::int")
+                .get(0, Integer.class);
+        Assumptions.assumeTrue(serverVersion != null && serverVersion >= 180000,
+                "NOT VALID NOT NULL constraints need PostgreSQL 18+");
+
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN note text");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target()
+                + " ADD CONSTRAINT target_note_nn NOT NULL note NOT VALID");
+        dsl.execute("CREATE UNIQUE INDEX target_note_idx ON " + PUBLIC_SCHEMA + "." + target() + " (note)");
+
+        assertSqlState("55000", () -> addPrimaryKeyUsingIndex("target_note_pk", "target_note_idx"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_note_pk"));
     }
 
     /**

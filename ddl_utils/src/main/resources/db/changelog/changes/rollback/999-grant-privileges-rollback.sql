@@ -615,6 +615,18 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.rename_table(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO public;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.validate_unique_index_for_attach(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM ddl_utils_caller;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.validate_unique_index_for_attach(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_unique_constraint_using_index(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

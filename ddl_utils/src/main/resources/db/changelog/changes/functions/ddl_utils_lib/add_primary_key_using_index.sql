@@ -13,54 +13,24 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.add_primary_key_using_index(
 AS
 $$
 BEGIN
-    -- The index name is emitted as a single %I identifier and resolved in the
-    -- table's schema; reject a qualified or pre-quoted name before building it.
-    IF pg_catalog.cardinality(pg_catalog.parse_ident(i_index_name)) <> 1
-        OR pg_catalog.strpos(i_index_name, '"') > 0 THEN
+    IF pg_catalog.octet_length(i_constraint_name) > 63 THEN
         RAISE EXCEPTION
-            'ddl_utils_lib.add_primary_key_using_index: i_index_name must be an unquoted, unqualified identifier'
+            'ddl_utils_lib.add_primary_key_using_index: the constraint name must be at most 63 bytes'
             USING ERRCODE = '22023';
     END IF;
 
-    IF pg_catalog.octet_length(i_constraint_name) > 63
-        OR pg_catalog.octet_length(i_index_name) > 63 THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.add_primary_key_using_index: a constraint or index name must be at most 63 bytes'
-            USING ERRCODE = '22023';
-    END IF;
-
-    IF NOT EXISTS (SELECT 1
-                   FROM pg_catalog.pg_class AS i
-                            JOIN pg_catalog.pg_namespace AS n ON n.oid = i.relnamespace
-                   WHERE n.nspname = i_schema_name
-                     AND i.relname = i_index_name
-                     AND i.relkind = 'i') THEN
-        RAISE EXCEPTION 'ddl_utils_lib.add_primary_key_using_index: index %.% does not exist',
-            i_schema_name, i_index_name
-            USING ERRCODE = '42704';
-    END IF;
+    PERFORM ddl_utils_lib.validate_unique_index_for_attach(
+            i_schema_name => i_schema_name,
+            i_table_name => i_table_name,
+            i_index_name => i_index_name,
+            i_context => 'ddl_utils_lib.add_primary_key_using_index');
 
     -- Attaching is metadata-only only when the index is valid, unique,
     -- non-partial and non-expression, and every key column is already NOT NULL.
-    -- Otherwise the ALTER scans the table while holding ACCESS EXCLUSIVE, which
-    -- the lock settings do not bound.
-    IF NOT EXISTS (SELECT 1
-                   FROM pg_catalog.pg_class AS i
-                            JOIN pg_catalog.pg_namespace AS n ON n.oid = i.relnamespace
-                            JOIN pg_catalog.pg_index AS ix ON ix.indexrelid = i.oid
-                   WHERE n.nspname = i_schema_name
-                     AND i.relname = i_index_name
-                     AND ix.indrelid = pg_catalog.format('%I.%I', i_schema_name, i_table_name)::regclass
-                     AND ix.indisunique
-                     AND ix.indisvalid
-                     AND ix.indpred IS NULL
-                     AND ix.indexprs IS NULL) THEN
-        RAISE EXCEPTION
-            'ddl_utils_lib.add_primary_key_using_index: index %.% is not a valid, non-partial, non-expression unique index on %.%',
-            i_schema_name, i_index_name, i_schema_name, i_table_name
-            USING ERRCODE = '42809';
-    END IF;
-
+    -- On PostgreSQL 18+ a catalogued NOT NULL constraint can be NOT VALID while
+    -- attnotnull is already true; the extra EXISTS rejects that case so the
+    -- ALTER cannot fall into a validating scan or an "incompatible NOT VALID
+    -- constraint" error. On older releases the EXISTS is always false.
     IF EXISTS (SELECT 1
                FROM pg_catalog.pg_class AS i
                         JOIN pg_catalog.pg_namespace AS n ON n.oid = i.relnamespace
@@ -71,9 +41,15 @@ BEGIN
                WHERE n.nspname = i_schema_name
                  AND i.relname = i_index_name
                  AND s.i < ix.indnkeyatts
-                 AND NOT a.attnotnull) THEN
+                 AND (NOT a.attnotnull
+                      OR EXISTS (SELECT 1
+                                 FROM pg_catalog.pg_constraint AS c
+                                 WHERE c.conrelid = a.attrelid
+                                   AND c.contype = 'n'
+                                   AND NOT c.convalidated
+                                   AND a.attnum = ANY (c.conkey)))) THEN
         RAISE EXCEPTION
-            'ddl_utils_lib.add_primary_key_using_index: every indexed column of %.% must already be NOT NULL; use ensure_not_null first',
+            'ddl_utils_lib.add_primary_key_using_index: every indexed column of %.% must already be NOT NULL and validated; use ensure_not_null first',
             i_schema_name, i_table_name
             USING ERRCODE = '55000';
     END IF;
@@ -98,4 +74,5 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.add_primary_key_using_index IS
-    'Attaches a pre-built unique index as the primary key.';
+    'Attaches a pre-built unique index as the primary key. The index and NOT NULL '
+        'preconditions are validated before the ALTER.';

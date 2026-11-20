@@ -670,7 +670,27 @@ settings                (see above)
 RETURNS void
 ```
 
-`SECURITY INVOKER`. Renames a constraint; metadata-only.
+`SECURITY INVOKER`. Renames a constraint; metadata-only. Both identifiers must
+be at most 63 bytes.
+
+###
+
+`ddl_utils_lib.validate_unique_index_for_attach(i_schema_name, i_table_name, i_index_name, i_context)`
+
+```sql
+i_schema_name ddl_utils.non_null_text
+i_table_name  ddl_utils.non_null_text
+i_index_name  ddl_utils.non_null_text
+i_context     ddl_utils.non_null_text
+RETURNS void
+```
+
+`SECURITY INVOKER`. Validates that an unqualified index name resolves to a
+usable unique index on the table: a controlled `42P01` (missing table), `42704`
+(missing index), `0A000` (partitioned index, which PostgreSQL cannot attach) or
+`42809` (not a table/index, on another table, or not a valid, non-partial,
+non-expression unique index). `i_context` prefixes the errors. Used by both
+`*_using_index` helpers below.
 
 ###
 
@@ -688,11 +708,11 @@ RETURNS void
 `SECURITY INVOKER`. Attaches a pre-built unique index as the primary key. Build
 the index with `CREATE UNIQUE INDEX CONCURRENTLY` first; the attach is
 metadata-only when the index is valid and the columns are already `NOT NULL`.
-Validates that the index exists in `i_schema_name`, is a valid, non-partial,
-non-expression unique index on the table, and every key column is already
-`NOT NULL`; otherwise raises `42704`/`42809`/`55000` before the ALTER.
-`i_index_name` must be an unquoted, unqualified identifier, and both names must
-be at most 63 bytes.
+Validates the index via `validate_unique_index_for_attach`, and every key column
+must already be `NOT NULL` and its (PostgreSQL 18+) NOT NULL constraint
+validated; otherwise raises `42P01`/`42704`/`0A000`/`42809`/`55000` before the
+ALTER. `i_index_name` must be an unquoted, unqualified identifier, and both
+names must be at most 63 bytes.
 
 ###
 
@@ -708,10 +728,10 @@ RETURNS void
 ```
 
 `SECURITY INVOKER`. Attaches a pre-built unique index as a unique constraint;
-metadata-only when the index is valid. Validates that the index exists in
-`i_schema_name`, is a valid, non-partial, non-expression unique index on the
-table; otherwise raises `42704`/`42809` before the ALTER. `i_index_name` must be
-an unquoted, unqualified identifier, and both names must be at most 63 bytes.
+metadata-only when the index is valid. Validates the index via
+`validate_unique_index_for_attach`; otherwise raises
+`42P01`/`42704`/`0A000`/`42809` before the ALTER. `i_index_name` must be an
+unquoted, unqualified identifier, and both names must be at most 63 bytes.
 
 ### `ddl_utils_lib.rename_table(i_schema_name, i_table_name, i_new_table_name, settings...)`
 
@@ -724,4 +744,4 @@ RETURNS void
 ```
 
 `SECURITY INVOKER`. Renames a table within its schema; metadata-only. The new
-name is unqualified.
+name must be unqualified and at most 63 bytes.
