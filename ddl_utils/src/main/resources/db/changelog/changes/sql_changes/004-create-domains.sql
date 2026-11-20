@@ -14,6 +14,13 @@ CREATE DOMAIN ddl_utils.non_null_text AS text
 COMMENT ON DOMAIN ddl_utils.non_null_text IS
     'text that is NOT NULL and not blank.';
 
+-- A SQL clause prefix may be empty (no prefix), but it must not be NULL: format()
+-- is strict and would turn the whole generated fragment into NULL.
+CREATE DOMAIN ddl_utils.sql_prefix AS text NOT NULL;
+
+COMMENT ON DOMAIN ddl_utils.sql_prefix IS
+    'text used as a SQL clause prefix: NOT NULL, but empty and blank values are allowed.';
+
 CREATE DOMAIN ddl_utils.non_null_boolean AS boolean
     CONSTRAINT non_null_boolean_check CHECK (value IS NOT NULL);
 

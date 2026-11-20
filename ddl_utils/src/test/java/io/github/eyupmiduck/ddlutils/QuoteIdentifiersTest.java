@@ -1,8 +1,11 @@
 package io.github.eyupmiduck.ddlutils;
 
 import org.junit.jupiter.api.Test;
+import org.jooq.exception.DataAccessException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies {@code ddl_utils_lib.quote_identifiers}: it joins identifiers into a
@@ -129,6 +132,45 @@ class QuoteIdentifiersTest extends PostgresTestBase {
                 "ARRAY[E'\\f']::ddl_utils.non_empty_non_null_text_array"));
         assertSqlState("22023", () -> quoteIdentifiers(
                 "ARRAY[E'\\013']::ddl_utils.non_empty_non_null_text_array"));
+    }
+
+    /**
+     * A NULL prefix is rejected by the sql_prefix domain: format() is strict, so
+     * the function would otherwise return NULL instead of an identifier list.
+     */
+    @Test
+    void rejectsNullPrefixThroughTheDomain() {
+        assertSqlState("23502", () -> quoteIdentifiers(
+                "ARRAY['a']::ddl_utils.non_empty_non_null_text_array", null));
+    }
+
+    /**
+     * The over-long error names the first offending identifier and its byte
+     * length, so a long column list is diagnosable.
+     */
+    @Test
+    void overlongErrorNamesTheOffenderAndLength() {
+        DataAccessException failure = assertThrows(DataAccessException.class, () -> quoteIdentifiers(
+                "ARRAY[repeat('a', 63), repeat('b', 64)]::ddl_utils.non_empty_non_null_text_array"));
+
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("b".repeat(64)),
+                () -> "the message should name the offending identifier: " + failure.getMessage());
+        assertTrue(failure.getMessage().contains("(64 bytes)"),
+                () -> "the message should state the byte length: " + failure.getMessage());
+    }
+
+    /**
+     * The blank error names the first offending element.
+     */
+    @Test
+    void blankErrorNamesTheOffender() {
+        DataAccessException failure = assertThrows(DataAccessException.class, () -> quoteIdentifiers(
+                "ARRAY['a', E'\\t ']::ddl_utils.non_empty_non_null_text_array"));
+
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("<\t >"),
+                () -> "the message should name the offending element: " + failure.getMessage());
     }
 
     private String quoteIdentifiers(String valueExpression) {

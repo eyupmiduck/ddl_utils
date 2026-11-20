@@ -13,6 +13,7 @@ GRANT SELECT ON ddl_utils.schema_lock_settings TO ddl_utils_caller;
 GRANT SELECT ON ddl_utils.table_lock_settings TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_negative_integer TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_null_text TO ddl_utils_caller;
+GRANT USAGE ON DOMAIN ddl_utils.sql_prefix TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_null_boolean TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_text_array TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array TO ddl_utils_caller;
@@ -116,11 +117,11 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_non_blank_elements(
     ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
-    text
+    ddl_utils.sql_prefix
     ) FROM public;
 GRANT EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
-    text
+    ddl_utils.sql_prefix
     ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_no_top_level_comma(
     text,

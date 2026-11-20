@@ -321,12 +321,13 @@ means no `DEFAULT` clause). Used to validate the array arguments of
 
 ```sql
 i_values ddl_utils.non_empty_non_null_text_array
-i_prefix text DEFAULT ''
+i_prefix ddl_utils.sql_prefix DEFAULT ''
 RETURNS text
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Joins the identifiers into a comma-separated
-list, each quoted with `%I` and optionally prefixed with a literal SQL clause (for example `'DROP COLUMN '`). Used to
+list, each quoted with `%I` and optionally prefixed with a literal SQL clause (for example `'DROP COLUMN '`). The `sql_prefix` domain requires a non-NULL
+prefix while allowing the empty string. Used to
 build the identifier lists in
 `add_foreign_key` and `drop_columns`.
 

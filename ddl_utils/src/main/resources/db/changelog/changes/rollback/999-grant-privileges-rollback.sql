@@ -383,11 +383,11 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_non_blank_elements(
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
-    text
+    ddl_utils.sql_prefix
     ) FROM ddl_utils_caller;
 GRANT EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
-    text
+    ddl_utils.sql_prefix
     ) TO public;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_no_top_level_comma(
     text,
@@ -481,6 +481,7 @@ REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_boolean_array FROM ddl_utils
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_empty_text_array FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_null_boolean FROM ddl_utils_caller;
+REVOKE USAGE ON DOMAIN ddl_utils.sql_prefix FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_null_text FROM ddl_utils_caller;
 REVOKE USAGE ON DOMAIN ddl_utils.non_negative_integer FROM ddl_utils_caller;
 REVOKE SELECT ON ddl_utils.table_lock_settings FROM ddl_utils_caller;
