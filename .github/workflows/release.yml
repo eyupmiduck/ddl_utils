@@ -8,9 +8,12 @@ name: Release
 on:
   push:
     tags:
-      # Only a <major>.<minor>.<patch> tag releases; v1foo, v1beta, v1-test or
-      # a bare v1 would otherwise derive an invalid -Drevision from the tag.
-      - "v[0-9]*.[0-9]*.[0-9]*"
+      # Only a <major>.<minor>.<patch> tag releases. Filters are globs, where
+      # `+` means one or more of the preceding character and `.` is literal, so
+      # every component is digits only. With `*` (zero or more of any
+      # character) a tag such as v1.2.3-rc1 or v1beta.2.3 would trigger the
+      # full release flow.
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 concurrency:
   # Serialize all releases, not just runs of the same tag: two tags pushed close
@@ -41,7 +44,14 @@ jobs:
       # because GITHUB_TOKEN-opened PRs do not trigger the required checks.
       bump-snapshot: true
     # RELEASE_TOKEN must be a repo-scoped fine-grained PAT/GitHub App token with
-    # contents: write and pull-requests: write. Protect this job with a
-    # required-review environment in repository settings.
+    # contents: write and pull-requests: write.
+    #
+    # There is NO environment approval gate on this token today. A job that
+    # calls a reusable workflow cannot declare `environment:`, and the pinned
+    # workflow_library maven-release.yml declares none, so repository settings
+    # cannot require a reviewer for this run. The control is repo write access:
+    # only a maintainer can push a `v*` tag, which is this workflow's only
+    # trigger. Moving a required-review environment into the library's release
+    # job and re-pinning is a follow-up in workflow_library.
     secrets:
       release-token: ${{ secrets.RELEASE_TOKEN }}
