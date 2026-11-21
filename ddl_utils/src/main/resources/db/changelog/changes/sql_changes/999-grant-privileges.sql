@@ -128,6 +128,16 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_non_blank_elements(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.assert_identifier_length(
+    text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.assert_identifier_length(
+    text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.quote_identifiers(
     ddl_utils.non_empty_non_null_text_array,
     ddl_utils.sql_prefix

@@ -16,6 +16,18 @@ DECLARE
     l_started_at            timestamptz;
     l_previous_lock_timeout text;
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so an
+    -- over-long schema or table name would silently target a different relation.
+    -- Guard the runner itself: every structured helper reaches ALTER TABLE here.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_schema_name,
+            i_context => 'ddl_utils_lib.alter_table',
+            i_argument => 'i_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_table_name,
+            i_context => 'ddl_utils_lib.alter_table',
+            i_argument => 'i_table_name');
+
     -- The EXECUTE below is intentionally not sanitised: the fragment is
     -- caller-provided DDL and the function is SECURITY INVOKER (see the guard
     -- below). PlpgsqlCheckTest allow-lists its security warning.

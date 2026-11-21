@@ -310,6 +310,36 @@ class ConstraintTest extends PostgresTestBase {
         assertDomainViolation(() -> addForeignKey("fk", new String[]{"parent_id"}, REFERENCED, null));
     }
 
+    /**
+     * The constraint-name guards bound the name at 63 bytes: an over-long name
+     * is rejected with 22023, while a 63-byte name passes the guard and fails
+     * later only because no such constraint exists (42704). The referenced
+     * schema and table of a foreign key are guarded the same way; a 63-byte
+     * missing referenced table passes the guard and fails later as
+     * undefined_table (42P01).
+     */
+    @Test
+    void boundsConstraintAndReferencedNameLength() {
+        String atLimit = "c".repeat(63);
+        String tooLong = "c".repeat(64);
+
+        assertSqlState("22023", () -> dropConstraint(tooLong));
+        assertSqlState("42704", () -> dropConstraint(atLimit));
+        assertSqlState("22023", () -> validateConstraint(tooLong));
+        assertSqlState("42704", () -> validateConstraint(atLimit));
+
+        assertSqlState("22023", () -> addForeignKey(
+                "fk", new String[]{"parent_id"}, tooLong, new String[]{"id"}));
+        assertSqlState("42P01", () -> addForeignKey(
+                "fk", new String[]{"parent_id"}, atLimit, new String[]{"id"}));
+
+        assertSqlState("22023", () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                "fk", new String[]{"parent_id"}, "s".repeat(64), REFERENCED, new String[]{"id"},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("3F000", () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
+                "fk", new String[]{"parent_id"}, "s".repeat(63), REFERENCED, new String[]{"id"},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));    }
+
     private void addCheckConstraint(String name, String expression) {
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, name, expression,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);

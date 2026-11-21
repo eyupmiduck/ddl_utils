@@ -321,6 +321,22 @@ a non-null element is blank (whitespace-only, using the same trim set as the
 means no `DEFAULT` clause). Used to validate the array arguments of
 `add_columns`, `add_foreign_key` and `drop_columns`.
 
+### `ddl_utils_lib.assert_identifier_length(i_value, i_context, i_argument)`
+
+```sql
+i_value    text
+i_context  ddl_utils.non_null_text
+i_argument ddl_utils.non_null_text
+RETURNS void
+```
+
+`STABLE`, `SECURITY INVOKER`. Raises `22023` when `i_value` is longer than
+`NAMEDATALEN - 1` (63) bytes, naming `i_argument` and the byte length; a NULL
+value is ignored. PostgreSQL truncates an over-long identifier with only a
+`NOTICE`, so every routine that emits a caller-supplied name must call this
+before the DDL. Used for column, constraint, schema and table names throughout
+`ddl_utils_lib`, and by `ddl_utils.ensure_not_null`.
+
 ### `ddl_utils_lib.quote_identifiers(i_values [, i_prefix])`
 
 ```sql

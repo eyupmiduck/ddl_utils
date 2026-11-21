@@ -261,6 +261,22 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
         assertEquals(1, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
     }
 
+    /**
+     * All three identifiers are bounded at 63 bytes before any catalog lookup or
+     * DDL: an over-long schema, table or column is rejected with 22023, while a
+     * 63-byte missing column passes the guard and fails later as
+     * undefined_column (42703).
+     */
+    @Test
+    void boundsIdentifierLength() {
+        assertSqlState("22023", () -> dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)",
+                "s".repeat(64), target(), "note"));
+        assertSqlState("22023", () -> dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)",
+                PUBLIC_SCHEMA, "t".repeat(64), "note"));
+        assertSqlState("22023", () -> callEnsureNotNull("c".repeat(64)));
+        assertSqlState("42703", () -> callEnsureNotNull("c".repeat(63)));
+    }
+
     private void callEnsureNotNull() {
         callEnsureNotNull("note");
     }

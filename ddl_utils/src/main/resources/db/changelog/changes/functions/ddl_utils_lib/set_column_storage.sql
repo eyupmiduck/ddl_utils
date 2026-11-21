@@ -13,6 +13,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.set_column_storage(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.set_column_storage',
+            i_argument => 'i_column_name');
+
     -- Storage is a small, fixed keyword set; validate it (case-insensitively,
     -- matching set_column_compression) so a caller cannot splice arbitrary SQL.
     -- The keyword is emitted verbatim (not as an identifier) because these are

@@ -16,6 +16,13 @@ DECLARE
     l_sequence regclass;
     l_max      bigint;
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.add_identity',
+            i_argument => 'i_column_name');
+
     -- The sequence advance below scans the column maximum in the caller's
     -- transaction. That is only correct under READ COMMITTED (or READ
     -- UNCOMMITTED, which PostgreSQL treats as READ COMMITTED): in REPEATABLE

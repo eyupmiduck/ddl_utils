@@ -13,6 +13,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_identity(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.drop_identity',
+            i_argument => 'i_column_name');
+
     -- Dropping an identity is metadata-only. IF EXISTS tolerates a column that
     -- has no identity; without it a missing identity raises an error.
     PERFORM ddl_utils_lib.alter_table(

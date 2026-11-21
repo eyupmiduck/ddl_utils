@@ -12,6 +12,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_not_null(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.drop_not_null',
+            i_argument => 'i_column_name');
+
     -- Dropping NOT NULL is metadata-only and performs no table scan; it does
     -- take an ACCESS EXCLUSIVE lock, which alter_table bounds with its retry
     -- loop.

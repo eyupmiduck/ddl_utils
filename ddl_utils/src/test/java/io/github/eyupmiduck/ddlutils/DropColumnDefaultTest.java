@@ -53,6 +53,17 @@ class DropColumnDefaultTest extends SingleTableTest {
         assertDomainViolation(() -> dropColumnDefault("note", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
     }
 
+    /**
+     * An over-long column name is rejected with 22023 before the ALTER; a
+     * 63-byte name passes the length guard and fails later only because no such
+     * column exists (42703).
+     */
+    @Test
+    void boundsColumnNameLength() {
+        assertSqlState("22023", () -> dropColumnDefault("c".repeat(64)));
+        assertSqlState("42703", () -> dropColumnDefault("c".repeat(63)));
+    }
+
     private void dropColumnDefault(String column) {
         dropColumnDefault(column, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }

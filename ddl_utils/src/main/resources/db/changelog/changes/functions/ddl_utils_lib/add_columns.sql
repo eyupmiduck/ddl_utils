@@ -55,6 +55,14 @@ BEGIN
 
     FOR l_index IN 1..l_count
         LOOP
+        -- PostgreSQL truncates an identifier longer than 63 bytes with only a
+        -- NOTICE, so an over-long column name would be created under the
+        -- truncated name. Name the array position so a long list is diagnosable.
+            PERFORM ddl_utils_lib.assert_identifier_length(
+                    i_value => i_column_names[l_index],
+                    i_context => 'ddl_utils_lib.add_columns',
+                    i_argument => pg_catalog.format('i_column_names[%s]', l_index));
+
         -- The type is spliced in as raw SQL, so require it to resolve to a
         -- single SQL type. This rejects extra clauses such as 'int, DROP COLUMN
         -- x' or 'int DEFAULT 0'.

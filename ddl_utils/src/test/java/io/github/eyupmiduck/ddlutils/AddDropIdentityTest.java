@@ -197,6 +197,19 @@ class AddDropIdentityTest extends SingleTableTest {
                 "a rejected call must not have added an identity");
     }
 
+    /**
+     * Both identity helpers reject an over-long column name with 22023 before
+     * the ALTER. A 63-byte name passes the length guard and fails later only
+     * because no such column exists (42703), which pins the inclusive boundary.
+     */
+    @Test
+    void boundsColumnNameLength() {
+        assertSqlState("22023", () -> addIdentity("a".repeat(64), "by default"));
+        assertSqlState("42703", () -> addIdentity("a".repeat(63), "by default"));
+        assertSqlState("22023", () -> dropIdentity("a".repeat(64), true));
+        assertSqlState("42703", () -> dropIdentity("a".repeat(63), true));
+    }
+
     private void addIdentity(String column, String generated) {
         Routines.addIdentity(dsl.configuration(), PUBLIC_SCHEMA, target(), column, generated,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);

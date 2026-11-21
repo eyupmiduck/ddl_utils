@@ -136,6 +136,23 @@ class AddColumnTest extends SingleTableTest {
         assertDomainViolation(() -> addColumn("note", "text", true, null, 100, 100, -1));
     }
 
+    /**
+     * A 63-byte column name (the identifier maximum) is created; a 64-byte name
+     * is rejected with 22023 before the ALTER, so no truncated column appears.
+     */
+    @Test
+    void boundsColumnNameLength() {
+        String atLimit = "a".repeat(63);
+
+        addColumn(atLimit, "int", true, null, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), atLimit));
+        assertSqlState("22023", () -> addColumn("b".repeat(64), "int", true, null,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "b".repeat(63)),
+                "a rejected over-long name must not leave a truncated column behind");
+    }
+
     private void addColumn(String column, String type, Boolean nullable, String defaultValue,
                            Integer lockTimeout, Integer sleepTime, Integer duration) {
         Routines.addColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), column, type, nullable,

@@ -12,6 +12,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.validate_constraint(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted constraint name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_constraint_name,
+            i_context => 'ddl_utils_lib.validate_constraint',
+            i_argument => 'i_constraint_name');
+
     -- This is NOT metadata-only: it scans existing rows to enforce the
     -- constraint, under SHARE UPDATE EXCLUSIVE on the table (which does not
     -- block DML there). Validating a FOREIGN KEY also takes SHARE ROW EXCLUSIVE

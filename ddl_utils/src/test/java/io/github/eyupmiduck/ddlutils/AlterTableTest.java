@@ -279,6 +279,22 @@ class AlterTableTest extends SingleTableTest {
         });
     }
 
+    /**
+     * The runner bounds the schema and table at 63 bytes before building the
+     * statement: an over-long name is rejected with 22023, while a 63-byte
+     * missing table passes the guard and fails later as undefined_table
+     * (42P01).
+     */
+    @Test
+    void boundsSchemaAndTableNameLength() {
+        assertSqlState("22023", () -> alterTable("s".repeat(64), target(), "ADD COLUMN added int",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("22023", () -> alterTable(PUBLIC_SCHEMA, "t".repeat(64), "ADD COLUMN added int",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertSqlState("42P01", () -> alterTable(PUBLIC_SCHEMA, "t".repeat(63), "ADD COLUMN added int",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+    }
+
     private void alterTable(String schema, String table, String fragment,
                             Integer lockTimeout, Integer sleepTime, Integer duration) {
         Routines.alterTable(dsl.configuration(), schema, table, fragment,
