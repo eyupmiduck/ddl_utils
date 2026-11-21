@@ -17,6 +17,7 @@ class RenameTableTest extends PostgresTestBase {
 
     private static final String TARGET = "rename_table_target";
     private static final String NEW_NAME = "rename_table_renamed";
+    private static final String NAME_AT_LIMIT = "n".repeat(63);
 
     @BeforeEach
     void createTargetTable() {
@@ -27,8 +28,10 @@ class RenameTableTest extends PostgresTestBase {
     void cleanUp() {
         clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
         clearTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        clearTableLockSettings(PUBLIC_SCHEMA, NAME_AT_LIMIT);
         dropTestTable(TARGET);
         dropTestTable(NEW_NAME);
+        dropTestTable(NAME_AT_LIMIT);
     }
 
     /**
@@ -112,6 +115,32 @@ class RenameTableTest extends PostgresTestBase {
     }
 
     /**
+     * A new name of exactly 63 bytes (NAMEDATALEN - 1) is accepted by the
+     * generic helper, the largest identifier PostgreSQL stores without
+     * truncating.
+     */
+    @Test
+    void acceptsNameAtByteLimit() {
+        renameTable(TARGET, NAME_AT_LIMIT);
+
+        assertFalse(tableExists(TARGET));
+        assertTrue(tableExists(NAME_AT_LIMIT));
+    }
+
+    /**
+     * The lock-aware wrapper accepts a new name of exactly 63 bytes too, so its
+     * settings move does not impose a stricter limit than the helper.
+     */
+    @Test
+    void lockAwareWrapperAcceptsNameAtByteLimit() {
+        io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, NAME_AT_LIMIT);
+
+        assertFalse(tableExists(TARGET));
+        assertTrue(tableExists(NAME_AT_LIMIT));
+    }
+
+    /**
      * A new name longer than NAMEDATALEN - 1 bytes is rejected instead of being
      * silently truncated, and the lock settings stay with the original name.
      */
@@ -119,10 +148,15 @@ class RenameTableTest extends PostgresTestBase {
     void rejectsOverLongNewNameWithoutMovingSettings() {
         setTableLockSettings(PUBLIC_SCHEMA, TARGET, 10, 20, 30);
         String tooLong = "n".repeat(64);
+        // 32 two-byte characters are 64 bytes: the limit is measured in bytes.
+        String multibyte = "\u00e9".repeat(32);
 
         assertSqlState("22023", () -> renameTable(TARGET, tooLong));
         assertSqlState("22023", () -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
                 dsl.configuration(), PUBLIC_SCHEMA, TARGET, tooLong));
+        assertSqlState("22023", () -> renameTable(TARGET, multibyte));
+        assertSqlState("22023", () -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, multibyte));
 
         assertTrue(tableExists(TARGET), "a rejected rename must leave the table name in place");
         Record settings = getTableLockSettings(PUBLIC_SCHEMA, TARGET);
@@ -145,8 +179,9 @@ class RenameTableTest extends PostgresTestBase {
     }
 
     /**
-     * Rejects null arguments through their domains, including the schema and the
-     * three lock settings on the generic helper.
+     * Rejects null arguments through their domains, including the schema, the
+     * source table and the new name on the generic helper and the schema, source
+     * table and new name on the lock-aware wrapper.
      */
     @Test
     void rejectsNullArguments() {
@@ -154,6 +189,10 @@ class RenameTableTest extends PostgresTestBase {
         assertDomainViolation(() -> renameTable(TARGET, null));
         assertDomainViolation(() -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
                 dsl.configuration(), null, TARGET, NEW_NAME));
+        assertDomainViolation(() -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, null, NEW_NAME));
+        assertDomainViolation(() -> io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, null));
         assertDomainViolation(() -> Routines.renameTable(dsl.configuration(), null, TARGET, NEW_NAME,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertDomainViolation(() -> Routines.renameTable(dsl.configuration(), PUBLIC_SCHEMA, TARGET, NEW_NAME,
@@ -162,6 +201,8 @@ class RenameTableTest extends PostgresTestBase {
                 DDL_LOCK_TIMEOUT, null, STATEMENT_DURATION));
         assertDomainViolation(() -> Routines.renameTable(dsl.configuration(), PUBLIC_SCHEMA, TARGET, NEW_NAME,
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
+
+        assertTrue(tableExists(TARGET), "a rejected rename must leave the table in place");
     }
 
     private void renameTable(String table, String newName) {
