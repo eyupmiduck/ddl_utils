@@ -7,6 +7,15 @@
 # run on every Dependabot PR, so a broken update fails CI before it can reach
 # main.
 #
+# io.github.eyupmiduck:liquibase-validation is published only to GitHub
+# Packages (the `github` repository in pom.xml). Dependabot cannot update it:
+# its implicit GitHub Packages token is scoped to this repository, while the
+# package lives in eyupmiduck/liquibase_validation, and this repo has no
+# Dependabot secrets (verified 2026-11-20; a `registries:` entry would need a
+# read:packages PAT stored as one). The dependency is therefore bumped by
+# hand: change <liquibase-validation.version> in pom.xml and let CI verify it.
+# The `ignore:` entry in the Maven update config records that deliberate pin.
+#
 # The open-PR limit is shared by every PR Dependabot opens for an ecosystem.
 # Only the grouped minor/patch PR is auto-merged, so leave room for ungrouped
 # majors, the excluded testcontainers/jOOQ updates and security PRs to wait for
@@ -25,6 +34,12 @@ updates:
       - eyupmiduck
     commit-message:
       prefix: deps
+    # Bumped by hand because it resolves only from GitHub Packages, which
+    # Dependabot cannot authenticate to from this repository (see the header
+    # comment). Ignoring it also stops Dependabot from proposing a version it
+    # cannot resolve.
+    ignore:
+      - dependency-name: "io.github.eyupmiduck:liquibase-validation"
     groups:
       maven-minor-patch:
         patterns:
