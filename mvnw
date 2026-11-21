@@ -168,11 +168,9 @@ exec_maven() {
 if [ -x "$MAVEN_HOME/bin/$MVN_CMD" ]; then
   verbose "found existing MAVEN_HOME at $MAVEN_HOME"
   exec_maven "$@"
-elif [ -d "$MAVEN_HOME" ]; then
-  # A directory left behind by an interrupted install must not be exec'd.
-  verbose "removing incomplete MAVEN_HOME at $MAVEN_HOME"
-  rm -rf -- "$MAVEN_HOME" || die "cannot remove incomplete MAVEN_HOME at $MAVEN_HOME"
 fi
+# A broken cache is removed by the locked install section below, so that every
+# MAVEN_HOME mutation happens under the same lock.
 
 case "${distributionUrl-}" in
 *?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
@@ -188,7 +186,13 @@ if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
     if [ -n "${STAGING_DIR-}" ]; then rm -rf -- "$STAGING_DIR"; fi
     if [ -n "${LOCK_DIR-}" ]; then rm -rf -- "$LOCK_DIR"; fi
   }
-  trap clean HUP INT TERM EXIT
+  trap clean EXIT
+  # A signal handler in POSIX sh resumes at the next command unless it exits, so
+  # Ctrl+C/TERM would otherwise be swallowed while the script keeps waiting or
+  # installing. clean() is idempotent, so the later EXIT trap is harmless.
+  trap 'clean; exit 129' HUP
+  trap 'clean; exit 130' INT
+  trap 'clean; exit 143' TERM
 else
   die "cannot create temp dir"
 fi
@@ -318,12 +322,14 @@ for dir in "$STAGING_DIR"/*; do
 done
 set -f
 
-if [ -f "$STAGING_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
+# Ambiguity is decided before the expected-name shortcut, otherwise a second
+# top-level launcher directory would be ignored silently.
+if [ "$candidateCount" -gt 1 ]; then
+  die "found multiple Maven distribution directories in the archive:$candidateDirs"
+elif [ -f "$STAGING_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
   actualDistributionDir="$distributionUrlNameMain"
 elif [ "$candidateCount" -eq 1 ]; then
   actualDistributionDir="${candidateDirs# }"
-elif [ "$candidateCount" -gt 1 ]; then
-  die "found multiple Maven distribution directories in the archive:$candidateDirs"
 fi
 
 if [ -z "$actualDistributionDir" ]; then
@@ -351,6 +357,14 @@ until mkdir -- "$lockDir" 2>/dev/null; do
     clean || :
     exec_maven "$@"
   fi
+  # A holder finishes within seconds; a lock older than the wait budget can only
+  # be stale (for example a SIGKILL), so break it instead of stalling for the
+  # whole timeout. A run killed with SIGKILL can also leave its staging dir.
+  if [ -n "$(find "$lockDir" -maxdepth 0 -mmin +10 2>/dev/null)" ]; then
+    verbose "removing stale install lock $lockDir"
+    rm -rf -- "$lockDir"
+    continue
+  fi
   lockAttempts=$((lockAttempts + 1))
   if [ "$lockAttempts" -ge 300 ]; then
     die "timed out waiting for $lockDir; remove it if no other mvnw is running"
@@ -358,6 +372,12 @@ until mkdir -- "$lockDir" 2>/dev/null; do
   sleep 1
 done
 LOCK_DIR="$lockDir"
+
+# Sweep staging directories left behind by runs killed with SIGKILL. Only old
+# ones are removed, so a concurrent run still downloading into its fresh staging
+# directory is unaffected.
+find "$installParent" -maxdepth 1 -name '.mvnw-install.*' -mmin +60 \
+    -exec rm -rf {} + 2>/dev/null || :
 
 # A complete install created while this run was downloading is reused as is.
 if [ -x "$MAVEN_HOME/bin/$MVN_CMD" ]; then
