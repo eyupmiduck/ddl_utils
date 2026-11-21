@@ -373,7 +373,14 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
      * missing-row path when the row was already gone.
      */
     protected void deleteDatabaseDefaults() {
-        Record row = getDatabaseLockSettings();
+        // Read the table directly: ddl_utils.get_database_lock_settings() raises
+        // P0002 when the row is missing, so it can never return an empty result
+        // and the null guard below would be dead code.
+        Record row = dsl.fetchOne("""
+                SELECT ddl_lock_timeout, sleep_time, statement_duration
+                FROM ddl_utils.database_lock_settings
+                WHERE id = 1
+                """);
         if (row == null) {
             throw new IllegalStateException(
                     "the database defaults row is already missing; nothing was deleted");
