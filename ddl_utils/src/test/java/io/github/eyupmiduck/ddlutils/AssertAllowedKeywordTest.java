@@ -1,8 +1,12 @@
 package io.github.eyupmiduck.ddlutils;
 
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies {@code ddl_utils_lib.assert_allowed_keyword}: it accepts a keyword
@@ -38,6 +42,20 @@ class AssertAllowedKeywordTest extends PostgresTestBase {
                 () -> assertAllowedKeyword("alway", "ARRAY['always', 'by default']"));
         assertSqlState("22023",
                 () -> assertAllowedKeyword("always ", "ARRAY['always', 'by default']"));
+    }
+
+    /**
+     * The rejection message echoes the value and the allow-list, so the caller
+     * can see the accepted keywords without reading the source.
+     */
+    @Test
+    void messageEchoesTheAllowList() {
+        DataAccessException failure = assertThrows(DataAccessException.class,
+                () -> assertAllowedKeyword("sometimes", "ARRAY['always', 'by default']"));
+
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("allowed: {always,\"by default\"}"),
+                () -> "the message should echo the allow-list: " + failure.getMessage());
     }
 
     /**

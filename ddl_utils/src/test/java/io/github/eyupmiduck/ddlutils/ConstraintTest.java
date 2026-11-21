@@ -197,6 +197,27 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
+     * drop_constraint always emits RESTRICT, so dropping a primary key that a
+     * foreign key still references fails with dependent_objects_still_exist
+     * (2BP01). Dependency order is the caller's responsibility: drop the
+     * foreign key first.
+     */
+    @Test
+    void dropConstraintRejectsReferencedPrimaryKey() {
+        addForeignKey("fk_parent", new String[]{"parent_id"}, REFERENCED, new String[]{"id"});
+
+        assertSqlState("2BP01", () -> Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA,
+                REFERENCED, REFERENCED + "_pkey", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertTrue(constraintExists(PUBLIC_SCHEMA, REFERENCED, REFERENCED + "_pkey"),
+                "the rejected drop must leave the referenced primary key in place");
+
+        dropConstraint("fk_parent");
+        Routines.dropConstraint(dsl.configuration(), PUBLIC_SCHEMA, REFERENCED,
+                REFERENCED + "_pkey", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+        assertFalse(constraintExists(PUBLIC_SCHEMA, REFERENCED, REFERENCED + "_pkey"));
+    }
+
+    /**
      * rename_constraint renames the constraint.
      */
     @Test

@@ -23,4 +23,6 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.assert_equal_cardinality IS
-    'Raises 22023 when two arrays do not have the same number of elements.';
+    'Raises 22023 when two arrays do not have the same number of elements. A '
+        'NULL array raises 22023 too (its cardinality is undefined), including '
+        'when both arrays are NULL.';

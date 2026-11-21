@@ -13,7 +13,9 @@ AS
 $$
 BEGIN
     -- Metadata-only. IF EXISTS is deliberately not used so a wrong name fails
-    -- fast rather than silently doing nothing.
+    -- fast rather than silently doing nothing. RESTRICT (the default) makes
+    -- dropping a primary key or unique constraint that a foreign key references
+    -- fail with 2BP01; there is no CASCADE option.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -26,4 +28,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.drop_constraint IS
-    'Drops a constraint, taking the lock settings explicitly.';
+    'Drops a constraint, taking the lock settings explicitly. Emits RESTRICT '
+        '(the default), so dropping a primary key or unique constraint that a '
+        'foreign key references raises 2BP01; drop the dependent foreign keys '
+        'first. There is no CASCADE option.';

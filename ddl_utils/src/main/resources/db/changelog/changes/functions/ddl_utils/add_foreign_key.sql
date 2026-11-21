@@ -44,4 +44,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils.add_foreign_key IS
-    'Lock-aware wrapper: adds a foreign key as NOT VALID.';
+    'Lock-aware wrapper: adds a foreign key as NOT VALID. Only the altered '
+        '(referencing) table''s lock settings are resolved, although ADD FOREIGN '
+        'KEY also takes SHARE ROW EXCLUSIVE on the referenced table; an override '
+        'for the referenced table is not honoured.';
