@@ -24,6 +24,10 @@ concurrency:
 permissions:
   contents: read
   packages: read
+  # Needed for the SARIF upload. It is read-only for pull_request runs from
+  # forks, so the called workflow's upload is disabled there via the
+  # `upload-sarif` input below; the lint still runs and `verify` stays the gate.
+  # Same-repo PRs, pushes and schedules upload.
   security-events: write
 
 jobs:
@@ -37,3 +41,7 @@ jobs:
       changelog-root: ddl_utils/src/main/resources/db/changelog
       config-path: ddl_utils/.liquibase-linter.yml
       whitelist-path: ddl_utils/.liquibase-linter-whitelist.yml
+      # A fork PR gets a read-only security-events token, so an upload would
+      # fail with 403. Keep the lint result in the job log and skip only the
+      # upload; the failing gate is `./mvnw verify` anyway.
+      upload-sarif: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
