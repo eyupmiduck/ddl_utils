@@ -26,14 +26,14 @@ class ProcedureCoverageTest extends PostgresTestBase {
         List<String> procedures = dsl.fetch("""
                         SELECT proname
                         FROM pg_proc
-                        WHERE pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'ddl_utils')
+                        WHERE pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
                             AND prokind = 'p'
-                        """)
+                        """, DDL_UTILS_SCHEMA)
                 .getValues(0, String.class);
 
         assertTrue(procedures.containsAll(
                         List.of("ensure_not_null", "ensure_check_constraint", "ensure_foreign_key")),
-                () -> "procedures not found; found: " + procedures);
+                () -> "procedures not found in " + DDL_UTILS_SCHEMA + "; found: " + procedures);
     }
 
     /**

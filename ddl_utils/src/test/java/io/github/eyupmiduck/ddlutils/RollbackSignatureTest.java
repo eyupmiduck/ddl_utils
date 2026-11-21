@@ -1,9 +1,12 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.testing.RollbackSignatureContract;
+import io.github.eyupmiduck.changelogvalidator.testing.TestResources;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Guards the routine rollback files, inheriting the shared
@@ -28,13 +31,14 @@ class RollbackSignatureTest extends RollbackSignatureContract {
     }
 
     /**
-     * The schemas that hold the project's routines.
+     * The schemas that hold the project's routines, taken from the shared
+     * constants so a schema rename cannot silently enumerate nothing.
      *
      * @return the routine schemas
      */
     @Override
     protected Collection<String> routineSchemas() {
-        return List.of("ddl_utils", "ddl_utils_lib");
+        return PostgresTestBase.ROUTINE_SCHEMAS;
     }
 
     /**
@@ -44,7 +48,23 @@ class RollbackSignatureTest extends RollbackSignatureContract {
      */
     @Override
     protected Collection<String> rollbackDirectories() {
-        return List.of("db/changelog/changes/functions-rollback",
-                "db/changelog/changes/procedures-rollback");
+        return PostgresTestBase.ROUTINE_ROLLBACK_DIRECTORIES;
+    }
+
+    /**
+     * Every configured routine schema holds at least one routine and every
+     * rollback directory holds at least one SQL file, so the inherited contract
+     * cannot pass by inspecting an empty set on either side.
+     *
+     * @throws java.io.IOException if a rollback directory cannot be read
+     */
+    @Test
+    void routineSchemasAndRollbackDirectoriesArePopulated() throws java.io.IOException {
+        PostgresTestBase.assertRoutineSchemasArePopulated(dsl, routineSchemas());
+        assertFalse(rollbackDirectories().isEmpty(), "at least one rollback directory is required");
+        for (String directory : rollbackDirectories()) {
+            assertFalse(TestResources.readSqlFiles(directory).isEmpty(),
+                    () -> "no rollback SQL files found in " + directory);
+        }
     }
 }

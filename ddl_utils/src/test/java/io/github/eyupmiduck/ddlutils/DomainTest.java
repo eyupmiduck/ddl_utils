@@ -4,6 +4,7 @@ import org.jooq.Record;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verifies that the Liquibase changelog creates the {@code ddl_utils} domains
@@ -216,8 +217,21 @@ class DomainTest extends PostgresTestBase {
                 "NULL::ddl_utils.non_empty_non_null_boolean_array", Object.class));
     }
 
+    /**
+     * Evaluates a scalar SQL expression and returns its value, failing with the
+     * expression in the message when no row or no value comes back instead of
+     * throwing a bare {@link NullPointerException}.
+     *
+     * @param expression the SQL expression to evaluate
+     * @param type       the expected Java type
+     * @param <T>        the expected Java type
+     * @return the non-null value of the expression
+     */
     private <T> T evaluate(String expression, Class<T> type) {
         Record record = dsl.fetchOne("SELECT " + expression);
-        return record.get(0, type);
+        assertNotNull(record, () -> "no row returned for expression: " + expression);
+        T value = record.get(0, type);
+        assertNotNull(value, () -> "NULL returned for expression: " + expression);
+        return value;
     }
 }
