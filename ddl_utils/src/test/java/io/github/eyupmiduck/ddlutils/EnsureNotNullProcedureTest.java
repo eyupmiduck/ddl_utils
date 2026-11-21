@@ -4,12 +4,15 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Verifies the {@code ddl_utils.ensure_not_null} procedure: it makes a column
@@ -18,6 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * steps, and recovers from a partial failure when called again.
  */
 class EnsureNotNullProcedureTest extends SingleTableTest {
+
+    /**
+     * The server-side statement timeout each concurrent worker sets, so a CALL
+     * blocked on a lock aborts instead of hanging the build.
+     */
+    private static final String WORKER_STATEMENT_TIMEOUT = "15s";
 
     EnsureNotNullProcedureTest() {
         super("ensure_not_null_procedure_target", "id int, note text");
@@ -126,26 +135,23 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         int callers = 4;
         CyclicBarrier barrier = new CyclicBarrier(callers);
-        try (ExecutorService pool = Executors.newFixedThreadPool(callers)) {
-            List<Future<Void>> futures = new ArrayList<>();
-            for (int i = 0; i < callers; i++) {
-                futures.add(pool.submit(() -> {
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i = 0; i < callers; i++) {
+            tasks.add(() -> {
+                try (Connection connection = openWorkerConnection();
+                     PreparedStatement statement = connection.prepareStatement(
+                             "CALL ddl_utils.ensure_not_null(?, ?, ?)")) {
+                    statement.setString(1, PUBLIC_SCHEMA);
+                    statement.setString(2, target());
+                    statement.setString(3, "note");
                     barrier.await(10, TimeUnit.SECONDS);
-                    try (Connection connection = openTestConnection();
-                         PreparedStatement statement = connection.prepareStatement(
-                                 "CALL ddl_utils.ensure_not_null(?, ?, ?)")) {
-                        statement.setString(1, PUBLIC_SCHEMA);
-                        statement.setString(2, target());
-                        statement.setString(3, "note");
-                        statement.execute();
-                    }
-                    return null;
-                }));
-            }
-            for (Future<Void> future : futures) {
-                future.get(30, TimeUnit.SECONDS);
-            }
+                    statement.execute();
+                }
+                return null;
+            });
         }
+
+        runConcurrently(callers, tasks);
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
@@ -183,6 +189,60 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
 
         assertNotNullable(PUBLIC_SCHEMA, target(), "note");
         assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
+    }
+
+    /**
+     * A call interrupted after {@code SET NOT NULL} was committed but before the
+     * temporary proof was dropped leaves the column NOT NULL with the proof
+     * still present; calling again recognizes it and removes it.
+     */
+    @Test
+    void recoversFromPartialFailureAfterSetNotNull() {
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + target() + " (id, note) VALUES (1, 'a')");
+        simulateNotNullCheckValidated(PUBLIC_SCHEMA, target(), "note");
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ALTER COLUMN note SET NOT NULL");
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertEquals(1, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"),
+                "the interrupted state must have the proof constraint still present");
+
+        callEnsureNotNull();
+
+        assertNotNullable(PUBLIC_SCHEMA, target(), "note");
+        assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, target(), "note"));
+    }
+
+    /**
+     * A partitioned parent is accepted and PostgreSQL recurses each step: the
+     * parent and every partition end NOT NULL, no temporary proof is left on
+     * either, and a second call is a no-op.
+     */
+    @Test
+    void handlesPartitionedParent() {
+        String parent = "ensure_not_null_partitioned";
+        String partition = "ensure_not_null_partitioned_1";
+        dsl.execute("CREATE TABLE " + PUBLIC_SCHEMA + "." + parent
+                + " (id int, note text) PARTITION BY RANGE (id)");
+        try {
+            dsl.execute("CREATE TABLE " + PUBLIC_SCHEMA + "." + partition
+                    + " PARTITION OF " + PUBLIC_SCHEMA + "." + parent + " FOR VALUES FROM (0) TO (100)");
+            dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + parent + " (id, note) VALUES (1, 'a')");
+
+            callEnsureNotNull(parent, "note");
+
+            assertNotNullable(PUBLIC_SCHEMA, parent, "note");
+            assertNotNullable(PUBLIC_SCHEMA, partition, "note");
+            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, parent, "note"));
+            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, partition, "note"));
+
+            callEnsureNotNull(parent, "note");
+
+            assertNotNullable(PUBLIC_SCHEMA, parent, "note");
+            assertNotNullable(PUBLIC_SCHEMA, partition, "note");
+            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, parent, "note"));
+            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, partition, "note"));
+        } finally {
+            dsl.execute("DROP TABLE IF EXISTS " + PUBLIC_SCHEMA + "." + parent);
+        }
     }
 
     /**
@@ -282,6 +342,60 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
     }
 
     private void callEnsureNotNull(String column) {
-        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, target(), column);
+        callEnsureNotNull(target(), column);
+    }
+
+    private void callEnsureNotNull(String table, String column) {
+        dsl.execute("CALL ddl_utils.ensure_not_null(?, ?, ?)", PUBLIC_SCHEMA, table, column);
+    }
+
+    /**
+     * Opens a worker connection whose session aborts any statement after
+     * {@link #WORKER_STATEMENT_TIMEOUT}: the backstop for a CALL the driver
+     * cannot interrupt once it is blocked in a socket read.
+     *
+     * @return a connection with a server-side statement timeout
+     * @throws SQLException if the connection or the setting fails
+     */
+    private Connection openWorkerConnection() throws SQLException {
+        Connection connection = openTestConnection();
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SET statement_timeout = '" + WORKER_STATEMENT_TIMEOUT + "'");
+            return connection;
+        } catch (SQLException e) {
+            connection.close();
+            throw e;
+        }
+    }
+
+    /**
+     * Runs the tasks on a fixed pool and waits at most 30 s for each, cancelling
+     * every worker on timeout and always shutting the pool down, so a blocked
+     * procedure cannot hang the build.
+     *
+     * @param workers the pool size
+     * @param tasks   the worker tasks
+     * @throws Exception the first worker failure, or the timeout failure
+     */
+    private void runConcurrently(int workers, List<Callable<Void>> tasks) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(workers);
+        List<Future<Void>> futures = new ArrayList<>();
+        try {
+            for (Callable<Void> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    for (Future<Void> pending : futures) {
+                        pending.cancel(true);
+                    }
+                    fail("a concurrent ensure_not_null call did not finish within 30 s", e);
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
     }
 }

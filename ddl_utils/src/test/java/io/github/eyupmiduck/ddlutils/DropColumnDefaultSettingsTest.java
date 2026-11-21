@@ -3,6 +3,8 @@ package io.github.eyupmiduck.ddlutils;
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Verifies the lock-aware {@code ddl_utils.drop_column_default} wrapper: it
  * resolves the table's lock settings through {@code get_lock_settings} and
@@ -15,10 +17,14 @@ class DropColumnDefaultSettingsTest extends SingleTableTest {
     }
 
     /**
-     * Drops the default using the database defaults.
+     * Drops the default using the database defaults. The fixture default is
+     * asserted first, so a missing fixture cannot make the drop a vacuous
+     * no-op.
      */
     @Test
     void dropColumnDefaultUsesDatabaseDefaults() {
+        assertEquals("'none'::text", columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"));
+
         Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note");
 
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "note");
@@ -28,11 +34,14 @@ class DropColumnDefaultSettingsTest extends SingleTableTest {
      * The wrapper passes the table-level lock settings to the helper: the
      * table's statement budget is far below the database default (30000 ms), so
      * a held lock makes the call give up quickly, whereas the default would have
-     * retried for ~30 s.
+     * retried for ~30 s. A call that gave up must leave the default in place.
      */
     @Test
     void dropColumnDefaultUsesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
                 () -> Routines.dropColumnDefault(dsl.configuration(), PUBLIC_SCHEMA, target(), "note"));
+
+        assertEquals("'none'::text", columnAttribute(PUBLIC_SCHEMA, target(), "note", "column_default"),
+                "a call that gave up must leave the default in place");
     }
 }

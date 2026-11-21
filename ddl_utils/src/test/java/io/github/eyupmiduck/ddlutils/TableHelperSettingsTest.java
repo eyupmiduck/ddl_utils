@@ -5,7 +5,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -29,12 +32,27 @@ class TableHelperSettingsTest extends PostgresTestBase {
 
     @AfterEach
     void cleanUp() {
-        try {
-            clearTableLockSettings(PUBLIC_SCHEMA, TARGET);
-        } finally {
-            dropTestTable(TARGET);
-            dropTestTable(REFERENCED);
-            dropTestTable(RENAMED);
+        // Run every step and chain the failures: a failed clear or drop must not
+        // leak the remaining tables.
+        RuntimeException failure = null;
+        List<Runnable> cleanups = List.of(
+                () -> clearTableLockSettings(PUBLIC_SCHEMA, TARGET),
+                () -> dropTestTable(TARGET),
+                () -> dropTestTable(REFERENCED),
+                () -> dropTestTable(RENAMED));
+        for (Runnable cleanup : cleanups) {
+            try {
+                cleanup.run();
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 
@@ -78,7 +96,8 @@ class TableHelperSettingsTest extends PostgresTestBase {
     /**
      * rename_table, add_primary_key_using_index and
      * add_unique_constraint_using_index pass the table-level lock settings to
-     * their helpers; a held ACCESS SHARE lock makes each give up quickly.
+     * their helpers; a held ACCESS SHARE lock makes each give up quickly, and
+     * each call that gave up must have left the catalog unchanged.
      */
     @Test
     void usesTableLockSettings() throws Exception {
@@ -88,11 +107,19 @@ class TableHelperSettingsTest extends PostgresTestBase {
 
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.renameTable(dsl.configuration(), PUBLIC_SCHEMA, TARGET, RENAMED));
+        assertTrue(tableExists(TARGET), "a rename that gave up must leave the table name in place");
+        assertFalse(tableExists(RENAMED), "a rename that gave up must not create the new name");
+
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.addPrimaryKeyUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET, "pk", "pk_idx"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "pk"),
+                "a call that gave up must not have created the primary key");
+
         assertGivesUpWhileTableLocked(TARGET, 2000,
                 () -> Routines.addUniqueConstraintUsingIndex(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
                         "code_uq", "code_idx"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "code_uq"),
+                "a call that gave up must not have created the unique constraint");
     }
 
 }

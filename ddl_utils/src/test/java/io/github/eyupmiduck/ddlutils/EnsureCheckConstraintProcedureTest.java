@@ -4,6 +4,8 @@ import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -16,6 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * committed step, and recovers when called again after a partial failure.
  */
 class EnsureCheckConstraintProcedureTest extends SingleTableTest {
+
+    /**
+     * The server-side statement timeout each concurrent worker sets, so a CALL
+     * blocked on a lock aborts instead of hanging the build.
+     */
+    private static final String WORKER_STATEMENT_TIMEOUT = "15s";
 
     EnsureCheckConstraintProcedureTest() {
         super("ensure_check_constraint_target", "id int, value int");
@@ -151,32 +159,28 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
     /**
      * Two concurrent calls for the same constraint are serialized by the
      * procedure's transaction-scoped advisory lock, so both succeed instead of
-     * one failing with duplicate_object.
+     * one failing with duplicate_object. Each worker runs with a server-side
+     * statement timeout, and a worker that does not finish is cancelled rather
+     * than hanging the build.
      */
     @Test
     void concurrentCallsAreSerialized() throws Exception {
         int callers = 2;
         CyclicBarrier barrier = new CyclicBarrier(callers);
-        ExecutorService pool = Executors.newFixedThreadPool(callers);
-        try {
-            List<Future<Void>> futures = new ArrayList<>();
-            for (int i = 0; i < callers; i++) {
-                futures.add(pool.submit(() -> {
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i = 0; i < callers; i++) {
+            tasks.add(() -> {
+                try (Connection connection = openWorkerConnection();
+                     Statement statement = connection.createStatement()) {
                     barrier.await(10, TimeUnit.SECONDS);
-                    try (Connection connection = openTestConnection();
-                         var statement = connection.createStatement()) {
-                        statement.execute("CALL ddl_utils.ensure_check_constraint('"
-                                + PUBLIC_SCHEMA + "', '" + target() + "', 'positive', 'value > 0')");
-                    }
-                    return null;
-                }));
-            }
-            for (Future<Void> future : futures) {
-                future.get(30, TimeUnit.SECONDS);
-            }
-        } finally {
-            pool.shutdownNow();
+                    statement.execute("CALL ddl_utils.ensure_check_constraint('"
+                            + PUBLIC_SCHEMA + "', '" + target() + "', 'positive', 'value > 0')");
+                }
+                return null;
+            });
         }
+
+        runConcurrently(callers, tasks);
 
         assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
@@ -194,6 +198,56 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
         assertEquals("42P01", failure.sqlState());
         assertTrue(failure.getMessage().contains("ensure_check_constraint: table"),
                 () -> "the message should name the missing table: " + failure.getMessage());
+    }
+
+    /**
+     * Opens a worker connection whose session aborts any statement after
+     * {@link #WORKER_STATEMENT_TIMEOUT}: the backstop for a CALL the driver
+     * cannot interrupt once it is blocked in a socket read.
+     *
+     * @return a connection with a server-side statement timeout
+     * @throws SQLException if the connection or the setting fails
+     */
+    private Connection openWorkerConnection() throws SQLException {
+        Connection connection = openTestConnection();
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SET statement_timeout = '" + WORKER_STATEMENT_TIMEOUT + "'");
+            return connection;
+        } catch (SQLException e) {
+            connection.close();
+            throw e;
+        }
+    }
+
+    /**
+     * Runs the tasks on a fixed pool and waits at most 30 s for each, cancelling
+     * every worker on timeout and always shutting the pool down, so a blocked
+     * procedure cannot hang the build.
+     *
+     * @param workers the pool size
+     * @param tasks   the worker tasks
+     * @throws Exception the first worker failure, or the timeout failure
+     */
+    private void runConcurrently(int workers, List<Callable<Void>> tasks) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(workers);
+        List<Future<Void>> futures = new ArrayList<>();
+        try {
+            for (Callable<Void> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    for (Future<Void> pending : futures) {
+                        pending.cancel(true);
+                    }
+                    fail("a concurrent ensure_check_constraint call did not finish within 30 s", e);
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     private void callEnsureCheckConstraint(String name, String expression) {
