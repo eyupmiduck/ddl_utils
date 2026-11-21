@@ -43,6 +43,22 @@ class DropRenameColumnTest extends SingleTableTest {
     }
 
     /**
+     * drop_columns rejects a list that is both blank and duplicated with the
+     * blank-element error, naming the position: ARRAY['', ''] must not report a
+     * duplicate of an invisible name.
+     */
+    @Test
+    void dropColumnsRejectsBlankNamesBeforeDuplicates() {
+        DataAccessException failure = assertThrows(DataAccessException.class,
+                () -> dropColumns(new String[]{"", ""}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("column name at position 1 is blank"),
+                () -> "the blank error must win and name the position: " + failure.getMessage());
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+    }
+
+    /**
      * drop_columns rejects an element that is blank, including whitespace other
      * than spaces, and leaves the table unchanged.
      */
@@ -132,15 +148,22 @@ class DropRenameColumnTest extends SingleTableTest {
 
     /**
      * rename_column rejects an identifier over PostgreSQL's 63-byte limit
-     * before the ALTER, leaving the table unchanged.
+     * before the ALTER, leaving the table unchanged. The DETAIL names both
+     * arguments and their byte lengths so the caller can see which is
+     * over-long.
      */
     @Test
     void renameColumnRejectsOverLongName() {
         String overLong = "c".repeat(64);
 
-        assertSqlState("22023", () -> renameColumn("old_name", overLong,
-                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        DataAccessException failure = assertThrows(DataAccessException.class,
+                () -> renameColumn("old_name", overLong, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("i_column_name is 8 bytes"),
+                () -> "the DETAIL should give i_column_name's length: " + failure.getMessage());
+        assertTrue(failure.getMessage().contains("i_new_column_name is 64 bytes"),
+                () -> "the DETAIL should give i_new_column_name's length: " + failure.getMessage());
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), overLong));
     }

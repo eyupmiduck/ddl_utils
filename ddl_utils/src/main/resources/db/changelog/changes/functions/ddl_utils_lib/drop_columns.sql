@@ -16,6 +16,15 @@ DECLARE
     l_duplicates text;
     l_count      integer := pg_catalog.cardinality(i_column_names);
 BEGIN
+    -- A blank name cannot produce a valid identifier; the helper also enforces
+    -- the 1-based precondition. Check blanks before duplicates: ARRAY['', ''] is
+    -- both blank and duplicate, and "blank at position N" is the precise defect
+    -- (the duplicate message would show an invisible name).
+    PERFORM ddl_utils_lib.assert_non_blank_elements(
+            i_values => i_column_names,
+            i_context => 'ddl_utils_lib.drop_columns',
+            i_label => 'column name');
+
     -- Duplicates would emit the same DROP COLUMN twice and fail with a raw
     -- 42703 from PostgreSQL; reject them with this function's own error.
     -- Compare as name, not text: PostgreSQL truncates an identifier to
@@ -37,13 +46,6 @@ BEGIN
             l_duplicates
             USING ERRCODE = '22023';
     END IF;
-
-    -- A blank name cannot produce a valid identifier; the helper also enforces
-    -- the 1-based precondition.
-    PERFORM ddl_utils_lib.assert_non_blank_elements(
-            i_values => i_column_names,
-            i_context => 'ddl_utils_lib.drop_columns',
-            i_label => 'column name');
 
     -- The column names are identifiers, quoted with %I; the fragment contains
     -- no caller-supplied SQL.

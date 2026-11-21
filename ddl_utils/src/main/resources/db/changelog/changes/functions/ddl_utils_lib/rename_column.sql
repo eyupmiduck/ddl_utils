@@ -15,11 +15,17 @@ $$
 BEGIN
     -- PostgreSQL silently truncates an identifier longer than NAMEDATALEN - 1
     -- bytes (with only a NOTICE), so a rename to an over-long name would appear
-    -- to succeed while later references to the full name fail.
+    -- to succeed while later references to the full name fail. The DETAIL names
+    -- both lengths so the caller can see which of the two identifiers is
+    -- over-long.
     IF pg_catalog.octet_length(i_column_name) > 63
         OR pg_catalog.octet_length(i_new_column_name) > 63 THEN
         RAISE EXCEPTION 'ddl_utils_lib.rename_column: an identifier must be at most 63 bytes'
-            USING ERRCODE = '22023';
+            USING ERRCODE = '22023',
+                DETAIL = pg_catalog.format(
+                        'i_column_name is %s bytes; i_new_column_name is %s bytes',
+                        pg_catalog.octet_length(i_column_name),
+                        pg_catalog.octet_length(i_new_column_name));
     END IF;
 
     -- Both names are identifiers, so they are quoted with %I and the fragment

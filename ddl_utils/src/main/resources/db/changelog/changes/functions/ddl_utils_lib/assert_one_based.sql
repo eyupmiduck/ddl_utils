@@ -19,11 +19,18 @@ BEGIN
     IF i_values IS NULL THEN
         RAISE EXCEPTION '%: array must not be NULL', i_context
             USING ERRCODE = '22023';
+    ELSIF pg_catalog.array_ndims(i_values) > 1 THEN
+        -- Check the dimensionality before the cardinality so a genuinely
+        -- multidimensional value reports its shape rather than some other
+        -- defect. A `> 1` test (rather than `IS DISTINCT FROM 1`) is deliberate:
+        -- PostgreSQL collapses an array with a zero-length dimension to an empty
+        -- array, for which array_ndims is NULL. Such a value is indistinguishable
+        -- from '{}' and must still report that it is empty below, not that it is
+        -- "not one-dimensional".
+        RAISE EXCEPTION '%: array must be one-dimensional', i_context
+            USING ERRCODE = '22023';
     ELSIF pg_catalog.cardinality(i_values) = 0 THEN
         RAISE EXCEPTION '%: array must not be empty', i_context
-            USING ERRCODE = '22023';
-    ELSIF pg_catalog.array_ndims(i_values) IS DISTINCT FROM 1 THEN
-        RAISE EXCEPTION '%: array must be one-dimensional', i_context
             USING ERRCODE = '22023';
     ELSIF pg_catalog.array_lower(i_values, 1) IS DISTINCT FROM 1 THEN
         RAISE EXCEPTION '%: array must be 1-based', i_context
