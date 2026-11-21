@@ -112,7 +112,10 @@ class ConstraintTest extends PostgresTestBase {
         assertSqlState("23514", () -> validateConstraint("label_not_pair"));
     }
 
-
+    /**
+     * add_foreign_key creates the FK as NOT VALID, so existing orphan rows do
+     * not fail the call.
+     */
     @Test
     void addForeignKeyIsNotValid() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)");
@@ -352,7 +355,8 @@ class ConstraintTest extends PostgresTestBase {
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertSqlState("3F000", () -> Routines.addForeignKey(dsl.configuration(), PUBLIC_SCHEMA, TARGET,
                 "fk", new String[]{"parent_id"}, "s".repeat(63), REFERENCED, new String[]{"id"},
-                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));    }
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+    }
 
     private void addCheckConstraint(String name, String expression) {
         Routines.addCheckConstraint(dsl.configuration(), PUBLIC_SCHEMA, TARGET, name, expression,
