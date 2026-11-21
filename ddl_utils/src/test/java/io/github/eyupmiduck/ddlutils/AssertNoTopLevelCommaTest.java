@@ -2,6 +2,8 @@ package io.github.eyupmiduck.ddlutils;
 
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,22 +50,24 @@ class AssertNoTopLevelCommaTest extends PostgresTestBase {
     }
 
     /**
-     * Representative top-level comma positions are all rejected: leading,
-     * trailing, doubled, whitespace-separated, and before a different ALTER
-     * action.
+     * A top-level comma is rejected wherever it appears: leading, trailing,
+     * doubled, whitespace-separated, or before a different ALTER action. Each
+     * form is its own case, so a regression is reported against the form that
+     * broke.
+     *
+     * @param value an expression whose comma is at the top level
      */
-    @Test
-    void rejectsRepresentativeTopLevelCommaForms() {
-        for (String value : new String[]{
-                ", ADD COLUMN backdoor text",
-                "0,",
-                "0,, 1",
-                "0 , ADD COLUMN backdoor text",
-                "0, DROP COLUMN id",
-                "0,\tADD COLUMN backdoor text",
-                "  0, x"}) {
-            assertSqlState("22023", () -> assertNoTopLevelComma(value));
-        }
+    @ParameterizedTest
+    @ValueSource(strings = {
+            ", ADD COLUMN backdoor text",
+            "0,",
+            "0,, 1",
+            "0 , ADD COLUMN backdoor text",
+            "0, DROP COLUMN id",
+            "0,\tADD COLUMN backdoor text",
+            "  0, x"})
+    void rejectsRepresentativeTopLevelCommaForms(String value) {
+        assertSqlState("22023", () -> assertNoTopLevelComma(value));
     }
 
     /**

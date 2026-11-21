@@ -96,9 +96,23 @@ class ConstraintTest extends PostgresTestBase {
     }
 
     /**
-     * add_foreign_key creates the FK as NOT VALID, so existing orphan rows do
-     * not fail the call.
+     * A comma inside a quoted literal is a legitimate CHECK expression, not a
+     * second ALTER TABLE action: the constraint is created and validated end to
+     * end through {@code add_check_constraint} rather than being rejected by the
+     * top-level-comma guard.
      */
+    @Test
+    void acceptsCommaInsideQuotedLiteralInCheckExpression() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + TARGET + " ADD COLUMN label text");
+        dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (label) VALUES ('a,b')");
+
+        addCheckConstraint("label_not_pair", "label <> 'a,b'");
+        assertNotValidated(PUBLIC_SCHEMA, TARGET, "label_not_pair");
+
+        assertSqlState("23514", () -> validateConstraint("label_not_pair"));
+    }
+
+
     @Test
     void addForeignKeyIsNotValid() {
         dsl.execute("INSERT INTO " + PUBLIC_SCHEMA + "." + TARGET + " (parent_id) VALUES (999)");

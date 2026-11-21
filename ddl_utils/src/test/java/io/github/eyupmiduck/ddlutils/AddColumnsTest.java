@@ -1,6 +1,7 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.ddlutils.jooq.ddl_utils_lib.Routines;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,6 +50,13 @@ class AddColumnsTest extends SingleTableTest {
                 new String[]{"int"},
                 new String[]{null, null},
                 new Boolean[]{true, true},
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        // types longer than names
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"first"},
+                new String[]{"int", "text"},
+                new String[]{null},
+                new Boolean[]{true},
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         // defaults shorter than names
         assertSqlState("22023", () -> addColumns(
@@ -256,17 +264,21 @@ class AddColumnsTest extends SingleTableTest {
     }
 
     /**
-     * A 0-based nullable array is rejected by the dedicated guard; without it,
-     * the loop would read a missing element as NULL and silently create a
-     * nullable column instead of the requested NOT NULL one.
+     * A 0-based nullable array is rejected by the dedicated 1-based guard: with
+     * one element the lengths agree, so only {@code assert_one_based} can reject
+     * it. Without that guard the loop would read a missing element as NULL and
+     * silently create a nullable column instead of the requested NOT NULL one.
      */
     @Test
     void rejectsNonOneBasedNullableArray() {
-        assertSqlState("22023", () -> dsl.execute(
+        DataAccessException failure = assertThrows(DataAccessException.class, () -> dsl.execute(
                 "SELECT ddl_utils_lib.add_columns(?, ?, ARRAY['first'], ARRAY['int'], "
-                        + "ARRAY[NULL::text], '[0:1]={true,false}'::boolean[], ?, ?, ?)",
+                        + "ARRAY[NULL::text], '[0:0]={true}'::boolean[], ?, ?, ?)",
                 PUBLIC_SCHEMA, target(), DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("must be 1-based"),
+                () -> "the 1-based guard, not the length guard, must reject it: " + failure.getMessage());
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "first"));
     }
 

@@ -37,10 +37,10 @@ class AlterTableTest extends SingleTableTest {
      */
     @Test
     void appliesAlterTableFragments() {
-        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN added int", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN added int", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "added"));
 
-        alterTable(PUBLIC_SCHEMA, target(), "DROP COLUMN added", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "DROP COLUMN added", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "added"));
     }
 
@@ -51,7 +51,8 @@ class AlterTableTest extends SingleTableTest {
     @Test
     void rejectsFragmentsWithMultipleStatements() {
         assertSqlState("22023", () -> alterTable(
-                PUBLIC_SCHEMA, target(), "ADD COLUMN injected int; DROP TABLE " + target(), 1000, 10, 5000));
+                PUBLIC_SCHEMA, target(), "ADD COLUMN injected int; DROP TABLE " + target(),
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "injected"));
         assertDoesNotThrow(() -> dsl.fetchOne("SELECT 1 FROM " + target()));
@@ -64,10 +65,12 @@ class AlterTableTest extends SingleTableTest {
      */
     @Test
     void acceptsQuotedSeparatorsAndComments() {
-        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN note text DEFAULT 'a;b'", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN note text DEFAULT 'a;b'",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
 
-        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN \"x--y\" int", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN \"x--y\" int",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "x--y"));
     }
 
@@ -77,11 +80,13 @@ class AlterTableTest extends SingleTableTest {
      */
     @Test
     void acceptsEscapedQuoteAndRejectsUnquotedSeparator() {
-        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN note text DEFAULT 'it''s;ok'", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN note text DEFAULT 'it''s;ok'",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "note"));
 
         assertSqlState("22023", () -> alterTable(
-                PUBLIC_SCHEMA, target(), "ADD COLUMN bad int; SELECT 1", 1000, 10, 5000));
+                PUBLIC_SCHEMA, target(), "ADD COLUMN bad int; SELECT 1",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "bad"));
     }
 
@@ -91,15 +96,17 @@ class AlterTableTest extends SingleTableTest {
      */
     @Test
     void acceptsDollarIdentifierAndRejectsUnquotedComment() {
-        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN a$b int", 1000, 10, 5000);
+        alterTable(PUBLIC_SCHEMA, target(), "ADD COLUMN a$b int", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "a$b"));
 
         assertSqlState("22023", () -> alterTable(
-                PUBLIC_SCHEMA, target(), "ADD COLUMN commented int -- trailing", 1000, 10, 5000));
+                PUBLIC_SCHEMA, target(), "ADD COLUMN commented int -- trailing",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "commented"));
 
         assertSqlState("22023", () -> alterTable(
-                PUBLIC_SCHEMA, target(), "ADD COLUMN blocked int /* comment */", 1000, 10, 5000));
+                PUBLIC_SCHEMA, target(), "ADD COLUMN blocked int /* comment */",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "blocked"));
     }
 
@@ -116,7 +123,7 @@ class AlterTableTest extends SingleTableTest {
             assertSqlState("22023", () -> alterTable(PUBLIC_SCHEMA, target(),
                     "ADD COLUMN note text DEFAULT $q$'$q$ ; DROP TABLE "
                             + PUBLIC_SCHEMA + ".alter_table_victim; SELECT 'x'",
-                    1000, 10, 5000));
+                    DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
             assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "note"));
             assertDoesNotThrow(() -> dsl.fetchOne(
@@ -133,27 +140,32 @@ class AlterTableTest extends SingleTableTest {
     @Test
     void acceptsDollarQuotedValuesAndQuotedIdentifiers() {
         alterTable(PUBLIC_SCHEMA, target(),
-                "ADD COLUMN payload jsonb DEFAULT $$ {\"v\": \"a;b\"} $$", 1000, 10, 5000);
+                "ADD COLUMN payload jsonb DEFAULT $$ {\"v\": \"a;b\"} $$",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "payload"));
 
         alterTable(PUBLIC_SCHEMA, target(),
-                "ADD COLUMN tagged text DEFAULT $tag$--not a comment; x$tag$", 1000, 10, 5000);
+                "ADD COLUMN tagged text DEFAULT $tag$--not a comment; x$tag$",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "tagged"));
 
         alterTable(PUBLIC_SCHEMA, target(),
-                "ADD COLUMN estr text DEFAULT E'it\\'s;ok'", 1000, 10, 5000);
+                "ADD COLUMN estr text DEFAULT E'it\\'s;ok'", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "estr"));
 
         alterTable(PUBLIC_SCHEMA, target(),
-                "ADD COLUMN \"a'b\" int", 1000, 10, 5000);
+                "ADD COLUMN \"a'b\" int", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "a'b"));
     }
 
     /**
      * Retries after a lock timeout and succeeds once a competing session
      * releases its lock. The lock is held when the call starts and released on
-     * a background thread after a delay, so at least one attempt must have timed
-     * out and been retried before the call succeeds.
+     * a background thread after a delay, so a successful call that waited at
+     * least the release delay proves it observed contention rather than
+     * applying the ALTER immediately. (This does not by itself prove a retry: a
+     * single blocking attempt would also pass. That the loop retries and then
+     * gives up is proved by {@link #givesUpAfterStatementDuration}.)
      */
     @Test
     void retriesUntilTheLockIsAvailable() {
@@ -164,7 +176,8 @@ class AlterTableTest extends SingleTableTest {
 
         long elapsedMillis = (System.nanoTime() - started) / 1_000_000;
         assertTrue(elapsedMillis >= 800,
-                () -> "the call should have retried at least once; elapsed=" + elapsedMillis + "ms");
+                () -> "the call should have observed the held lock and waited for it; elapsed="
+                        + elapsedMillis + "ms");
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "retried"));
     }
 
@@ -194,7 +207,7 @@ class AlterTableTest extends SingleTableTest {
             assertNotEquals("0", before, "the test must start from a non-default lock_timeout");
 
             tx.fetch("SELECT ddl_utils_lib.alter_table(?, ?, ?, ?, ?, ?)",
-                    PUBLIC_SCHEMA, target(), "ADD COLUMN tuned int", 1000, 10, 5000);
+                    PUBLIC_SCHEMA, target(), "ADD COLUMN tuned int", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
 
             String after = tx.fetchOne("SELECT current_setting('lock_timeout') AS value")
                     .get("value", String.class);
@@ -256,7 +269,8 @@ class AlterTableTest extends SingleTableTest {
             try {
                 tx.transaction(inner -> DSL.using(inner).fetch(
                         "SELECT ddl_utils_lib.alter_table(?, ?, ?, ?, ?, ?)",
-                        PUBLIC_SCHEMA, target(), "ADD COLUMN x int; SELECT 1", 1000, 10, 5000));
+                        PUBLIC_SCHEMA, target(), "ADD COLUMN x int; SELECT 1",
+                                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
                 fail("expected the invalid fragment to be rejected");
             } catch (DataAccessException expected) {
                 assertEquals("22023", expected.sqlState());
@@ -277,6 +291,25 @@ class AlterTableTest extends SingleTableTest {
             }
             assertCallerLockTimeout(tx, "7s");
         });
+    }
+
+    /**
+     * A blank fragment is rejected by the {@code non_null_text} domain before
+     * the body runs, and a missing table reaches the ALTER and fails as
+     * undefined_table (42P01) instead of being pre-validated into some other
+     * error. Neither leaves a column behind.
+     */
+    @Test
+    void rejectsBlankFragmentAndMissingTable() {
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, target(), "   ",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertDomainViolation(() -> alterTable(PUBLIC_SCHEMA, target(), "\t\n",
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertSqlState("42P01", () -> alterTable(PUBLIC_SCHEMA, "alter_table_missing",
+                "ADD COLUMN added int", DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "added"));
     }
 
     /**

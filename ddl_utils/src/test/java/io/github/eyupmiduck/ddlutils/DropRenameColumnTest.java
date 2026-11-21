@@ -7,9 +7,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Verifies the structured column helpers {@code ddl_utils_lib.drop_column} and
- * {@code ddl_utils_lib.rename_column}: each builds an identifier-safe fragment
- * and runs it through {@code ddl_utils_lib.alter_table}.
+ * Verifies the structured column helpers {@code ddl_utils_lib.drop_column},
+ * {@code ddl_utils_lib.drop_columns} and {@code ddl_utils_lib.rename_column}:
+ * each builds an identifier-safe fragment and runs it through
+ * {@code ddl_utils_lib.alter_table}.
  */
 class DropRenameColumnTest extends SingleTableTest {
 
@@ -92,15 +93,24 @@ class DropRenameColumnTest extends SingleTableTest {
 
     /**
      * Two names that differ only after the 63-byte identifier limit collapse to
-     * the same PostgreSQL identifier and are rejected as duplicates.
+     * the same PostgreSQL identifier and are rejected as duplicates. The error
+     * names the duplicate and says it is a duplicate, so it cannot be confused
+     * with the separate 63-byte length rejection.
      */
     @Test
     void dropColumnsRejectsNamesThatCollapseToTheSameIdentifier() {
         String base = "a".repeat(63);
 
-        assertSqlState("22023", () -> dropColumns(
-                new String[]{base + "x", base + "y"}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        DataAccessException failure = assertThrows(DataAccessException.class,
+                () -> dropColumns(new String[]{base + "x", base + "y"},
+                        DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
 
+        assertEquals("22023", failure.sqlState());
+        assertTrue(failure.getMessage().contains("duplicate"),
+                () -> "the error must be the duplicate rejection, not a length rejection: "
+                        + failure.getMessage());
+        assertTrue(failure.getMessage().contains(base + "x"),
+                () -> "the error should name the collapsed duplicate: " + failure.getMessage());
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "keep"));
     }
@@ -166,6 +176,33 @@ class DropRenameColumnTest extends SingleTableTest {
                 () -> "the DETAIL should give i_new_column_name's length: " + failure.getMessage());
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
         assertFalse(hasColumn(PUBLIC_SCHEMA, target(), overLong));
+    }
+
+    /**
+     * rename_column accepts a new name of exactly 63 bytes (NAMEDATALEN - 1),
+     * the largest identifier PostgreSQL stores without truncation.
+     */
+    @Test
+    void renameColumnAcceptsNameAtByteLimit() {
+        String atLimit = "c".repeat(63);
+
+        renameColumn("old_name", atLimit, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), atLimit));
+    }
+
+    /**
+     * The 63-byte limit is measured in bytes, not characters: 32 two-byte
+     * characters are 64 bytes and would be truncated by PostgreSQL, so the
+     * rename is rejected and the old name survives.
+     */
+    @Test
+    void renameColumnRejectsMultibyteOverLongName() {
+        assertSqlState("22023", () -> renameColumn(
+                "old_name", "\u00e9".repeat(32), DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"));
     }
 
     /**
