@@ -2,7 +2,6 @@ package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.testing.PublishedRelease;
 import io.github.eyupmiduck.changelogvalidator.testing.UpgradeContract;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,13 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p>The previous release is resolved from GitHub Packages automatically, and
  * the container configuration is shared with the regular test base (see
  * {@link PostgresTestBase}).
- *
- * <p>Temporarily disabled for ddl-s47: that epic edits the existing changelog
- * and routine files in place, which invalidates the comparison with the last
- * published release until the epic is complete. The final PR of the epic
- * re-enables it.
  */
-@Disabled("ddl-s47: in-place changeset edits during the epic; re-enable in the final PR")
 class LiquibaseUpgradeTest extends UpgradeContract {
 
     /**
