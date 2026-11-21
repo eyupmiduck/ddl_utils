@@ -126,8 +126,10 @@
                 <enabled>true</enabled>
             </releases>
             <!-- Maven enables snapshot resolution when a repository has no
-                 <snapshots> policy. The project forbids snapshot versions, so
-                 state it explicitly rather than relying on the default. -->
+                 <snapshots> policy. The project consumes no snapshot
+                 dependencies (only the project's own revision is a SNAPSHOT
+                 locally), so state it explicitly rather than relying on the
+                 default. -->
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>

@@ -27,7 +27,9 @@ permissions:
   # Needed for the SARIF upload. It is read-only for pull_request runs from
   # forks, so the called workflow's upload is disabled there via the
   # `upload-sarif` input below; the lint still runs and `verify` stays the gate.
-  # Same-repo PRs, pushes and schedules upload.
+  # This workflow triggers only on pull_request, so only same-repo PR runs
+  # upload; the expression stays event-aware in case push/schedule triggers are
+  # ever added.
   security-events: write
 
 jobs:
