@@ -390,6 +390,16 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="function-ddl_utils_lib.foreign_key_definition_matches" author="lee.horner"
+               dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/foreign_key_definition_matches.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/foreign_key_definition_matches-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="function-ddl_utils_lib.add_foreign_key" author="lee.horner" dbms="postgresql" runOnChange="true">
         <createProcedure path="functions/ddl_utils_lib/add_foreign_key.sql" relativeToChangelogFile="true"/>
         <rollback>

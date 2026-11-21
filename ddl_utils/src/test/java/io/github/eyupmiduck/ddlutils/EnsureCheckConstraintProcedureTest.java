@@ -181,6 +181,21 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
         assertValidated(PUBLIC_SCHEMA, target(), "positive");
     }
 
+    /**
+     * A missing source table is reported as undefined_table with the
+     * procedure's own message, not a raw ::regclass cast error.
+     */
+    @Test
+    void rejectsMissingSourceTable() {
+        DataAccessException failure = assertThrows(DataAccessException.class, () -> dsl.execute(
+                "CALL ddl_utils.ensure_check_constraint(?, ?, ?, ?)",
+                PUBLIC_SCHEMA, "ensure_check_constraint_missing", "positive", "value > 0"));
+
+        assertEquals("42P01", failure.sqlState());
+        assertTrue(failure.getMessage().contains("ensure_check_constraint: table"),
+                () -> "the message should name the missing table: " + failure.getMessage());
+    }
+
     private void callEnsureCheckConstraint(String name, String expression) {
         dsl.execute("CALL ddl_utils.ensure_check_constraint(?, ?, ?, ?)",
                 PUBLIC_SCHEMA, target(), name, expression);

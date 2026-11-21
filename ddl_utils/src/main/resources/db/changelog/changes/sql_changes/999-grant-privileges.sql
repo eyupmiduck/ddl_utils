@@ -568,6 +568,24 @@ GRANT EXECUTE ON FUNCTION ddl_utils_lib.add_check_constraint(
     ddl_utils.non_negative_integer,
     ddl_utils.non_negative_integer
     ) TO ddl_utils_caller;
+REVOKE EXECUTE ON FUNCTION ddl_utils_lib.foreign_key_definition_matches(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_non_null_text_array
+    ) FROM public;
+GRANT EXECUTE ON FUNCTION ddl_utils_lib.foreign_key_definition_matches(
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_null_text,
+    ddl_utils.non_empty_non_null_text_array,
+    ddl_utils.non_empty_non_null_text_array
+    ) TO ddl_utils_caller;
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.add_foreign_key(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,

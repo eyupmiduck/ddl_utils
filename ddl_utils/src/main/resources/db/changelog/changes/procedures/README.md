@@ -154,8 +154,8 @@ Add a `CHECK` constraint and validate it in two committed steps, so the `ACCESS
 EXCLUSIVE` lock of `ADD CONSTRAINT` is released before the scan. The constraint
 name must be at most 63 bytes (`22023`); PostgreSQL would otherwise truncate it
 and the validation/recovery guard would not find it. The source relation must be
-an ordinary or partitioned table (`relkind` `r`/`p`), otherwise the procedure
-raises `42809` before any DDL.
+an ordinary or partitioned table (`relkind` `r`/`p`); a missing relation raises
+`42P01` and a non-table `42809` before any DDL.
 
 1. `ddl_utils_lib.add_check_constraint(<name>, <expr>)` — `NOT VALID`, instant.
 2. `ddl_utils_lib.validate_constraint(<name>)` — scans under `SHARE UPDATE
@@ -164,6 +164,12 @@ raises `42809` before any DDL.
 A re-run skips the add when the constraint exists and the validate when it is
 already valid. A violation by existing rows fails validation with `23514` and
 leaves the constraint `NOT VALID`; fix the data and re-run.
+
+Each step re-takes the transaction-scoped advisory lock after the `COMMIT` and
+re-resolves the relation and constraint, because external DDL is not blocked by
+the advisory lock: a relation dropped in the gap raises `42P01`, a vanished
+constraint `42704`, and a same-named constraint of another kind `42710`. The
+same-kind conflict guard also runs under the first lock.
 
 The constraint **name is the identity**: a same-named `CHECK` is treated as the
 target and its expression is not re-checked. A `CHECK` expression cannot be
@@ -189,13 +195,24 @@ Same two committed steps as `ensure_check_constraint`, for a foreign key:
 tables) then `ddl_utils_lib.validate_constraint`. Idempotent and recoverable the
 same way. The constraint name must be at most 63 bytes (`22023`), as for
 `ensure_check_constraint`; the source and referenced relations must be ordinary
-or partitioned tables (`relkind` `r`/`p`), otherwise the procedure raises
-`42809`.
+or partitioned tables (`relkind` `r`/`p`), otherwise a missing relation raises
+`42P01` and a non-table `42809`.
+
+Even a `NOT VALID` foreign key requires the referenced columns to be covered by
+a unique index or constraint (a bare unique index is accepted). The procedure
+checks that before any DDL and raises `42830` with its own message instead of
+the generic `ALTER TABLE` error.
 
 Unlike a `CHECK`, a foreign key can be compared exactly, so a same-named key
 that references different columns or a different table is not silently accepted:
-the procedure compares `confrelid` and the ordered `conkey`/`confkey` and raises
-`42710` when the definition differs. The mismatch message includes the stored
-definition. A transaction-scoped advisory lock is keyed on the sorted pair of
-relations, so reciprocal `ensure_foreign_key(A -> B)` and `(B -> A)` calls
-serialize instead of acquiring the two table locks in opposite order.
+the procedure compares `confrelid` and the `conkey`/`confkey` mapping as a
+multiset (PostgreSQL may reorder the keys) and raises `42710` when the definition
+differs. The mismatch message includes the stored definition. A
+transaction-scoped advisory lock is keyed on the sorted pair of relations, so
+reciprocal `ensure_foreign_key(A -> B)` and `(B -> A)` calls serialize instead of
+acquiring the two table locks in opposite order.
+
+After the `COMMIT`, step 2 re-takes the lock and re-resolves both relations and
+the constraint: a relation dropped in the gap raises `42P01`, a vanished
+constraint `42704`, and a constraint whose definition changed `42710`, instead
+of silently skipping validation or validating the wrong key.

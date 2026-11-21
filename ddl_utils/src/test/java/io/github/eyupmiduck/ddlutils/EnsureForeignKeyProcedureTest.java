@@ -393,6 +393,41 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 new String[]{"id"}));
     }
 
+    /**
+     * A missing source table is reported as undefined_table with the
+     * procedure's own message, not a raw ::regclass cast error.
+     */
+    @Test
+    void rejectsMissingSourceTable() {
+        DataAccessException failure = assertThrows(DataAccessException.class, () -> dsl.execute(
+                "CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                PUBLIC_SCHEMA, "ensure_foreign_key_missing", "fk_missing",
+                new String[]{"parent_id"}, PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+
+        assertEquals("42P01", failure.sqlState());
+        assertTrue(failure.getMessage().contains("ensure_foreign_key: table"),
+                () -> "the message should name the missing table: " + failure.getMessage());
+    }
+
+    /**
+     * The referenced columns must be covered by a unique index or constraint even
+     * for a NOT VALID foreign key; the procedure reports it before any DDL.
+     */
+    @Test
+    void rejectsReferencedColumnsWithoutUniqueIndex() {
+        String noKey = "ensure_foreign_key_no_key";
+        createTestTable(noKey, "id int");
+        try {
+            assertSqlState("42830", () -> dsl.execute(
+                    "CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
+                    PUBLIC_SCHEMA, TARGET, "fk_no_key", new String[]{"parent_id"},
+                    PUBLIC_SCHEMA, noKey, new String[]{"id"}));
+            assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "fk_no_key"));
+        } finally {
+            dropTestTable(noKey);
+        }
+    }
+
     private void callEnsureForeignKey(String name) {
         dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
                 PUBLIC_SCHEMA, TARGET, name,

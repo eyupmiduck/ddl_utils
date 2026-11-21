@@ -634,6 +634,26 @@ RETURNS void
 ROW EXCLUSIVE` on both tables). The two column arrays must be non-empty and of
 equal length; blank names are rejected with `22023`.
 
+### `ddl_utils_lib.foreign_key_definition_matches(i_schema_name, i_table_name, i_constraint_name, i_referenced_schema_name, i_referenced_table_name, i_column_names, i_referenced_column_names)`
+
+```sql
+i_schema_name             ddl_utils.non_null_text
+i_table_name              ddl_utils.non_null_text
+i_constraint_name         ddl_utils.non_null_text
+i_referenced_schema_name  ddl_utils.non_null_text
+i_referenced_table_name   ddl_utils.non_null_text
+i_column_names            ddl_utils.non_empty_non_null_text_array
+i_referenced_column_names ddl_utils.non_empty_non_null_text_array
+RETURNS boolean
+```
+
+`STABLE`, `SECURITY INVOKER`. Returns whether the named foreign key on the source
+table matches the referenced relation and the source -> referenced column
+mapping, with PostgreSQL's default actions, match type and deferrability. The
+mapping is compared as a multiset. Used by the `ensure_foreign_key` procedure to
+compare a same-named constraint and to re-verify it after the inter-step
+`COMMIT`.
+
 ### `ddl_utils_lib.validate_constraint(i_schema_name, i_table_name, i_constraint_name, settings...)`
 
 ```sql
