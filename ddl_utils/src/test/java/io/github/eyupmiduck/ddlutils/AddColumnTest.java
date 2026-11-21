@@ -109,10 +109,15 @@ class AddColumnTest extends SingleTableTest {
     }
 
     /**
-     * Rejects null for each mandatory text argument through its domain.
+     * Rejects null for each mandatory text argument (schema, table, column and
+     * type) through its domain, so a caller cannot pass an incomplete target.
      */
     @Test
     void rejectsNullTextArguments() {
+        assertDomainViolation(() -> Routines.addColumn(dsl.configuration(),
+                null, target(), "note", "text", true, null, 100, 100, 1000));
+        assertDomainViolation(() -> Routines.addColumn(dsl.configuration(),
+                PUBLIC_SCHEMA, null, "note", "text", true, null, 100, 100, 1000));
         assertDomainViolation(() -> addColumn(null, "text", true, null, 100, 100, 1000));
         assertDomainViolation(() -> addColumn("note", null, true, null, 100, 100, 1000));
     }

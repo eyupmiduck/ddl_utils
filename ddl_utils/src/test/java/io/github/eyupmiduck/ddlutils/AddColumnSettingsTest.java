@@ -60,6 +60,7 @@ class AddColumnSettingsTest extends SingleTableTest {
         assertNullable(PUBLIC_SCHEMA, target(), "first");
         assertNoColumnDefault(PUBLIC_SCHEMA, target(), "first");
         assertNotNullable(PUBLIC_SCHEMA, target(), "second");
+        assertNoColumnDefault(PUBLIC_SCHEMA, target(), "second");
     }
 
     /**

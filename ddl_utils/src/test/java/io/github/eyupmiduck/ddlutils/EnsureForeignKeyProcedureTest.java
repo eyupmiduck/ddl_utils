@@ -7,9 +7,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,6 +25,12 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
 
     private static final String TARGET = "ensure_foreign_key_target";
     private static final String REFERENCED = "ensure_foreign_key_referenced";
+
+    /**
+     * The server-side statement timeout each concurrent worker sets, so a CALL
+     * blocked on a lock aborts instead of hanging the build.
+     */
+    private static final String WORKER_STATEMENT_TIMEOUT = "15s";
 
     @BeforeEach
     void createTargetTables() {
@@ -54,7 +62,9 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     /**
      * The created foreign key has the requested source/referenced tables and
      * column mapping and the PostgreSQL-default referential actions and
-     * deferrability, not just any constraint named {@code fk_parent}.
+     * deferrability, not just any constraint named {@code fk_parent}. The
+     * catalog lookups are scoped to the target table and to foreign keys, so a
+     * same-named constraint on another table cannot be read instead.
      */
     private void assertForeignKeyDefinition(String name) {
         Record definition = dsl.fetchOne("""
@@ -69,8 +79,12 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 JOIN pg_class c ON c.oid = con.conrelid
                 JOIN pg_class cr ON cr.oid = con.confrelid
                 JOIN pg_namespace n ON n.oid = con.connamespace
-                WHERE con.conname = ? AND n.nspname = ?
-                """, name, PUBLIC_SCHEMA);
+                WHERE con.conname = ?
+                    AND con.contype = 'f'
+                    AND con.conrelid = (SELECT oid FROM pg_class
+                                        WHERE relname = ? AND relnamespace =
+                                            (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                """, name, TARGET, PUBLIC_SCHEMA);
         assertNotNull(definition, () -> "constraint not found: " + name);
         assertEquals(TARGET, definition.get("table_name", String.class));
         assertEquals(REFERENCED, definition.get("referenced_table_name", String.class));
@@ -87,9 +101,35 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 JOIN pg_attribute sa ON sa.attrelid = con.conrelid AND sa.attnum = con.conkey[s.i]
                 JOIN pg_attribute ra ON ra.attrelid = con.confrelid AND ra.attnum = con.confkey[s.i]
                 WHERE con.conname = ?
-                    AND con.connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
-                """, name, PUBLIC_SCHEMA).getValues(0, String.class);
+                    AND con.contype = 'f'
+                    AND con.conrelid = (SELECT oid FROM pg_class
+                                        WHERE relname = ? AND relnamespace =
+                                            (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                ORDER BY s.i
+                """, name, TARGET, PUBLIC_SCHEMA).getValues(0, String.class);
         assertEquals(List.of("parent_id->id"), mapping);
+    }
+
+    /**
+     * The catalog assertions read the constraint on the target table even when
+     * another table in the same schema has a same-named foreign key, so the
+     * helper cannot match the wrong rows or fail with a cardinality error.
+     */
+    @Test
+    void readsDefinitionWhenSameNamedForeignKeyExistsElsewhere() {
+        String other = "ensure_foreign_key_other";
+        createTestTable(other, "id int PRIMARY KEY, parent_id int");
+        try {
+            dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + other
+                    + " ADD CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES "
+                    + PUBLIC_SCHEMA + "." + other + " (id)");
+
+            callEnsureForeignKey("fk_parent");
+
+            assertForeignKeyDefinition("fk_parent");
+        } finally {
+            dropTestTable(other);
+        }
     }
 
     /**
@@ -112,6 +152,8 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     /**
      * Reciprocal foreign keys on two tables serialize on the same advisory-lock
      * slot, so concurrent calls do not deadlock in opposite table-lock order.
+     * Each worker runs with a server-side statement timeout and the test fails
+     * (cancelling every worker) rather than hanging if one does not finish.
      */
     @Test
     void reciprocalCallsDoNotDeadlock() throws Exception {
@@ -121,32 +163,29 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
         try {
             int callers = 2;
             CyclicBarrier barrier = new CyclicBarrier(callers);
-            try (ExecutorService pool = Executors.newFixedThreadPool(callers)) {
-                List<Future<Void>> futures = new ArrayList<>();
-                futures.add(pool.submit(() -> {
+            List<Callable<Void>> tasks = new ArrayList<>();
+            tasks.add(() -> {
+                try (Connection connection = openWorkerConnection();
+                     Statement statement = connection.createStatement()) {
                     barrier.await(10, TimeUnit.SECONDS);
-                    try (Connection connection = openTestConnection();
-                         Statement statement = connection.createStatement()) {
-                        statement.execute("CALL ddl_utils.ensure_foreign_key('" + PUBLIC_SCHEMA + "', '"
-                                + TARGET + "', 'fk_forward', ARRAY['parent_id'], '"
-                                + PUBLIC_SCHEMA + "', '" + REFERENCED + "', ARRAY['id'])");
-                    }
-                    return null;
-                }));
-                futures.add(pool.submit(() -> {
-                    barrier.await(10, TimeUnit.SECONDS);
-                    try (Connection connection = openTestConnection();
-                         Statement statement = connection.createStatement()) {
-                        statement.execute("CALL ddl_utils.ensure_foreign_key('" + PUBLIC_SCHEMA + "', '"
-                                + REFERENCED + "', 'fk_reverse', ARRAY['target_id'], '"
-                                + PUBLIC_SCHEMA + "', '" + TARGET + "', ARRAY['id'])");
-                    }
-                    return null;
-                }));
-                for (Future<Void> future : futures) {
-                    future.get(30, TimeUnit.SECONDS);
+                    statement.execute("CALL ddl_utils.ensure_foreign_key('" + PUBLIC_SCHEMA + "', '"
+                            + TARGET + "', 'fk_forward', ARRAY['parent_id'], '"
+                            + PUBLIC_SCHEMA + "', '" + REFERENCED + "', ARRAY['id'])");
                 }
-            }
+                return null;
+            });
+            tasks.add(() -> {
+                try (Connection connection = openWorkerConnection();
+                     Statement statement = connection.createStatement()) {
+                    barrier.await(10, TimeUnit.SECONDS);
+                    statement.execute("CALL ddl_utils.ensure_foreign_key('" + PUBLIC_SCHEMA + "', '"
+                            + REFERENCED + "', 'fk_reverse', ARRAY['target_id'], '"
+                            + PUBLIC_SCHEMA + "', '" + TARGET + "', ARRAY['id'])");
+                }
+                return null;
+            });
+
+            runConcurrently(callers, tasks);
 
             assertValidated(PUBLIC_SCHEMA, TARGET, "fk_forward");
             assertValidated(PUBLIC_SCHEMA, REFERENCED, "fk_reverse");
@@ -161,7 +200,9 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     /**
      * A same-named foreign key with a different definition (here, a different
      * referencing column) is not mistaken for the requested one: the procedure
-     * fails loudly instead of silently accepting the wrong constraint.
+     * fails loudly instead of silently accepting the wrong constraint. The
+     * message is checked case-insensitively (not against the deparse's upper
+     * case) and the untouched definition is verified through the catalog.
      */
     @Test
     void rejectsSameNamedForeignKeyWithDifferentDefinition() {
@@ -173,8 +214,10 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 () -> callEnsureForeignKey("fk_parent"));
 
         assertEquals("42710", failure.sqlState());
-        assertTrue(failure.getMessage().contains("FOREIGN KEY"),
-                () -> "the mismatch message should show the existing definition: " + failure.getMessage());
+        assertTrue(failure.getMessage().toLowerCase(Locale.ROOT).contains("different definition"),
+                () -> "the mismatch message should say the definition differs: " + failure.getMessage());
+        assertEquals("{1}", foreignKeyRow("fk_parent").get("source_key", String.class),
+                "the pre-existing key must still reference id, not parent_id");
     }
 
     /**
@@ -189,10 +232,8 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
 
         assertSqlState("42710", () -> callEnsureForeignKey("fk_parent"));
 
-        assertEquals("c", dsl.fetchOne(
-                "SELECT confdeltype::text FROM pg_constraint WHERE conname = 'fk_parent'"
-                        + " AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)",
-                PUBLIC_SCHEMA).get(0, String.class));
+        assertEquals("c", foreignKeyRow("fk_parent").get("delete_action", String.class),
+                "the pre-existing ON DELETE CASCADE action must be left untouched");
     }
 
     /**
@@ -212,10 +253,7 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
                 + " ADD CONSTRAINT fk_parent FOREIGN KEY (id, parent_id) REFERENCES "
                 + PUBLIC_SCHEMA + "." + REFERENCED + " (code, id)");
 
-        assertEquals("{2,1}", dsl.fetchOne(
-                "SELECT confkey::text FROM pg_constraint WHERE conname = 'fk_parent'"
-                        + " AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)",
-                PUBLIC_SCHEMA).get(0, String.class));
+        assertEquals("{2,1}", foreignKeyRow("fk_parent").get("referenced_key", String.class));
 
         dsl.execute("CALL ddl_utils.ensure_foreign_key(?, ?, ?, ?, ?, ?, ?)",
                 PUBLIC_SCHEMA, TARGET, "fk_parent",
@@ -271,15 +309,19 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
-     * A second call on an already valid constraint is a no-op.
+     * A second call on an already valid constraint is a no-op: the constraint's
+     * catalog OID is unchanged, so a drop-and-re-add cannot pass as idempotent.
      */
     @Test
     void isIdempotent() {
         callEnsureForeignKey("fk_parent");
+        Long oid = foreignKeyRow("fk_parent").get("oid", Long.class);
 
         callEnsureForeignKey("fk_parent");
 
         assertValidated(PUBLIC_SCHEMA, TARGET, "fk_parent");
+        assertEquals(oid, foreignKeyRow("fk_parent").get("oid", Long.class),
+                "the second call must validate the existing key, not drop and re-add it");
     }
 
     /**
@@ -425,6 +467,82 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
             assertFalse(constraintExists(PUBLIC_SCHEMA, TARGET, "fk_no_key"));
         } finally {
             dropTestTable(noKey);
+        }
+    }
+
+    /**
+     * Returns the catalog row for the named foreign key on the target table,
+     * scoped to that table and to {@code contype = 'f'}, so a same-named
+     * constraint elsewhere cannot be read instead. A missing row fails with a
+     * clear assertion rather than a null dereference.
+     *
+     * @param name the constraint name
+     * @return the constraint row
+     */
+    private Record foreignKeyRow(String name) {
+        Record row = dsl.fetchOne("""
+                SELECT con.oid,
+                       con.conkey::text AS source_key,
+                       con.confkey::text AS referenced_key,
+                       con.confdeltype::text AS delete_action
+                FROM pg_constraint con
+                WHERE con.conname = ?
+                    AND con.contype = 'f'
+                    AND con.conrelid = (SELECT oid FROM pg_class
+                                        WHERE relname = ? AND relnamespace =
+                                            (SELECT oid FROM pg_namespace WHERE nspname = ?))
+                """, name, TARGET, PUBLIC_SCHEMA);
+        assertNotNull(row, () -> "foreign key not found: " + PUBLIC_SCHEMA + "." + TARGET + "." + name);
+        return row;
+    }
+
+    /**
+     * Opens a worker connection whose session aborts any statement after
+     * {@link #WORKER_STATEMENT_TIMEOUT}: the backstop for a CALL the driver
+     * cannot interrupt once it is blocked in a socket read.
+     *
+     * @return a connection with a server-side statement timeout
+     * @throws SQLException if the connection or the setting fails
+     */
+    private Connection openWorkerConnection() throws SQLException {
+        Connection connection = openTestConnection();
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SET statement_timeout = '" + WORKER_STATEMENT_TIMEOUT + "'");
+            return connection;
+        } catch (SQLException e) {
+            connection.close();
+            throw e;
+        }
+    }
+
+    /**
+     * Runs the tasks on a fixed pool and waits at most 30 s for each, cancelling
+     * every worker on timeout and always shutting the pool down, so a blocked
+     * procedure cannot hang the build.
+     *
+     * @param workers the pool size
+     * @param tasks   the worker tasks
+     * @throws Exception the first worker failure, or the timeout failure
+     */
+    private void runConcurrently(int workers, List<Callable<Void>> tasks) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(workers);
+        List<Future<Void>> futures = new ArrayList<>();
+        try {
+            for (Callable<Void> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    for (Future<Void> pending : futures) {
+                        pending.cancel(true);
+                    }
+                    fail("a concurrent ensure_foreign_key call did not finish within 30 s", e);
+                }
+            }
+        } finally {
+            pool.shutdownNow();
         }
     }
 
