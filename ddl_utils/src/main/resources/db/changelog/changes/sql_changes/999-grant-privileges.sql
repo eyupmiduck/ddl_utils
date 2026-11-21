@@ -19,8 +19,21 @@ GRANT USAGE ON DOMAIN ddl_utils.non_empty_text_array TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_text_array TO ddl_utils_caller;
 GRANT USAGE ON DOMAIN ddl_utils.non_empty_non_null_boolean_array TO ddl_utils_caller;
 
--- Functions grant EXECUTE to PUBLIC by default; revoke it and grant only to
--- the caller role, so execution is explicit.
+-- Functions grant EXECUTE to PUBLIC by default. Make the invariant structural
+-- for routines created later by the migration role: ALTER DEFAULT PRIVILEGES
+-- applies to objects that the issuing role creates in this database from now
+-- on. The per-object REVOKE below still covers the routines that already exist
+-- (and any created by a different role).
+--
+-- The statement must be global, not `IN SCHEMA ddl_utils, ddl_utils_lib`:
+-- PostgreSQL only adds per-schema defaults to the global defaults, so a
+-- per-schema REVOKE cannot remove the built-in PUBLIC grant and is a no-op
+-- (see the ALTER DEFAULT PRIVILEGES documentation). The migration role is
+-- dedicated to this changelog, so the wider scope is intended.
+ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON ROUTINES FROM public;
+
+-- Revoke the default PUBLIC EXECUTE from each existing routine and grant only
+-- to the caller role, so execution is explicit.
 REVOKE EXECUTE ON FUNCTION ddl_utils_lib.alter_table(
     ddl_utils.non_null_text,
     ddl_utils.non_null_text,
