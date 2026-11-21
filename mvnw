@@ -26,9 +26,10 @@
 # re-apply all of it (and keep .mvn/wrapper/maven-wrapper.properties):
 #   1. Reuse a cached MAVEN_HOME only when bin/mvn is executable, remove a
 #      broken cache, and validate the launcher after install.
-#   2. Extract into a unique staging directory next to MAVEN_HOME and rename it
-#      into place, so the install is atomic and never nests into an existing
-#      directory.
+#   2. Extract into a unique staging directory next to MAVEN_HOME, serialize
+#      the final placement with an atomic mkdir lock (reusing a complete
+#      install another run just finished), and rename it into place, so the
+#      install is atomic and never nests into an existing directory.
 #   3. Fail closed with a clear message when unzip is missing while a zip
 #      distributionSha256Sum is pinned (the fallback tarball cannot match it).
 #   4. `|| die` on the Java downloader and a final else naming the missing
@@ -185,6 +186,7 @@ if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
   clean() {
     rm -rf -- "$TMP_DOWNLOAD_DIR"
     if [ -n "${STAGING_DIR-}" ]; then rm -rf -- "$STAGING_DIR"; fi
+    if [ -n "${LOCK_DIR-}" ]; then rm -rf -- "$LOCK_DIR"; fi
   }
   trap clean HUP INT TERM EXIT
 else
@@ -259,7 +261,11 @@ elif set_java_home; then
   verbose " - Running Downloader.java ..."
   "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")" || die "Java downloader: Failed to fetch $distributionUrl"
 else
-  die "cannot download $distributionUrl: no wget or curl found, and no usable java/javac (set JAVA_HOME or PATH)"
+  if [ -n "${MVNW_USERNAME-}" ]; then
+    die "cannot download $distributionUrl: wget and curl are only used for anonymous downloads, and no usable java/javac was found for the authenticated download (set JAVA_HOME or PATH)"
+  else
+    die "cannot download $distributionUrl: no wget or curl found, and no usable java/javac (set JAVA_HOME or PATH)"
+  fi
 fi
 
 # If specified, validate the SHA-256 sum of the Maven distribution zip file
@@ -329,14 +335,48 @@ fi
 verbose "Found extracted Maven distribution directory: $actualDistributionDir"
 printf %s\\n "$distributionUrl" >"$STAGING_DIR/$actualDistributionDir/mvnw.url"
 
-# Never nest into an existing directory: drop a broken cache left by an earlier
-# run, then rename the staged tree into place. Staging and MAVEN_HOME share a
-# parent, so the rename is atomic and a concurrent run sees either nothing or a
-# complete distribution, never a half-installed copy.
+# Serialize the final placement across concurrent runs that share this
+# MAVEN_HOME. mkdir is atomic, so only one process can hold the lock; clean()
+# (in the trap) releases it when this run is interrupted. LOCK_DIR is assigned
+# only after the mkdir succeeds, so a run that is still waiting never deletes a
+# lock another process holds.
+lockDir="${MAVEN_HOME}.lock"
+lockAttempts=0
+until mkdir -- "$lockDir" 2>/dev/null; do
+  # If the holder has just finished, reuse its complete distribution instead of
+  # deleting and reinstalling it (deleting it would break a run that already
+  # started Maven from that directory).
+  if [ -x "$MAVEN_HOME/bin/$MVN_CMD" ]; then
+    verbose "another mvnw run installed $MAVEN_HOME; reusing it"
+    clean || :
+    exec_maven "$@"
+  fi
+  lockAttempts=$((lockAttempts + 1))
+  if [ "$lockAttempts" -ge 300 ]; then
+    die "timed out waiting for $lockDir; remove it if no other mvnw is running"
+  fi
+  sleep 1
+done
+LOCK_DIR="$lockDir"
+
+# A complete install created while this run was downloading is reused as is.
+if [ -x "$MAVEN_HOME/bin/$MVN_CMD" ]; then
+  verbose "another mvnw run installed $MAVEN_HOME; reusing it"
+  rmdir -- "$LOCK_DIR" || :
+  LOCK_DIR=""
+  clean || :
+  exec_maven "$@"
+fi
+
+# Under the lock, drop a broken cache left by an earlier run, then rename the
+# staged tree into place. Staging and MAVEN_HOME share a parent, so the rename
+# is atomic and no half-installed copy can be exec'd.
 if [ -e "$MAVEN_HOME" ]; then
   rm -rf -- "$MAVEN_HOME" || die "cannot remove incomplete MAVEN_HOME at $MAVEN_HOME"
 fi
 mv -- "$STAGING_DIR/$actualDistributionDir" "$MAVEN_HOME" || die "fail to move MAVEN_HOME"
+rmdir -- "$LOCK_DIR" || :
+LOCK_DIR=""
 
 # Validate the installed launcher before handing control to it.
 [ -x "$MAVEN_HOME/bin/$MVN_CMD" ] || die "installed Maven distribution at $MAVEN_HOME has no executable bin/$MVN_CMD"
