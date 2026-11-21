@@ -21,6 +21,20 @@
 # ----------------------------------------------------------------------------
 # Apache Maven Wrapper startup batch script, version 3.3.4
 #
+# LOCAL CHANGES (ddl_utils, bead ddl-s47.13). This file is the upstream 3.3.4
+# script plus the hardening below. A wrapper bump replaces this file, so
+# re-apply all of it (and keep .mvn/wrapper/maven-wrapper.properties):
+#   1. Reuse a cached MAVEN_HOME only when bin/mvn is executable, remove a
+#      broken cache, and validate the launcher after install.
+#   2. Extract into a unique staging directory next to MAVEN_HOME and rename it
+#      into place, so the install is atomic and never nests into an existing
+#      directory.
+#   3. Fail closed with a clear message when unzip is missing while a zip
+#      distributionSha256Sum is pinned (the fallback tarball cannot match it).
+#   4. `|| die` on the Java downloader and a final else naming the missing
+#      download tool.
+#   5. Detect multiple distribution candidates instead of taking the first.
+#
 # Optional ENV vars
 # -----------------
 #   JAVA_HOME - location of a JDK home dir, required when download maven via java source
@@ -150,9 +164,13 @@ exec_maven() {
   exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
 }
 
-if [ -d "$MAVEN_HOME" ]; then
+if [ -x "$MAVEN_HOME/bin/$MVN_CMD" ]; then
   verbose "found existing MAVEN_HOME at $MAVEN_HOME"
   exec_maven "$@"
+elif [ -d "$MAVEN_HOME" ]; then
+  # A directory left behind by an interrupted install must not be exec'd.
+  verbose "removing incomplete MAVEN_HOME at $MAVEN_HOME"
+  rm -rf -- "$MAVEN_HOME" || die "cannot remove incomplete MAVEN_HOME at $MAVEN_HOME"
 fi
 
 case "${distributionUrl-}" in
@@ -161,14 +179,28 @@ case "${distributionUrl-}" in
 esac
 
 # prepare tmp dir
+# The download goes to the system temp dir; extraction is staged next to
+# MAVEN_HOME (below) so the final rename is on one filesystem.
 if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
-  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
+  clean() {
+    rm -rf -- "$TMP_DOWNLOAD_DIR"
+    if [ -n "${STAGING_DIR-}" ]; then rm -rf -- "$STAGING_DIR"; fi
+  }
   trap clean HUP INT TERM EXIT
 else
   die "cannot create temp dir"
 fi
 
-mkdir -p -- "${MAVEN_HOME%/*}"
+# Stage the extracted distribution in MAVEN_HOME's parent directory, so the
+# final rename into MAVEN_HOME is atomic. A unique staging name keeps
+# concurrent wrapper runs from sharing a partially extracted tree.
+installParent="${MAVEN_HOME%/*}"
+mkdir -p -- "$installParent"
+if STAGING_DIR="$(mktemp -d "$installParent/.mvnw-install.XXXXXX")" && [ -d "$STAGING_DIR" ]; then
+  :
+else
+  die "cannot create staging dir in $installParent"
+fi
 
 # Download and Install Apache Maven
 verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
@@ -177,6 +209,12 @@ verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
 
 # select .zip or .tar.gz
 if ! command -v unzip >/dev/null; then
+  # The pinned checksum is for the .zip, so a tarball fallback could never
+  # match it (and would report a misleading "distribution might be
+  # compromised"). Fail closed instead; only an unpinned wrapper may fall back.
+  if [ -n "${distributionSha256Sum-}" ]; then
+    die "unzip is required to verify distributionSha256Sum for $distributionUrlName; install unzip or remove the checksum from .mvn/wrapper/maven-wrapper.properties"
+  fi
   distributionUrl="${distributionUrl%.zip}.tar.gz"
   distributionUrlName="${distributionUrl##*/}"
 fi
@@ -219,7 +257,9 @@ elif set_java_home; then
   verbose " - Compiling Downloader.java ..."
   "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
   verbose " - Running Downloader.java ..."
-  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
+  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")" || die "Java downloader: Failed to fetch $distributionUrl"
+else
+  die "cannot download $distributionUrl: no wget or curl found, and no usable java/javac (set JAVA_HOME or PATH)"
 fi
 
 # If specified, validate the SHA-256 sum of the Maven distribution zip file
@@ -249,47 +289,57 @@ if [ -n "${distributionSha256Sum-}" ]; then
   fi
 fi
 
-# unzip and move
+# unzip and move (into the staging dir next to MAVEN_HOME)
 if command -v unzip >/dev/null; then
-  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$STAGING_DIR" || die "failed to unzip"
 else
-  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$STAGING_DIR" || die "failed to untar"
 fi
 
-# Find the actual extracted directory name (handles snapshots where filename != directory name)
+# Find the distribution directory: the expected name when present, otherwise
+# the only top-level directory that holds the launcher (snapshots use a
+# different directory name). Several candidates mean an ambiguous archive, so
+# fail rather than silently pick the first.
 actualDistributionDir=""
-
-# First try the expected directory name (for regular distributions)
-if [ -d "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" ]; then
-  if [ -f "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
-    actualDistributionDir="$distributionUrlNameMain"
+candidateDirs=""
+candidateCount=0
+set +f
+for dir in "$STAGING_DIR"/*; do
+  if [ -d "$dir" ] && [ -f "$dir/bin/$MVN_CMD" ]; then
+    candidateCount=$((candidateCount + 1))
+    candidateDirs="$candidateDirs $(basename "$dir")"
   fi
-fi
+done
+set -f
 
-# If not found, search for any directory with the Maven executable (for snapshots)
-if [ -z "$actualDistributionDir" ]; then
-  # enable globbing to iterate over items
-  set +f
-  for dir in "$TMP_DOWNLOAD_DIR"/*; do
-    if [ -d "$dir" ]; then
-      if [ -f "$dir/bin/$MVN_CMD" ]; then
-        actualDistributionDir="$(basename "$dir")"
-        break
-      fi
-    fi
-  done
-  set -f
+if [ -f "$STAGING_DIR/$distributionUrlNameMain/bin/$MVN_CMD" ]; then
+  actualDistributionDir="$distributionUrlNameMain"
+elif [ "$candidateCount" -eq 1 ]; then
+  actualDistributionDir="${candidateDirs# }"
+elif [ "$candidateCount" -gt 1 ]; then
+  die "found multiple Maven distribution directories in the archive:$candidateDirs"
 fi
 
 if [ -z "$actualDistributionDir" ]; then
-  verbose "Contents of $TMP_DOWNLOAD_DIR:"
-  verbose "$(ls -la "$TMP_DOWNLOAD_DIR")"
+  verbose "Contents of $STAGING_DIR:"
+  verbose "$(ls -la "$STAGING_DIR")"
   die "Could not find Maven distribution directory in extracted archive"
 fi
 
 verbose "Found extracted Maven distribution directory: $actualDistributionDir"
-printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$actualDistributionDir/mvnw.url"
-mv -- "$TMP_DOWNLOAD_DIR/$actualDistributionDir" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
+printf %s\\n "$distributionUrl" >"$STAGING_DIR/$actualDistributionDir/mvnw.url"
+
+# Never nest into an existing directory: drop a broken cache left by an earlier
+# run, then rename the staged tree into place. Staging and MAVEN_HOME share a
+# parent, so the rename is atomic and a concurrent run sees either nothing or a
+# complete distribution, never a half-installed copy.
+if [ -e "$MAVEN_HOME" ]; then
+  rm -rf -- "$MAVEN_HOME" || die "cannot remove incomplete MAVEN_HOME at $MAVEN_HOME"
+fi
+mv -- "$STAGING_DIR/$actualDistributionDir" "$MAVEN_HOME" || die "fail to move MAVEN_HOME"
+
+# Validate the installed launcher before handing control to it.
+[ -x "$MAVEN_HOME/bin/$MVN_CMD" ] || die "installed Maven distribution at $MAVEN_HOME has no executable bin/$MVN_CMD"
 
 clean || :
 exec_maven "$@"
