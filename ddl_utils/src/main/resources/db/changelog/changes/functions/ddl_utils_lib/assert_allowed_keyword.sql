@@ -13,10 +13,11 @@ BEGIN
     -- The comparison is case-insensitive on both sides, and EXISTS (rather than
     -- = ANY) makes a NULL or empty allow-list (and NULL elements) reject the
     -- value instead of making the predicate NULL and skipping the check. The
-    -- message echoes the allow-list. RAISE formats a % argument with the type's
-    -- output function (array_out for text[]), which is IMMUTABLE, so this does
-    -- not stop the function being IMMUTABLE (unlike array_to_string, which is
-    -- STABLE).
+    -- message echoes the allow-list: RAISE formats a % argument with the type's
+    -- output function instead of calling a SQL-language helper, and the result
+    -- still depends only on the arguments, so the IMMUTABLE label stands (the
+    -- earlier comment's claim that echoing the list would change the declared
+    -- volatility was wrong).
     IF NOT EXISTS (SELECT 1
                    FROM pg_catalog.unnest(i_allowed) AS allowed(keyword)
                    WHERE pg_catalog.lower(allowed.keyword) = pg_catalog.lower(i_value)) THEN
