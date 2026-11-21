@@ -24,10 +24,21 @@ concurrency:
 permissions:
   contents: read
   actions: read
+  # Uploading the SARIF report needs this. It is read-only for pull_request
+  # runs from forks, and the called workflow uploads as part of its analyze
+  # step with no way to skip just the upload, so the analyze job is skipped for
+  # fork PRs (see its `if:`) rather than failing with 403 after a full analysis.
+  # The push to main still analyzes the merged code and uploads.
   security-events: write
 
 jobs:
   analyze:
+    # A fork PR's security-events token cannot upload SARIF. Skip the whole
+    # analysis there instead of burning it and failing the upload; same-repo
+    # PRs, pushes to main and the schedule analyze and upload as before.
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.fork == false
     # Pinned to the workflow_library commit; bump the SHA deliberately when
     # upgrading the library.
     #
