@@ -45,6 +45,16 @@ class AssertAllowedKeywordTest extends PostgresTestBase {
     }
 
     /**
+     * A NULL value is rejected by the {@code non_null_text} domain before the
+     * allow-list comparison, so the rejection is explicit rather than an
+     * accident of matching nothing.
+     */
+    @Test
+    void rejectsNullValueThroughTheDomain() {
+        assertDomainViolation(() -> assertAllowedKeyword((String) null, "ARRAY['always']"));
+    }
+
+    /**
      * The rejection message echoes the value and the allow-list, so the caller
      * can see the accepted keywords without reading the source.
      */

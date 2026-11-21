@@ -1,9 +1,9 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.testing.PlpgsqlCheckContract;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Runs the {@code plpgsql_check} static analyser over every routine in the
@@ -27,12 +27,22 @@ class PlpgsqlCheckTest extends PlpgsqlCheckContract {
     }
 
     /**
-     * The schemas that hold the project's routines.
+     * The schemas that hold the project's routines, taken from the shared
+     * constants so a schema rename cannot silently enumerate nothing.
      *
      * @return the routine schemas
      */
     @Override
     protected Collection<String> routineSchemas() {
-        return List.of("ddl_utils", "ddl_utils_lib");
+        return PostgresTestBase.ROUTINE_SCHEMAS;
+    }
+
+    /**
+     * Every configured routine schema exists and holds at least one routine, so
+     * the inherited contract cannot pass by analysing an empty set.
+     */
+    @Test
+    void routineSchemasArePopulated() {
+        PostgresTestBase.assertRoutineSchemasArePopulated(dsl, routineSchemas());
     }
 }

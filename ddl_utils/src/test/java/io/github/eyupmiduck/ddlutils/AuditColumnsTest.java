@@ -19,6 +19,14 @@ import java.util.List;
 class AuditColumnsTest extends PostgresTestBase {
 
     /**
+     * The probe schema and table whose lock-settings rows seed the behavioral
+     * probe. The seed and the cleanup share these constants so a drifted
+     * cleanup cannot silently leave rows behind.
+     */
+    private static final String PROBE_SCHEMA = "audit_columns_test_schema";
+    private static final String PROBE_TABLE = "audit_columns_test_table";
+
+    /**
      * Removes the rows the behavioral probe seeds, even when the test fails.
      * Both cleanups are attempted; the first failure is preserved and the second
      * is attached as suppressed.
@@ -27,12 +35,12 @@ class AuditColumnsTest extends PostgresTestBase {
     void clearAuditFixtures() {
         RuntimeException failure = null;
         try {
-            clearTableLockSettings("audit_columns_test_schema", "audit_columns_test_table");
+            clearTableLockSettings(PROBE_SCHEMA, PROBE_TABLE);
         } catch (RuntimeException e) {
             failure = e;
         }
         try {
-            clearSchemaLockSettings("audit_columns_test_schema");
+            clearSchemaLockSettings(PROBE_SCHEMA);
         } catch (RuntimeException e) {
             if (failure != null) {
                 failure.addSuppressed(e);
@@ -63,8 +71,8 @@ class AuditColumnsTest extends PostgresTestBase {
      */
     @Test
     void updateTriggerRefreshesUpdatedAtAndPreservesCreatedAt() throws SQLException {
-        setSchemaLockSettings("audit_columns_test_schema", 100, 1000, 30);
-        setTableLockSettings("audit_columns_test_schema", "audit_columns_test_table", 100, 1000, 30);
+        setSchemaLockSettings(PROBE_SCHEMA, 100, 1000, 30);
+        setTableLockSettings(PROBE_SCHEMA, PROBE_TABLE, 100, 1000, 30);
         try (Connection owner = openOwnerConnection()) {
             RoutineAssertions.assertUpdateTriggerRefreshesAuditColumns(owner, "ddl_utils",
                     List.of("database_lock_settings", "schema_lock_settings", "table_lock_settings"));

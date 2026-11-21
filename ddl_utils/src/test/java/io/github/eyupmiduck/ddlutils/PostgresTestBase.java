@@ -1,14 +1,21 @@
 package io.github.eyupmiduck.ddlutils;
 
 import io.github.eyupmiduck.changelogvalidator.testing.ChangelogTestSupport;
+import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.junit.jupiter.api.AfterEach;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ddl_utils' PostgreSQL test base: the shared
@@ -49,6 +56,26 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     static final String DDL_UTILS_SCHEMA = "ddl_utils";
     static final String DDL_UTILS_LIB_SCHEMA = "ddl_utils_lib";
 
+    /**
+     * The schemas that hold the project's routines, derived from the schema
+     * constants so a rename cannot leave an enumeration query inspecting a
+     * schema that no longer exists.
+     */
+    static final List<String> ROUTINE_SCHEMAS = List.of(DDL_UTILS_SCHEMA, DDL_UTILS_LIB_SCHEMA);
+
+    /**
+     * The rollback directories that mirror the per-routine function and
+     * procedure SQL files, shared by the rollback contract test.
+     */
+    static final List<String> ROUTINE_ROLLBACK_DIRECTORIES = List.of(
+            "db/changelog/changes/functions-rollback",
+            "db/changelog/changes/procedures-rollback");
+
+    /**
+     * The application role the grant changeset grants EXECUTE to.
+     */
+    static final String DDL_UTILS_CALLER = "ddl_utils_caller";
+
     static final String DATABASE_CHANGELOG_TABLE = "ddl_utils_databasechangelog";
     static final String DATABASE_CHANGELOG_LOCK_TABLE = "ddl_utils_databasechangeloglock";
 
@@ -87,6 +114,30 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
         assertEquals(ddlLockTimeout, row.get("ddl_lock_timeout", Integer.class));
         assertEquals(sleepTime, row.get("sleep_time", Integer.class));
         assertEquals(statementDuration, row.get("statement_duration", Integer.class));
+    }
+
+    /**
+     * Asserts that every listed schema exists and holds at least one function
+     * or procedure, so an enumeration query built from the list cannot pass by
+     * inspecting nothing.
+     *
+     * @param dsl     the connection to query the catalog with
+     * @param schemas the routine schemas to check
+     */
+    static void assertRoutineSchemasArePopulated(DSLContext dsl, Collection<String> schemas) {
+        assertFalse(schemas.isEmpty(), "at least one routine schema is required");
+        for (String schema : schemas) {
+            Record row = dsl.fetchOne("""
+                    SELECT count(*)::int AS routine_count
+                    FROM pg_proc AS p
+                    JOIN pg_namespace AS n ON n.oid = p.pronamespace
+                    WHERE n.nspname = ? AND p.prokind IN ('f', 'p')
+                    """, schema);
+            assertNotNull(row, () -> "no routine count returned for schema " + schema);
+            Integer routines = row.get("routine_count", Integer.class);
+            assertTrue(routines != null && routines > 0,
+                    () -> "no routines found in schema " + schema);
+        }
     }
 
     /**
@@ -174,27 +225,31 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
 
     /**
      * Returns the number of temporary NOT NULL proof CHECK constraints for a
-     * column, or {@code -1} when the count cannot be read. Only CHECK
-     * constraints count: PostgreSQL 18+ also records the column's NOT NULL as a
-     * {@code pg_constraint} row.
+     * column. Only CHECK constraints count: PostgreSQL 18+ also records the
+     * column's NOT NULL as a {@code pg_constraint} row. The count comes from a
+     * single aggregate row, so a missing or NULL count is a broken helper, not
+     * an empty result, and raises instead of returning a sentinel.
      *
      * @param schema the table schema
      * @param table  the table name
      * @param column the column name
-     * @return the number of matching constraints, or {@code -1}
+     * @return the number of matching constraints
      */
     protected int notNullProofConstraintCount(String schema, String table, String column) {
-        Integer count = dsl.fetchOne(
+        Record row = dsl.fetchOne(
                 """
-                        SELECT count(*)::int
+                        SELECT count(*)::int AS constraint_count
                         FROM pg_constraint
                         WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = ?
                                             AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?))
                             AND contype = 'c'
                             AND conname = ?
                         """,
-                table, schema, notNullCheckConstraintName(schema, table, column)).get(0, Integer.class);
-        return count != null ? count : -1;
+                table, schema, notNullCheckConstraintName(schema, table, column));
+        assertNotNull(row, () -> "no NOT NULL proof constraint count for " + schema + "." + table + "." + column);
+        Integer count = row.get("constraint_count", Integer.class);
+        assertNotNull(count, () -> "NULL NOT NULL proof constraint count for " + schema + "." + table + "." + column);
+        return count;
     }
 
     /**
@@ -302,16 +357,56 @@ abstract class PostgresTestBase extends io.github.eyupmiduck.changelogvalidator.
     }
 
     /**
+     * The database defaults captured by {@link #deleteDatabaseDefaults}, so
+     * {@link #restoreDeletedDatabaseDefaults} can put the row back after the
+     * test even when it fails before restoring explicitly.
+     */
+    private Integer deletedDdlLockTimeout;
+    private Integer deletedSleepTime;
+    private Integer deletedStatementDuration;
+
+    /**
      * Deletes the singleton database defaults row, for tests that exercise the
-     * missing-row path. Use with {@link #restoreDatabaseDefaults}.
+     * missing-row path. The row's values are captured and restored
+     * automatically after the test, so the cleanup cannot be forgotten; the
+     * row must exist first, so a test cannot believe it exercised the
+     * missing-row path when the row was already gone.
      */
     protected void deleteDatabaseDefaults() {
+        Record row = getDatabaseLockSettings();
+        if (row == null) {
+            throw new IllegalStateException(
+                    "the database defaults row is already missing; nothing was deleted");
+        }
+        deletedDdlLockTimeout = row.get("ddl_lock_timeout", Integer.class);
+        deletedSleepTime = row.get("sleep_time", Integer.class);
+        deletedStatementDuration = row.get("statement_duration", Integer.class);
         try (Connection connection = openOwnerConnection();
              Statement statement = connection.createStatement()) {
             statement.execute("DELETE FROM ddl_utils.database_lock_settings WHERE id = 1");
         } catch (SQLException e) {
             throw new IllegalStateException("failed to delete the database defaults", e);
         }
+    }
+
+    /**
+     * Restores the database defaults deleted by {@link #deleteDatabaseDefaults}
+     * with the values captured at deletion time. Runs after every test and is a
+     * no-op when nothing was deleted, so the delete/restore pair is structural
+     * rather than a convention the caller must remember.
+     */
+    @AfterEach
+    void restoreDeletedDatabaseDefaults() {
+        Integer ddlLockTimeout = deletedDdlLockTimeout;
+        Integer sleepTime = deletedSleepTime;
+        Integer statementDuration = deletedStatementDuration;
+        deletedDdlLockTimeout = null;
+        deletedSleepTime = null;
+        deletedStatementDuration = null;
+        if (ddlLockTimeout == null || sleepTime == null || statementDuration == null) {
+            return;
+        }
+        restoreDatabaseDefaults(ddlLockTimeout, sleepTime, statementDuration);
     }
 
     /**

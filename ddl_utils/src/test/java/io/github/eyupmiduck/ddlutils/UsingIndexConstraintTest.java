@@ -111,10 +111,13 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
     /**
      * The attached constraint is on the target table and is backed by an index
-     * over exactly the expected column. PostgreSQL renames the backing index to
-     * the constraint name.
+     * over exactly the expected columns, in index order. PostgreSQL renames the
+     * backing index to the constraint name.
+     *
+     * @param constraint the constraint name
+     * @param columns    the expected key columns, in index order
      */
-    private void assertConstraintUsesIndex(String constraint, String column) {
+    private void assertConstraintUsesIndex(String constraint, String... columns) {
         Record row = dsl.fetchOne("""
                 SELECT c.relname AS table_name, ci.relname AS index_name
                 FROM pg_constraint con
@@ -128,15 +131,20 @@ class UsingIndexConstraintTest extends SingleTableTest {
         assertEquals(constraint, row.get("index_name", String.class),
                 "USING INDEX renames the backing index to the constraint name");
 
-        List<String> columns = dsl.fetch("""
+        // Walk indkey positionally and stop at indnkeyatts: INCLUDE columns sit
+        // after the key columns in indkey and are not part of the constraint.
+        List<String> indexed = dsl.fetch("""
                 SELECT a.attname
                 FROM pg_constraint con
                 JOIN pg_index i ON i.indexrelid = con.conindid
-                JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY (i.indkey)
+                CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS key_column(attnum, position)
+                JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = key_column.attnum
                 WHERE con.conname = ?
                     AND con.conrelid = pg_catalog.format('%I.%I', ?, ?)::regclass
+                    AND key_column.position <= i.indnkeyatts
+                ORDER BY key_column.position
                 """, constraint, PUBLIC_SCHEMA, target()).getValues(0, String.class);
-        assertEquals(List.of(column), columns);
+        assertEquals(List.of(columns), indexed);
     }
 
     /**
@@ -167,14 +175,35 @@ class UsingIndexConstraintTest extends SingleTableTest {
     }
 
     /**
-     * A qualified or pre-quoted index name is rejected: USING INDEX resolves an
-     * unqualified name in the table's schema.
+     * The indexed-column assertion reads the key columns in index order and
+     * excludes INCLUDE columns, so a multi-column index with an included column
+     * is not mistaken for a three-column constraint or read in arbitrary catalog
+     * order.
+     */
+    @Test
+    void attachesMultiColumnIndexWithAnIncludedColumn() {
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN note text");
+        dsl.execute("CREATE UNIQUE INDEX target_multi_idx ON " + PUBLIC_SCHEMA + "." + target()
+                + " (code, id) INCLUDE (note)");
+
+        addUniqueConstraintUsingIndex("target_multi", "target_multi_idx");
+
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, "target_multi"));
+        assertConstraintUsesIndex("target_multi", "code", "id");
+    }
+
+    /**
+     * A qualified or pre-quoted index name is rejected by both wrappers: USING
+     * INDEX resolves an unqualified name in the table's schema.
      */
     @Test
     void rejectsQualifiedIndexName() {
         dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
 
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", PUBLIC_SCHEMA + ".target_pk_idx"));
+        assertSqlState("22023", () -> addUniqueConstraintUsingIndex("target_uq", PUBLIC_SCHEMA + ".target_pk_idx"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_pk"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_uq"));
     }
 
     /**
@@ -241,14 +270,17 @@ class UsingIndexConstraintTest extends SingleTableTest {
     }
 
     /**
-     * A pre-quoted index name is rejected: USING INDEX takes an unquoted
-     * identifier.
+     * A pre-quoted index name is rejected by both wrappers: USING INDEX takes an
+     * unquoted identifier.
      */
     @Test
     void rejectsPreQuotedIndexName() {
         dsl.execute("CREATE UNIQUE INDEX target_pk_idx ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
 
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", "\"target_pk_idx\""));
+        assertSqlState("22023", () -> addUniqueConstraintUsingIndex("target_uq", "\"target_pk_idx\""));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_pk"));
+        assertFalse(constraintExists(PUBLIC_SCHEMA, target(), "target_uq"));
     }
 
     /**
@@ -286,6 +318,36 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
         addUniqueConstraintUsingIndex("target_code", longIndex);
         assertEquals("u", constraintType(PUBLIC_SCHEMA, "target_code"));
+    }
+
+    /**
+     * The primary-key helper accepts a 63-byte index name, pinning the length
+     * guard boundary on the index side of that helper too.
+     */
+    @Test
+    void acceptsPrimaryKeyIndexNameAtTheLegalBoundary() {
+        String longIndex = "i".repeat(63);
+        dsl.execute("CREATE UNIQUE INDEX " + longIndex + " ON " + PUBLIC_SCHEMA + "." + target() + " (id)");
+
+        addPrimaryKeyUsingIndex("target_pk", longIndex);
+
+        assertEquals("p", constraintType(PUBLIC_SCHEMA, "target_pk"));
+        assertConstraintUsesIndex("target_pk", "id");
+    }
+
+    /**
+     * The unique-constraint helper accepts a 63-byte constraint name, pinning
+     * the length guard boundary on the constraint side of that helper too.
+     */
+    @Test
+    void acceptsUniqueConstraintNameAtTheLegalBoundary() {
+        String longConstraint = "c".repeat(63);
+        dsl.execute("CREATE UNIQUE INDEX target_code_idx ON " + PUBLIC_SCHEMA + "." + target() + " (code)");
+
+        addUniqueConstraintUsingIndex(longConstraint, "target_code_idx");
+
+        assertEquals("u", constraintType(PUBLIC_SCHEMA, longConstraint));
+        assertConstraintUsesIndex(longConstraint, "code");
     }
 
     /**

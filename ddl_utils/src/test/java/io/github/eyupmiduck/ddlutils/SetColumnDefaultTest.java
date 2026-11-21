@@ -72,6 +72,17 @@ class SetColumnDefaultTest extends SingleTableTest {
     }
 
     /**
+     * A comma inside a quoted string literal is not a top-level comma and is
+     * accepted, so a literal default can contain a comma end to end.
+     */
+    @Test
+    void acceptsCommaInsideQuotedLiteral() {
+        setColumnDefault("note", "'a,b'");
+
+        assertColumnDefault(PUBLIC_SCHEMA, target(), "note", "'a,b'");
+    }
+
+    /**
      * Rejects null or blank arguments through their domains before the body
      * runs.
      */

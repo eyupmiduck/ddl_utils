@@ -14,10 +14,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class DropRenameColumnSettingsTest extends SingleTableTest {
 
-    private static final int TABLE_LOCK_TIMEOUT = 100;
-    private static final int TABLE_SLEEP_TIME = 100;
-    private static final int TABLE_STATEMENT_DURATION = 300;
-    private static final long GIVE_UP_MILLIS = 2000;
+    /**
+     * The maximum time each call may take to give up. It must exceed the shared
+     * statement budget ({@link PostgresTestBase#STATEMENT_DURATION}) but stay far
+     * below the ~30 s database default, so a wrapper that ignored the table
+     * settings fails the assertion instead of retrying for the full default.
+     */
+    private static final long GIVE_UP_MILLIS = 8_000;
 
     DropRenameColumnSettingsTest() {
         super("drop_rename_column_settings_target", "id int, keep int, old_name int");
@@ -66,7 +69,7 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
     @Test
     void usesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
-                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name"));
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"),
@@ -80,7 +83,7 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
     @Test
     void dropColumnsUsesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
-                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.dropColumns(dsl.configuration(), PUBLIC_SCHEMA, target(),
                         new String[]{"old_name", "keep"}));
 
@@ -96,7 +99,7 @@ class DropRenameColumnSettingsTest extends SingleTableTest {
     @Test
     void renameColumnUsesTableLockSettings() throws Exception {
         assertUsesTableLockSettings(
-                TABLE_LOCK_TIMEOUT, TABLE_SLEEP_TIME, TABLE_STATEMENT_DURATION, GIVE_UP_MILLIS,
+                DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION, GIVE_UP_MILLIS,
                 () -> Routines.renameColumn(dsl.configuration(), PUBLIC_SCHEMA, target(), "old_name", "new_name"));
 
         assertTrue(hasColumn(PUBLIC_SCHEMA, target(), "old_name"),

@@ -72,13 +72,22 @@ class LiquibaseUpgradeTest extends UpgradeContract {
     }
 
     /**
-     * The upgraded database has both ddl_utils schemas.
+     * The upgraded database has every managed schema. The schema names come
+     * from {@link #managedSchemas()} rather than being repeated in the query, so
+     * the expected value and the thing it counts cannot drift apart.
      */
     @Override
     protected void assertUpgradedDatabase() {
-        assertEquals(managedSchemas().size(), upgradeDsl().fetchOne(
-                                "SELECT count(*) FROM pg_namespace WHERE nspname IN ('ddl_utils', 'ddl_utils_lib')")
-                        .get(0, Integer.class),
-                "the upgraded database should have the ddl_utils schemas");
+        Collection<String> schemas = managedSchemas();
+        if (schemas.isEmpty()) {
+            throw new IllegalStateException("managedSchemas() must not be empty");
+        }
+        String placeholders = String.join(", ", java.util.Collections.nCopies(schemas.size(), "?"));
+        Integer found = upgradeDsl().fetchOne(
+                        "SELECT count(*) FROM pg_namespace WHERE nspname IN (" + placeholders + ")",
+                        schemas.toArray())
+                .get(0, Integer.class);
+        assertEquals(schemas.size(), found,
+                () -> "the upgraded database should have the managed schemas " + schemas);
     }
 }

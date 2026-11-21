@@ -32,16 +32,17 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
     }
 
     /**
-     * set_column_compression uses the database defaults.
+     * set_column_compression uses the database defaults. The chosen method is
+     * lz4 rather than the server default pglz, so a no-op wrapper cannot pass.
      */
     @Test
     void setColumnCompressionUsesDatabaseDefaults() {
         assertNull(getTableLockSettings(PUBLIC_SCHEMA, target()),
                 "the test must start with no table-level override");
 
-        Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz");
+        Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "lz4");
 
-        assertEquals("pglz", columnCompression(PUBLIC_SCHEMA, target(), "note"));
+        assertEquals("lz4", columnCompression(PUBLIC_SCHEMA, target(), "note"));
     }
 
     /**
@@ -63,14 +64,16 @@ class SetColumnAttributeSettingsTest extends SingleTableTest {
 
     /**
      * set_column_compression resolves the table settings and gives up while the
-     * table is locked, leaving the compression unchanged.
+     * table is locked, leaving the compression unchanged. The attempted method
+     * is lz4 while the column starts at the server default pglz, so a call that
+     * wrongly succeeded would be visible.
      */
     @Test
     void setColumnCompressionUsesTableLockSettings() throws Exception {
         String before = columnCompression(PUBLIC_SCHEMA, target(), "note");
 
         assertUsesTableLockSettings(
-                () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "pglz"));
+                () -> Routines.setColumnCompression(dsl.configuration(), PUBLIC_SCHEMA, target(), "note", "lz4"));
 
         assertEquals(before, columnCompression(PUBLIC_SCHEMA, target(), "note"),
                 "a call that gave up must not have changed the compression");
