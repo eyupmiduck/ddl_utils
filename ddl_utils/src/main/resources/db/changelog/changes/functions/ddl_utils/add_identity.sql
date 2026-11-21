@@ -39,4 +39,5 @@ $$;
 
 COMMENT ON FUNCTION ddl_utils.add_identity IS
     'Lock-aware wrapper: adds an identity to a column. i_generated must be '
-        'always or by default, and the column must already be NOT NULL.';
+        'always or by default, and the column must already be NOT NULL. Requires '
+        'READ COMMITTED isolation; REPEATABLE READ/SERIALIZABLE raise 0A000.';

@@ -16,6 +16,19 @@ DECLARE
     l_sequence regclass;
     l_max      bigint;
 BEGIN
+    -- The sequence advance below scans the column maximum in the caller's
+    -- transaction. That is only correct under READ COMMITTED (or READ
+    -- UNCOMMITTED, which PostgreSQL treats as READ COMMITTED): in REPEATABLE
+    -- READ/SERIALIZABLE the snapshot predates rows committed before the ALTER,
+    -- so the scan can miss them and leave the sequence below the true maximum.
+    IF pg_catalog.current_setting('transaction_isolation')
+        NOT IN ('read committed', 'read uncommitted') THEN
+        RAISE EXCEPTION
+            'ddl_utils_lib.add_identity: requires READ COMMITTED isolation, not %',
+            pg_catalog.current_setting('transaction_isolation')
+            USING ERRCODE = '0A000';
+    END IF;
+
     -- The generated mode is a two-value keyword set; validate it so a caller
     -- cannot splice arbitrary SQL. It is emitted verbatim (not as an
     -- identifier) because these are unquoted PostgreSQL keywords.
@@ -43,9 +56,11 @@ BEGIN
     -- A new identity sequence starts at 1, so a populated column would hand out
     -- duplicate values to later inserts. Move the sequence past the current
     -- maximum. The scan runs in the same transaction as the ALTER (which just
-    -- held ACCESS EXCLUSIVE), so no concurrent insert can race it; the scan is
-    -- not bounded by the lock settings, so a large table extends the exclusive
-    -- lock window.
+    -- held ACCESS EXCLUSIVE), so no concurrent insert can commit while it runs;
+    -- this is only correct under READ COMMITTED (enforced above), because a
+    -- REPEATABLE READ/SERIALIZABLE snapshot would not see rows committed before
+    -- the ALTER. The scan is not bounded by the lock settings, so a large table
+    -- extends the exclusive lock window.
     l_sequence := pg_catalog.pg_get_serial_sequence(
             pg_catalog.format('%I.%I', i_schema_name, i_table_name), i_column_name)::regclass;
     IF l_sequence IS NULL THEN
@@ -72,5 +87,7 @@ COMMENT ON FUNCTION ddl_utils_lib.add_identity IS
     'Adds an identity to a column, taking the lock settings explicitly. The '
         'column must already be NOT NULL; the sequence is advanced past the '
         'column''s current maximum (or started at 1 when the maximum is below 1) '
-        'so generated values cannot collide. The max() scan runs under ACCESS '
-        'EXCLUSIVE and is not bounded by the lock settings.';
+        'so generated values cannot collide. Requires READ COMMITTED isolation '
+        '(READ UNCOMMITTED is treated as such); REPEATABLE READ/SERIALIZABLE '
+        'raise 0A000. The max() scan runs under ACCESS EXCLUSIVE and is not '
+        'bounded by the lock settings.';

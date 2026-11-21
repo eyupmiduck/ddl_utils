@@ -579,7 +579,11 @@ RETURNS void
 ```
 
 `SECURITY INVOKER`. Adds an identity (`ALWAYS` or `BY DEFAULT`); an invalid mode
-is rejected with `22023`.
+is rejected with `22023`. Requires READ COMMITTED isolation (READ UNCOMMITTED is
+treated as such); REPEATABLE READ/SERIALIZABLE raise `0A000` because the
+sequence-max scan uses the caller's snapshot. The column must be `NOT NULL`; the
+sequence is advanced past the current maximum (or started at 1 when the maximum
+is below 1), and the scan runs under `ACCESS EXCLUSIVE`.
 
 ### `ddl_utils_lib.drop_identity(i_schema_name, i_table_name, i_column_name, i_if_exists, settings...)`
 

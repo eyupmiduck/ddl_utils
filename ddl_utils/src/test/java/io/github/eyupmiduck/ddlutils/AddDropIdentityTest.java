@@ -165,6 +165,26 @@ class AddDropIdentityTest extends SingleTableTest {
     }
 
     /**
+     * The sequence scan needs READ COMMITTED; REPEATABLE READ and SERIALIZABLE
+     * are rejected before any DDL because their snapshot could miss rows
+     * committed before the ALTER.
+     */
+    @Test
+    void rejectsNonReadCommittedIsolation() {
+        for (String isolation : new String[]{"REPEATABLE READ", "SERIALIZABLE"}) {
+            assertSqlState("0A000", () -> dsl.transaction(configuration -> {
+                DSLContext tx = DSL.using(configuration);
+                tx.execute("SET TRANSACTION ISOLATION LEVEL " + isolation);
+                Routines.addIdentity(tx.configuration(), PUBLIC_SCHEMA, target(), "id", "by default",
+                        DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+            }));
+        }
+
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), "id"),
+                "a rejected call must not have added an identity");
+    }
+
+    /**
      * Rejects null arguments through their domains.
      */
     @Test
