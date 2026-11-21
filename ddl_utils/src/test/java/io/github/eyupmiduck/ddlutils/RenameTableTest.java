@@ -91,6 +91,27 @@ class RenameTableTest extends PostgresTestBase {
     }
 
     /**
+     * Renaming a table that has no lock-settings override onto a name with a
+     * pre-provisioned row leaves that row untouched: a missing source row makes
+     * the settings move a no-op.
+     */
+    @Test
+    void leavesDestinationSettingsWhenSourceHasNone() {
+        setTableLockSettings(PUBLIC_SCHEMA, NEW_NAME, 100, 200, 300);
+
+        io.github.eyupmiduck.ddlutils.jooq.ddl_utils.Routines.renameTable(
+                dsl.configuration(), PUBLIC_SCHEMA, TARGET, NEW_NAME);
+
+        assertFalse(tableExists(TARGET));
+        assertTrue(tableExists(NEW_NAME));
+        assertNull(getTableLockSettings(PUBLIC_SCHEMA, TARGET),
+                "a table without an override must not gain a settings row on rename");
+        Record settings = getTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        assertNotNull(settings);
+        assertLockSettings(settings, 100, 200, 300);
+    }
+
+    /**
      * A new name longer than NAMEDATALEN - 1 bytes is rejected instead of being
      * silently truncated, and the lock settings stay with the original name.
      */

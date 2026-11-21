@@ -237,7 +237,8 @@ has no lock-aware wrapper). The two `*_using_index` helpers attach a pre-built
 unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is metadata-only when
 the index is valid. `ddl_utils.rename_table` also moves the table's lock
 settings to the new name in one statement (`ddl_utils.move_table_lock_settings`);
-an existing row for the destination is replaced with a `NOTICE`.
+a missing source row makes that move a no-op (a destination row is left
+untouched), while an existing destination row is replaced with a `NOTICE`.
 
 ## `ddl_utils_lib`
 
