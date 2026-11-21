@@ -124,6 +124,19 @@ class SetColumnAttributeTest extends SingleTableTest {
         assertDomainViolation(() -> setCompression("note", "pglz", DDL_LOCK_TIMEOUT, SLEEP_TIME, -1));
     }
 
+    /**
+     * Both attribute helpers reject an over-long column name with 22023 before
+     * the ALTER; a 63-byte name passes the length guard and fails later only
+     * because no such column exists (42703).
+     */
+    @Test
+    void boundsColumnNameLength() {
+        assertSqlState("22023", () -> setStorage("c".repeat(64), "external"));
+        assertSqlState("42703", () -> setStorage("c".repeat(63), "external"));
+        assertSqlState("22023", () -> setCompression("c".repeat(64), "lz4"));
+        assertSqlState("42703", () -> setCompression("c".repeat(63), "lz4"));
+    }
+
     private void setStorage(String column, String storage) {
         setStorage(column, storage, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }

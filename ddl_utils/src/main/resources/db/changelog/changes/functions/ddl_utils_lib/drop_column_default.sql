@@ -12,6 +12,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_column_default(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.drop_column_default',
+            i_argument => 'i_column_name');
+
     -- The column name is an identifier, so it is quoted with %I and the
     -- fragment contains no caller-supplied SQL.
     PERFORM ddl_utils_lib.alter_table(

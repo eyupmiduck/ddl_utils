@@ -17,8 +17,10 @@ BEGIN
     END IF;
 
     -- A top-level comma in a raw expression can append a second ALTER TABLE
-    -- action; reject it. has_top_level_comma ignores commas nested in groups or
-    -- string literals.
+    -- action; reject it. has_top_level_comma ignores commas nested in
+    -- parentheses, brackets and braces, inside string, E-string and
+    -- dollar-quoted literals, inside quoted identifiers, and inside line or
+    -- (nested) block comments.
     IF ddl_utils_lib.has_top_level_comma(i_value) THEN
         RAISE EXCEPTION '%: a top-level comma is not allowed', i_context
             USING ERRCODE = '22023';

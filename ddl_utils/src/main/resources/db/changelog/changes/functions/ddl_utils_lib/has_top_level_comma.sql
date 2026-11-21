@@ -8,6 +8,12 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.has_top_level_comma(
 AS
 $func$
 BEGIN
+    -- The documented contract: a NULL value has no comma. Check it here so the
+    -- contract does not rely on has_unquoted_token's own NULL handling.
+    IF i_value IS NULL THEN
+        RETURN false;
+    END IF;
+
     -- The token scanner is shared with the alter_table fragment guard.
     RETURN ddl_utils_lib.has_unquoted_token(
             i_value => i_value,

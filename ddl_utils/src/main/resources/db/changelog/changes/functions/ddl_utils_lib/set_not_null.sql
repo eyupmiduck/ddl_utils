@@ -12,6 +12,13 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.set_not_null(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted column name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils_lib.set_not_null',
+            i_argument => 'i_column_name');
+
     -- SET NOT NULL ordinarily scans the table to prove no row is NULL, under an
     -- ACCESS EXCLUSIVE lock. PostgreSQL skips that scan when a valid CHECK
     -- constraint already proves the column non-null. This helper makes the

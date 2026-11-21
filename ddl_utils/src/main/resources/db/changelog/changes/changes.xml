@@ -4,7 +4,30 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.22.xsd">
 
+    <!-- Fail fast, before any DDL, when the documented role setup was skipped:
+         every grant below assumes ddl_utils_caller exists, and without this
+         check the failure would come from the last changeset after every object
+         had already been created. A sqlCheck is the one place a tiny inline SQL
+         statement is accepted (the changelog otherwise keeps SQL in files). The
+         second check covers the migration (owner) role's README prerequisite;
+         ALTER DEFAULT PRIVILEGES in 999 makes the migration role the one whose
+         future routines need no PUBLIC EXECUTE. -->
     <changeSet id="001-create-schema" author="lee.horner" dbms="postgresql">
+        <preConditions onFail="HALT" onError="HALT">
+            <sqlCheck expectedResult="ok">
+                SELECT CASE
+                           WHEN pg_catalog.to_regrole('ddl_utils_caller') IS NOT NULL THEN 'ok'
+                           ELSE 'the ddl_utils_caller role is missing: create the roles before running the changelog (README "Installing with the Liquibase CLI", step 1 "Create the roles")'
+                       END
+            </sqlCheck>
+            <sqlCheck expectedResult="ok">
+                SELECT CASE
+                           WHEN pg_catalog.has_database_privilege(current_user, current_database(),
+                                                                  'CREATE') THEN 'ok'
+                           ELSE 'the migration role lacks CREATE on this database: grant it as shown in README "Installing with the Liquibase CLI", step 1 "Create the roles"'
+                       END
+            </sqlCheck>
+        </preConditions>
         <sqlFile path="sql_changes/001-create-schema.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="rollback/001-create-schema-rollback.sql" relativeToChangelogFile="true"/>

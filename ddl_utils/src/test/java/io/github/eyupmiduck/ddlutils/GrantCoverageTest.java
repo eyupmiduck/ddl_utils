@@ -4,9 +4,11 @@ import io.github.eyupmiduck.changelogvalidator.testing.GrantAssertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -59,5 +61,60 @@ class GrantCoverageTest extends PostgresTestBase {
                 """).get(0, Integer.class);
         assertEquals(0, triggerExecutable,
                 "the trigger function must not be executable by ddl_utils_caller");
+    }
+
+    /**
+     * The grant changeset revokes PUBLIC EXECUTE by default for routines the
+     * migration role creates in {@code ddl_utils} / {@code ddl_utils_lib} from
+     * then on, so a routine added by a later changeset cannot silently stay
+     * executable by PUBLIC (and therefore by every role). A probe routine
+     * created as the owner must have a stored ACL with no PUBLIC EXECUTE entry,
+     * and no implicit caller grant either.
+     */
+    @Test
+    void routinesCreatedLaterHaveNoPublicExecute() throws Exception {
+        String probe = "default_acl_probe";
+        try (Connection owner = openOwnerConnection();
+             Statement statement = owner.createStatement()) {
+            statement.execute("CREATE FUNCTION ddl_utils." + probe
+                    + "() RETURNS integer LANGUAGE sql AS 'SELECT 1'");
+        }
+        try {
+            Boolean aclStored = dsl.fetchOne("""
+                    SELECT p.proacl IS NOT NULL
+                    FROM pg_proc AS p
+                    JOIN pg_namespace AS n ON n.oid = p.pronamespace
+                    WHERE n.nspname = 'ddl_utils' AND p.proname = ?
+                    """, probe).get(0, Boolean.class);
+            assertTrue(aclStored,
+                    "the revoked default must be recorded in the new routine's ACL");
+
+            Integer publicExecute = dsl.fetchOne("""
+                    SELECT count(*)::int
+                    FROM pg_proc AS p
+                    JOIN pg_namespace AS n ON n.oid = p.pronamespace
+                    CROSS JOIN LATERAL pg_catalog.aclexplode(p.proacl) AS a
+                    WHERE n.nspname = 'ddl_utils'
+                      AND p.proname = ?
+                      AND a.grantee = 0
+                      AND a.privilege_type = 'EXECUTE'
+                    """, probe).get(0, Integer.class);
+            assertEquals(0, publicExecute,
+                    "a routine created after the grant changeset must not keep PUBLIC EXECUTE");
+
+            Boolean callerExecute = dsl.fetchOne("""
+                    SELECT pg_catalog.has_function_privilege('ddl_utils_caller', p.oid, 'EXECUTE')
+                    FROM pg_proc AS p
+                    JOIN pg_namespace AS n ON n.oid = p.pronamespace
+                    WHERE n.nspname = 'ddl_utils' AND p.proname = ?
+                    """, probe).get(0, Boolean.class);
+            assertFalse(callerExecute,
+                    "a new routine has no caller grant until the changeset adds one");
+        } finally {
+            try (Connection owner = openOwnerConnection();
+                 Statement statement = owner.createStatement()) {
+                statement.execute("DROP FUNCTION IF EXISTS ddl_utils." + probe + "()");
+            }
+        }
     }
 }

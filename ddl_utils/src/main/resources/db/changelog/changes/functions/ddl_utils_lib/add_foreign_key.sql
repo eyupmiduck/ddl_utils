@@ -28,6 +28,17 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- The referenced schema and table are emitted with %I in the fragment, not
+    -- routed through alter_table's own guard.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_referenced_schema_name,
+            i_context => 'ddl_utils_lib.add_foreign_key',
+            i_argument => 'i_referenced_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_referenced_table_name,
+            i_context => 'ddl_utils_lib.add_foreign_key',
+            i_argument => 'i_referenced_table_name');
+
     PERFORM ddl_utils_lib.assert_equal_cardinality(
             i_a => i_column_names,
             i_b => i_referenced_column_names,

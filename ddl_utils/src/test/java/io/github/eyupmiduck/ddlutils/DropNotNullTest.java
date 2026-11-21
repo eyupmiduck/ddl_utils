@@ -56,6 +56,17 @@ class DropNotNullTest extends SingleTableTest {
         assertDomainViolation(() -> dropNotNull("note", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
     }
 
+    /**
+     * An over-long column name is rejected with 22023 before the ALTER; a
+     * 63-byte name passes the length guard and fails later only because no such
+     * column exists (42703).
+     */
+    @Test
+    void boundsColumnNameLength() {
+        assertSqlState("22023", () -> dropNotNull("c".repeat(64)));
+        assertSqlState("42703", () -> dropNotNull("c".repeat(63)));
+    }
+
     private void dropNotNull(String column) {
         dropNotNull(column, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }

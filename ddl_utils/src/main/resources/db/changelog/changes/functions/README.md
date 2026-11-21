@@ -233,11 +233,15 @@ over the matching `ddl_utils_lib` helpers (same names). `add_check_constraint`
 and `add_foreign_key` emit `NOT VALID` (metadata-only); call
 `ddl_utils_lib.validate_constraint` separately to enforce the constraint
 against existing rows (it scans but takes only `SHARE UPDATE EXCLUSIVE`, so it
-has no lock-aware wrapper). The two `*_using_index` helpers attach a pre-built
+has no lock-aware wrapper). `ddl_utils.add_foreign_key` resolves only the altered
+(referencing) table's lock settings, although `ADD FOREIGN KEY` also takes
+`SHARE ROW EXCLUSIVE` on the referenced table; an override for the referenced
+table is not honoured. The two `*_using_index` helpers attach a pre-built
 unique index (`CREATE UNIQUE INDEX CONCURRENTLY`), which is metadata-only when
 the index is valid. `ddl_utils.rename_table` also moves the table's lock
 settings to the new name in one statement (`ddl_utils.move_table_lock_settings`);
-an existing row for the destination is replaced with a `NOTICE`.
+a missing source row makes that move a no-op (a destination row is left
+untouched), while an existing destination row is replaced with a `NOTICE`.
 
 ## `ddl_utils_lib`
 
@@ -317,6 +321,22 @@ a non-null element is blank (whitespace-only, using the same trim set as the
 means no `DEFAULT` clause). Used to validate the array arguments of
 `add_columns`, `add_foreign_key` and `drop_columns`.
 
+### `ddl_utils_lib.assert_identifier_length(i_value, i_context, i_argument)`
+
+```sql
+i_value    text
+i_context  ddl_utils.non_null_text
+i_argument ddl_utils.non_null_text
+RETURNS void
+```
+
+`STABLE`, `SECURITY INVOKER`. Raises `22023` when `i_value` is longer than
+`NAMEDATALEN - 1` (63) bytes, naming `i_argument` and the byte length; a NULL
+value is ignored. PostgreSQL truncates an over-long identifier with only a
+`NOTICE`, so every routine that emits a caller-supplied name must call this
+before the DDL. Used for column, constraint, schema and table names throughout
+`ddl_utils_lib`, and by `ddl_utils.ensure_not_null`.
+
 ### `ddl_utils_lib.quote_identifiers(i_values [, i_prefix])`
 
 ```sql
@@ -355,8 +375,9 @@ RETURNS void
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the value is not one of the
-lower-case keyword allow-list (the comparison is case-insensitive). Used by
-`add_identity`, `set_column_compression` and `set_column_storage`.
+lower-case keyword allow-list (the comparison is case-insensitive). The message
+echoes the allow-list. Used by `add_identity`, `set_column_compression` and
+`set_column_storage`.
 
 ### `ddl_utils_lib.assert_equal_cardinality(i_a, i_b, i_context)`
 
@@ -368,8 +389,9 @@ RETURNS void
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Raises `22023` when the two arrays have
-different lengths (a NULL array counts as unequal). Used by `add_foreign_key`
-and the `ensure_foreign_key` procedure.
+different lengths; a NULL array also raises `22023` (its cardinality is
+undefined), including when both arrays are NULL. Used by `add_foreign_key` and
+the `ensure_foreign_key` procedure.
 
 ###
 
@@ -634,7 +656,6 @@ RETURNS void
 `SECURITY INVOKER`. Adds a foreign key as `NOT VALID` (no scan; takes `SHARE
 ROW EXCLUSIVE` on both tables). The two column arrays must be non-empty and of
 equal length; blank names are rejected with `22023`.
-
 ###
 `ddl_utils_lib.foreign_key_definition_matches(i_schema_name, i_table_name, i_constraint_name, i_referenced_schema_name, i_referenced_table_name, i_column_names, i_referenced_column_names)`
 
@@ -681,7 +702,9 @@ RETURNS void
 ```
 
 `SECURITY INVOKER`. Drops a constraint; metadata-only. It does not use
-`IF EXISTS`, so a wrong name fails.
+`IF EXISTS`, so a wrong name fails. It emits `RESTRICT` (the default), so a
+primary key or unique constraint that a foreign key references fails with
+`2BP01`; drop the dependent foreign keys first (there is no `CASCADE` option).
 
 ###
 

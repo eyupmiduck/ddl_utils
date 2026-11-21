@@ -111,6 +111,17 @@ class SetNotNullTest extends SingleTableTest {
         assertDomainViolation(() -> setNotNull("note", DDL_LOCK_TIMEOUT, SLEEP_TIME, null));
     }
 
+    /**
+     * An over-long column name is rejected with 22023 before the ALTER; a
+     * 63-byte name passes the length guard and fails later only because no such
+     * column exists (42703).
+     */
+    @Test
+    void boundsColumnNameLength() {
+        assertSqlState("22023", () -> setNotNull("c".repeat(64)));
+        assertSqlState("42703", () -> setNotNull("c".repeat(63)));
+    }
+
     private void setNotNull(String column) {
         setNotNull(column, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
     }

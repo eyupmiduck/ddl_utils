@@ -17,6 +17,22 @@ DECLARE
     l_relation         regclass;
     l_lock_key         bigint;
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so each
+    -- name is checked before any catalog lookup or DDL: an over-long table name
+    -- could otherwise resolve to a different relation through regclass.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_schema_name,
+            i_context => 'ddl_utils.ensure_not_null',
+            i_argument => 'i_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_table_name,
+            i_context => 'ddl_utils.ensure_not_null',
+            i_argument => 'i_table_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_column_name,
+            i_context => 'ddl_utils.ensure_not_null',
+            i_argument => 'i_column_name');
+
     -- Called outside an explicit transaction block (autocommit): the COMMITs
     -- below fail with 2D000 inside a transaction block.
     --
@@ -220,5 +236,6 @@ $$;
 
 COMMENT ON PROCEDURE ddl_utils.ensure_not_null IS
     'Makes a column NOT NULL without holding ACCESS EXCLUSIVE across the scan. '
-        'For a partitioned table the operation recurses to every partition and '
-        'the lock/retry settings bound only the parent statement.';
+        'All three identifiers must be at most 63 bytes. For a partitioned table '
+        'the operation recurses to every partition and the lock/retry settings '
+        'bound only the parent statement.';

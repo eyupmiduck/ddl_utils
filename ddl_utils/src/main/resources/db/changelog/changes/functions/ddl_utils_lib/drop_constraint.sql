@@ -12,8 +12,17 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.drop_constraint(
 AS
 $$
 BEGIN
+    -- PostgreSQL truncates an over-long identifier with only a NOTICE, so the
+    -- emitted constraint name could silently differ from the requested one.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_constraint_name,
+            i_context => 'ddl_utils_lib.drop_constraint',
+            i_argument => 'i_constraint_name');
+
     -- Metadata-only. IF EXISTS is deliberately not used so a wrong name fails
-    -- fast rather than silently doing nothing.
+    -- fast rather than silently doing nothing. RESTRICT (the default) makes
+    -- dropping a primary key or unique constraint that a foreign key references
+    -- fail with 2BP01; there is no CASCADE option.
     PERFORM ddl_utils_lib.alter_table(
             i_schema_name => i_schema_name,
             i_table_name => i_table_name,
@@ -26,4 +35,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.drop_constraint IS
-    'Drops a constraint, taking the lock settings explicitly.';
+    'Drops a constraint, taking the lock settings explicitly. Emits RESTRICT '
+        '(the default), so dropping a primary key or unique constraint that a '
+        'foreign key references raises 2BP01; drop the dependent foreign keys '
+        'first. There is no CASCADE option.';

@@ -361,6 +361,25 @@ class AddColumnsTest extends SingleTableTest {
                 DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
     }
 
+    /**
+     * A 63-byte column name (the identifier maximum) is created; a 64-byte name
+     * is rejected with 22023 before the ALTER, so no truncated column appears.
+     */
+    @Test
+    void boundsColumnNameLength() {
+        String atLimit = "a".repeat(63);
+
+        addColumns(new String[]{atLimit}, new String[]{"int"}, new String[]{null},
+                new Boolean[]{true}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION);
+
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), atLimit));
+        assertSqlState("22023", () -> addColumns(
+                new String[]{"b".repeat(64)}, new String[]{"int"}, new String[]{null},
+                new Boolean[]{true}, DDL_LOCK_TIMEOUT, SLEEP_TIME, STATEMENT_DURATION));
+        assertFalse(hasColumn(PUBLIC_SCHEMA, target(), "b".repeat(63)),
+                "a rejected over-long name must not leave a truncated column behind");
+    }
+
     private void addColumns(String[] names, String[] types, String[] defaults, Boolean[] nullable,
                             Integer lockTimeout, Integer sleepTime, Integer duration) {
         Routines.addColumns(dsl.configuration(), PUBLIC_SCHEMA, target(), names, types, defaults,

@@ -163,7 +163,13 @@ the Liquibase CLI at `db.changelog-master.xml`.
   the target database and schema.
 - A role the routines and settings are granted to (`ddl_utils_caller` below).
   The last changeset grants to it, so it must exist **before** you run the
-  changelog. Applications connect as this role (or a role granted it).
+  changelog; the changelog's first changeset checks for it and halts before any
+  DDL when it is missing. Applications connect as this role (or a role granted
+  it). The grant changeset also revokes the default `PUBLIC` `EXECUTE` for
+  routines that the migration role creates later in this database (the revoke
+  must be database-wide: a per-schema `REVOKE` cannot remove PostgreSQL's
+  built-in global grant), so a routine added by a later changeset is not
+  world-executable by default.
 
 ### 1. Create the roles
 
