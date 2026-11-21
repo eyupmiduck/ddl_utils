@@ -15,6 +15,13 @@ on:
 # Non-matching comments land in a unique noop group so they are skipped
 # instantly without cancelling a running review.
 # Keep the predicate below in sync with the job's `if:` (and vice versa).
+#
+# A command may be followed by a newline and a body, so the shape match accepts
+# that too. Expression string literals are NOT escape-processed: '\n' in one is
+# a literal backslash + n. fromJSON('"\n"') parses JSON (which is escape-
+# processed) and yields a real newline. Both LF and CR are accepted because the
+# REST API sends LF and the web UI sends CRLF; an LF prefix does not match a
+# CRLF body.
 concurrency:
   group: >-
     ${{
@@ -30,7 +37,9 @@ concurrency:
             || github.event.comment.author_association == 'COLLABORATOR'
           )
           && (github.event.comment.body == '/open-code-review'
-              || startsWith(github.event.comment.body, '/open-code-review '))
+              || startsWith(github.event.comment.body, '/open-code-review ')
+              || startsWith(github.event.comment.body, format('/open-code-review{0}', fromJSON('"\n"')))
+              || startsWith(github.event.comment.body, format('/open-code-review{0}', fromJSON('"\r"'))))
         )
       )
       && format('ocr-{0}', github.event.pull_request.number || github.event.issue.number)
@@ -46,7 +55,8 @@ jobs:
   code-review:
     # Only run for opened PRs and authorized /open-code-review comments; a
     # matching concurrency group alone does not stop non-matching events.
-    # Keep this in sync with concurrency.group above (and vice versa).
+    # Keep this in sync with concurrency.group above (and vice versa), including
+    # the fromJSON newline/CR pair explained there.
     if: >-
       github.event_name == 'pull_request_target'
       || (
@@ -59,7 +69,9 @@ jobs:
           || github.event.comment.author_association == 'COLLABORATOR'
         )
         && (github.event.comment.body == '/open-code-review'
-              || startsWith(github.event.comment.body, '/open-code-review '))
+              || startsWith(github.event.comment.body, '/open-code-review ')
+              || startsWith(github.event.comment.body, format('/open-code-review{0}', fromJSON('"\n"')))
+              || startsWith(github.event.comment.body, format('/open-code-review{0}', fromJSON('"\r"'))))
       )
     # Pinned to the workflow_library commit so a change to its default branch
     # cannot alter what runs here with pull-requests: write and the LLM secret.

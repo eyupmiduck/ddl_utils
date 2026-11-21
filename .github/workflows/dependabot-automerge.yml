@@ -23,10 +23,15 @@ concurrency:
 
 jobs:
   auto-merge:
-    # Defense in depth: the called workflow also checks the actor, but keep the
-    # write token scoped to the Dependabot bot and the main branch here too.
+    # Defense in depth for the write token: gate on the pull request's author
+    # AND on the actor that triggered this run. The author does not change when
+    # someone else pushes to the branch, so without the actor check a
+    # collaborator push to a Dependabot branch would re-enable auto-merge.
+    # (Required reviews, if configured, still block the merge; this is not the
+    # only control.)
     if: >-
-      github.event.pull_request.user.login == 'dependabot[bot]'
+      github.actor == 'dependabot[bot]'
+      && github.event.pull_request.user.login == 'dependabot[bot]'
       && github.event.pull_request.base.ref == 'main'
     uses: eyupmiduck/workflow_library/.github/workflows/dependabot-automerge.yml@2499e14a4533396c8318abecaa35dd2477be1f41 # main, verified 2026-11-06
     with:
