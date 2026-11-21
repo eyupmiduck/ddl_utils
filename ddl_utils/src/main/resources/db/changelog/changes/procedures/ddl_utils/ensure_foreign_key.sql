@@ -159,22 +159,21 @@ BEGIN
     -- covered by a unique index (a PRIMARY KEY/UNIQUE constraint or a bare
     -- unique index). Without this guard the generic "there is no unique
     -- constraint matching given keys" comes from ALTER TABLE instead.
-    IF NOT EXISTS (
-            SELECT 1
-            FROM pg_catalog.pg_index AS ix
-            WHERE ix.indrelid = l_referenced_relation
-              AND ix.indisunique
-              AND ix.indisvalid
-              AND ix.indpred IS NULL
-              AND ix.indexprs IS NULL
-              AND ix.indnkeyatts = pg_catalog.cardinality(i_referenced_column_names)
-              AND (SELECT pg_catalog.count(*)
-                   FROM pg_catalog.generate_subscripts(ix.indkey, 1) AS s(i)
-                            JOIN pg_catalog.pg_attribute AS a
-                                 ON a.attrelid = ix.indrelid AND a.attnum = ix.indkey[s.i]
-                   WHERE s.i < ix.indnkeyatts
-                     AND a.attname = ANY (i_referenced_column_names::text[]))
-                  = pg_catalog.cardinality(i_referenced_column_names)) THEN
+    IF NOT EXISTS (SELECT 1
+                   FROM pg_catalog.pg_index AS ix
+                   WHERE ix.indrelid = l_referenced_relation
+                     AND ix.indisunique
+                     AND ix.indisvalid
+                     AND ix.indpred IS NULL
+                     AND ix.indexprs IS NULL
+                     AND ix.indnkeyatts = pg_catalog.cardinality(i_referenced_column_names)
+                     AND (SELECT pg_catalog.count(*)
+                          FROM pg_catalog.generate_subscripts(ix.indkey, 1) AS s(i)
+                                   JOIN pg_catalog.pg_attribute AS a
+                                        ON a.attrelid = ix.indrelid AND a.attnum = ix.indkey[s.i]
+                          WHERE s.i < ix.indnkeyatts
+                            AND a.attname = ANY (i_referenced_column_names::text[]))
+                       = pg_catalog.cardinality(i_referenced_column_names)) THEN
         RAISE EXCEPTION
             'ddl_utils.ensure_foreign_key: the referenced columns of %.% are not covered by a unique index or constraint',
             i_referenced_schema_name, i_referenced_table_name

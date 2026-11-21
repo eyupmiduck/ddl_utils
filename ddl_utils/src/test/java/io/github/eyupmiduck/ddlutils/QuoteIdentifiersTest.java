@@ -1,11 +1,9 @@
 package io.github.eyupmiduck.ddlutils;
 
-import org.junit.jupiter.api.Test;
 import org.jooq.exception.DataAccessException;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies {@code ddl_utils_lib.quote_identifiers}: it joins identifiers into a

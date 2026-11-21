@@ -42,12 +42,12 @@ BEGIN
                  AND i.relname = i_index_name
                  AND s.i < ix.indnkeyatts
                  AND (NOT a.attnotnull
-                      OR EXISTS (SELECT 1
-                                 FROM pg_catalog.pg_constraint AS c
-                                 WHERE c.conrelid = a.attrelid
-                                   AND c.contype = 'n'
-                                   AND NOT c.convalidated
-                                   AND a.attnum = ANY (c.conkey)))) THEN
+                   OR EXISTS (SELECT 1
+                              FROM pg_catalog.pg_constraint AS c
+                              WHERE c.conrelid = a.attrelid
+                                AND c.contype = 'n'
+                                AND NOT c.convalidated
+                                AND a.attnum = ANY (c.conkey)))) THEN
         RAISE EXCEPTION
             'ddl_utils_lib.add_primary_key_using_index: every indexed column of %.% must already be NOT NULL and validated; use ensure_not_null first',
             i_schema_name, i_table_name

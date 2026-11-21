@@ -31,46 +31,45 @@ BEGIN
     -- PostgreSQL-default actions/match/deferrability, and the same source ->
     -- referenced column mapping as a multiset (PostgreSQL may reorder the keys
     -- to align them with the referenced unique index).
-    l_matches := EXISTS (
-            SELECT 1
-            FROM pg_catalog.pg_constraint AS c
-            WHERE c.conrelid = l_relation
-              AND c.conname = i_constraint_name
-              AND c.contype = 'f'
-              AND c.confrelid = l_referenced_relation
-              AND c.confupdtype = 'a'
-              AND c.confdeltype = 'a'
-              AND c.confmatchtype = 's'
-              AND NOT c.condeferrable
-              AND NOT c.condeferred
-              AND NOT EXISTS (WITH stored AS (SELECT sa.attname AS source_name,
-                                                     ra.attname AS referenced_name
-                                              FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
-                                                       JOIN pg_catalog.pg_attribute AS sa
-                                                            ON sa.attrelid = c.conrelid
-                                                                AND sa.attnum = c.conkey[s.i]
-                                                       JOIN pg_catalog.pg_attribute AS ra
-                                                            ON ra.attrelid = c.confrelid
-                                                                AND ra.attnum = c.confkey[s.i]),
-                                   requested AS (SELECT s.name AS source_name,
-                                                        r.name AS referenced_name
-                                                 FROM pg_catalog.unnest(i_column_names::text[])
-                                                          WITH ORDINALITY AS s(name, ord)
-                                                     JOIN pg_catalog.unnest(
-                                                             i_referenced_column_names::text[]
-                                                          ) WITH ORDINALITY AS r(name, ord)
-                                                          ON s.ord = r.ord)
-                              SELECT 1
-                              WHERE EXISTS (SELECT source_name, referenced_name
-                                            FROM requested
-                                            EXCEPT ALL
-                                            SELECT source_name, referenced_name
-                                            FROM stored)
-                                 OR EXISTS (SELECT source_name, referenced_name
-                                            FROM stored
-                                            EXCEPT ALL
-                                            SELECT source_name, referenced_name
-                                            FROM requested)));
+    l_matches := EXISTS (SELECT 1
+                         FROM pg_catalog.pg_constraint AS c
+                         WHERE c.conrelid = l_relation
+                           AND c.conname = i_constraint_name
+                           AND c.contype = 'f'
+                           AND c.confrelid = l_referenced_relation
+                           AND c.confupdtype = 'a'
+                           AND c.confdeltype = 'a'
+                           AND c.confmatchtype = 's'
+                           AND NOT c.condeferrable
+                           AND NOT c.condeferred
+                           AND NOT EXISTS (WITH stored AS (SELECT sa.attname AS source_name,
+                                                                  ra.attname AS referenced_name
+                                                           FROM pg_catalog.generate_subscripts(c.conkey, 1) AS s(i)
+                                                                    JOIN pg_catalog.pg_attribute AS sa
+                                                                         ON sa.attrelid = c.conrelid
+                                                                             AND sa.attnum = c.conkey[s.i]
+                                                                    JOIN pg_catalog.pg_attribute AS ra
+                                                                         ON ra.attrelid = c.confrelid
+                                                                             AND ra.attnum = c.confkey[s.i]),
+                                                requested AS (SELECT s.name AS source_name,
+                                                                     r.name AS referenced_name
+                                                              FROM pg_catalog.unnest(i_column_names::text[])
+                                                                       WITH ORDINALITY AS s(name, ord)
+                                                                       JOIN pg_catalog.unnest(
+                                                                      i_referenced_column_names::text[]
+                                                                            ) WITH ORDINALITY AS r(name, ord)
+                                                                            ON s.ord = r.ord)
+                                           SELECT 1
+                                           WHERE EXISTS (SELECT source_name, referenced_name
+                                                         FROM requested
+                                                         EXCEPT ALL
+                                                         SELECT source_name, referenced_name
+                                                         FROM stored)
+                                              OR EXISTS (SELECT source_name, referenced_name
+                                                         FROM stored
+                                                         EXCEPT ALL
+                                                         SELECT source_name, referenced_name
+                                                         FROM requested)));
 
     RETURN l_matches;
 END;

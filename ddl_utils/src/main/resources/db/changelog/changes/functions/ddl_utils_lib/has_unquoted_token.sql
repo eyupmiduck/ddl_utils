@@ -13,24 +13,24 @@ DECLARE
     -- Dollar-quote tags follow unquoted-identifier rules without `$`: the first
     -- character may not be a digit. PostgreSQL also accepts non-ASCII
     -- characters, detected by code point (ascii(...) >= 128) instead of listed.
-    l_tag_first_chars constant text    := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_';
-    l_tag_chars       constant text    := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
+    l_tag_first_chars  constant text    := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_';
+    l_tag_chars        constant text    := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
     -- Identifier continuation characters (what may precede an E-string prefix):
     -- ASCII letters, digits, underscore, dollar, or any non-ASCII character
     -- (PostgreSQL treats high-bit bytes as identifier characters).
-    l_ident_cont_chars constant text   := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$';
-    l_length                   integer;
-    l_pos                      integer := 1;
-    l_scan                     integer;
-    l_depth                    integer := 0;
-    l_block_depth              integer := 0;
-    l_state                    text    := 'code';
-    l_dollar_tag               text;
-    l_char                     text;
-    l_next                     text;
-    l_prev                     text;
-    l_tag_char                 text;
-    l_token                    text;
+    l_ident_cont_chars constant text    := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$';
+    l_length                    integer;
+    l_pos                       integer := 1;
+    l_scan                      integer;
+    l_depth                     integer := 0;
+    l_block_depth               integer := 0;
+    l_state                     text    := 'code';
+    l_dollar_tag                text;
+    l_char                      text;
+    l_next                      text;
+    l_prev                      text;
+    l_tag_char                  text;
+    l_token                     text;
 BEGIN
     -- The scan reads no catalog state and is deterministic for a given value, so
     -- IMMUTABLE is correct; the blank-token validation is deterministic too.

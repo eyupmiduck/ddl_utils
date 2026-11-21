@@ -326,7 +326,8 @@ RETURNS text
 ```
 
 `IMMUTABLE`, `SECURITY INVOKER`. Joins the identifiers into a comma-separated
-list, each quoted with `%I` and optionally prefixed with a literal SQL clause (for example `'DROP COLUMN '`). The `sql_prefix` domain requires a non-NULL
+list, each quoted with `%I` and optionally prefixed with a literal SQL clause (for example `'DROP COLUMN '`). The
+`sql_prefix` domain requires a non-NULL
 prefix while allowing the empty string. Used to
 build the identifier lists in
 `add_foreign_key` and `drop_columns`.
@@ -634,7 +635,8 @@ RETURNS void
 ROW EXCLUSIVE` on both tables). The two column arrays must be non-empty and of
 equal length; blank names are rejected with `22023`.
 
-### `ddl_utils_lib.foreign_key_definition_matches(i_schema_name, i_table_name, i_constraint_name, i_referenced_schema_name, i_referenced_table_name, i_column_names, i_referenced_column_names)`
+###
+`ddl_utils_lib.foreign_key_definition_matches(i_schema_name, i_table_name, i_constraint_name, i_referenced_schema_name, i_referenced_table_name, i_column_names, i_referenced_column_names)`
 
 ```sql
 i_schema_name             ddl_utils.non_null_text
