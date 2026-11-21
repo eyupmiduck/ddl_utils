@@ -11,6 +11,8 @@ import java.sql.SQLWarning;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -47,6 +49,7 @@ class MoveTableLockSettingsTest extends PostgresTestBase {
         assertNull(getTableLockSettings(PUBLIC_SCHEMA, OLD_NAME),
                 "the source row must be deleted by the move");
         Record settings = getTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        assertNotNull(settings, "the moved row must exist under the new name");
         assertLockSettings(settings, 10, 20, 30);
         assertTrue(createdAtIs(NEW_NAME, "2020-01-01 00:00:00+00"),
                 "the moved row must keep the source's created_at");
@@ -69,6 +72,7 @@ class MoveTableLockSettingsTest extends PostgresTestBase {
         assertNull(getTableLockSettings(PUBLIC_SCHEMA, OLD_NAME),
                 "a no-op move must not create a source row");
         Record settings = getTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        assertNotNull(settings, "the pre-provisioned destination row must still exist");
         assertLockSettings(settings, 100, 200, 300);
         assertTrue(createdAtIs(NEW_NAME, "2010-01-01 00:00:00+00"),
                 "the pre-existing destination row must be untouched");
@@ -107,11 +111,37 @@ class MoveTableLockSettingsTest extends PostgresTestBase {
 
         assertNull(getTableLockSettings(PUBLIC_SCHEMA, OLD_NAME));
         Record settings = getTableLockSettings(PUBLIC_SCHEMA, NEW_NAME);
+        assertNotNull(settings, "the moved row must exist under the new name");
         assertLockSettings(settings, 10, 20, 30);
         assertTrue(createdAtIs(NEW_NAME, "2010-01-01 00:00:00+00"),
                 "a destination row updated in place keeps its own created_at");
         assertTrue(warnings.stream().anyMatch(message -> message.contains(REPLACEMENT_NOTICE)),
                 () -> "replacing an existing destination row requires the NOTICE: " + warnings);
+    }
+
+    /**
+     * A same-name move is a true no-op: {@code rename_table} accepts renaming a
+     * table to its own name, so the move can be called with equal names. It must
+     * emit no NOTICE, keep the values and {@code created_at}, and not rewrite the
+     * row (which would bump {@code updated_at} through the shared trigger).
+     */
+    @Test
+    void sameNameMoveDoesNotRewriteTheRow() throws Exception {
+        setTableLockSettings(PUBLIC_SCHEMA, OLD_NAME, 10, 20, 30);
+        setCreatedAt(OLD_NAME, "2020-01-01 00:00:00+00");
+        Object updatedAtBefore = updatedAt(OLD_NAME);
+
+        List<String> warnings = moveAndCollectWarnings(OLD_NAME, OLD_NAME);
+
+        Record settings = getTableLockSettings(PUBLIC_SCHEMA, OLD_NAME);
+        assertNotNull(settings, "a same-name move must leave the row in place");
+        assertLockSettings(settings, 10, 20, 30);
+        assertTrue(createdAtIs(OLD_NAME, "2020-01-01 00:00:00+00"),
+                "a same-name move must not reset created_at");
+        assertEquals(updatedAtBefore, updatedAt(OLD_NAME),
+                "a same-name move must not rewrite the row and bump updated_at");
+        assertTrue(warnings.stream().noneMatch(message -> message.contains(REPLACEMENT_NOTICE)),
+                () -> "nothing moved, so no NOTICE may be emitted: " + warnings);
     }
 
     /**
@@ -155,6 +185,22 @@ class MoveTableLockSettingsTest extends PostgresTestBase {
             statement.setString(3, tableName);
             statement.execute();
         }
+    }
+
+    /**
+     * Returns the settings row's {@code updated_at}, so a test can prove that an
+     * operation did not rewrite the row.
+     */
+    private Object updatedAt(String tableName) {
+        Record row = dsl.fetchOne(
+                """
+                        SELECT updated_at
+                        FROM ddl_utils.table_lock_settings
+                        WHERE schema_name = ? AND table_name = ?
+                        """,
+                PUBLIC_SCHEMA, tableName);
+        assertNotNull(row, () -> "no settings row for " + tableName);
+        return row.get(0);
     }
 
     /**

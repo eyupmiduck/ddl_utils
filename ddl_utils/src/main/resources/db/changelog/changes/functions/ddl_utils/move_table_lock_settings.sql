@@ -25,11 +25,16 @@ BEGIN
                                     WHERE schema_name = i_schema_name
                                       AND table_name = i_new_table_name);
 
+    -- A same-name move is a true no-op: PostgreSQL accepts RENAME TO the same
+    -- name, and the DELETE + INSERT below would rewrite the row and reset
+    -- updated_at even though nothing moved.
+    IF i_table_name = i_new_table_name THEN
+        RETURN;
+    END IF;
+
     -- A missing source row makes the move a no-op, so a pre-existing
     -- destination row is not replaced and must not be reported as replaced.
-    IF l_source_exists
-        AND l_destination_exists
-        AND i_table_name <> i_new_table_name THEN
+    IF l_source_exists AND l_destination_exists THEN
         RAISE NOTICE
             'ddl_utils.move_table_lock_settings: replacing the existing lock settings for %.%',
             i_schema_name, i_new_table_name;
@@ -69,5 +74,6 @@ $$;
 COMMENT ON FUNCTION ddl_utils.move_table_lock_settings IS
     'Moves a table''s lock settings to a new table name in one statement. A '
         'missing source row makes the move a no-op (nothing is inserted or '
-        'replaced); an existing destination row is replaced by the moved values '
-        '(keeping its own created_at) and a NOTICE reports the replacement.';
+        'replaced), and a same-name move returns without rewriting the row; an '
+        'existing destination row is replaced by the moved values (keeping its '
+        'own created_at) and a NOTICE reports the replacement.';
