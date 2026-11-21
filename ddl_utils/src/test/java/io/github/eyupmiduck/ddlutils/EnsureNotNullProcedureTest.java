@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -232,14 +233,18 @@ class EnsureNotNullProcedureTest extends SingleTableTest {
             assertNotNullable(PUBLIC_SCHEMA, parent, "note");
             assertNotNullable(PUBLIC_SCHEMA, partition, "note");
             assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, parent, "note"));
-            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, partition, "note"));
+            assertFalse(constraintExists(PUBLIC_SCHEMA, partition,
+                            notNullCheckConstraintName(PUBLIC_SCHEMA, parent, "note")),
+                    "the parent-derived proof constraint must not remain on the partition");
 
             callEnsureNotNull(parent, "note");
 
             assertNotNullable(PUBLIC_SCHEMA, parent, "note");
             assertNotNullable(PUBLIC_SCHEMA, partition, "note");
             assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, parent, "note"));
-            assertEquals(0, notNullProofConstraintCount(PUBLIC_SCHEMA, partition, "note"));
+            assertFalse(constraintExists(PUBLIC_SCHEMA, partition,
+                            notNullCheckConstraintName(PUBLIC_SCHEMA, parent, "note")),
+                    "a no-op re-run must leave no parent-derived proof on the partition");
         } finally {
             dsl.execute("DROP TABLE IF EXISTS " + PUBLIC_SCHEMA + "." + parent);
         }
