@@ -103,6 +103,15 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The text domain rejects a string made up only of form feeds, the last
+     * character the domain's trim set enumerates.
+     */
+    @Test
+    void nonNullTextRejectsFormFeed() {
+        assertDomainViolation(() -> evaluate("E'\\014'::ddl_utils.non_null_text", String.class));
+    }
+
+    /**
      * The boolean domain accepts true and false.
      */
     @Test

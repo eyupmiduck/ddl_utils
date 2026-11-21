@@ -74,6 +74,28 @@ class AssertEqualCardinalityTest extends PostgresTestBase {
                 "ARRAY[['a', 'b']]::text[]", "ARRAY[['c', 'd']]::text[]"));
     }
 
+    /**
+     * Cardinality is the total element count, not the length of the first
+     * dimension: a 2x2 array and a 1x4 array both have cardinality 4 and are
+     * accepted, while their first dimensions differ.
+     */
+    @Test
+    void acceptsDifferentShapesWithTheSameTotalElementCount() {
+        assertDoesNotThrow(() -> assertEqualCardinality(
+                "ARRAY[['a', 'b'], ['c', 'd']]::text[]", "ARRAY[['e', 'f', 'g', 'h']]::text[]"));
+    }
+
+    /**
+     * The same first dimension is not enough: a 2x2 array and a 2x3 array both
+     * have first dimension 2 but cardinalities 4 and 6, so the mismatch is
+     * rejected.
+     */
+    @Test
+    void rejectsMismatchedTotalElementCountWithTheSameFirstDimension() {
+        assertSqlState("22023", () -> assertEqualCardinality(
+                "ARRAY[['a', 'b'], ['c', 'd']]::text[]", "ARRAY[['e', 'f', 'g'], ['h', 'i', 'j']]::text[]"));
+    }
+
     private void assertEqualCardinality(String a, String b) {
         // Both arguments are compile-time SQL literals supplied by the test.
         dsl.fetchOne("SELECT ddl_utils_lib.assert_equal_cardinality(" + a + ", " + b + ", ?)", "ctx");

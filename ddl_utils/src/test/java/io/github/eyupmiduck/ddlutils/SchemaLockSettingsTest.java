@@ -59,6 +59,21 @@ class SchemaLockSettingsTest extends PostgresTestBase {
     }
 
     /**
+     * set_schema_lock_settings round-trips the all-zero settings, whose meaning
+     * the lock documentation singles out: no per-attempt timeout, busy-wait
+     * between attempts and a single attempt. Zero must be stored verbatim and
+     * not treated as "unset".
+     */
+    @Test
+    void setSchemaLockSettingsRoundTripsAllZeroValues() {
+        setSchemaLockSettings(SCHEMA, 0, 0, 0);
+
+        Record row = getSchemaLockSettings(SCHEMA);
+        assertNotNull(row);
+        assertLockSettings(row, 0, 0, 0);
+    }
+
+    /**
      * set_schema_lock_settings rejects a null schema name and null or negative
      * values through the domains.
      */

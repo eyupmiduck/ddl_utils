@@ -121,6 +121,28 @@ class AddDropIdentityTest extends SingleTableTest {
     }
 
     /**
+     * Adds and drops an identity on a column whose name needs double quotes, so
+     * a {@code %I} to {@code %s} regression in either helper cannot pass: the
+     * unquoted name would fold to lower case and miss the column.
+     */
+    @Test
+    void addsAndDropsIdentityOnAColumnThatNeedsQuoting() {
+        String column = "Mixed Case";
+        dsl.execute("ALTER TABLE " + PUBLIC_SCHEMA + "." + target() + " ADD COLUMN \""
+                + column + "\" int NOT NULL");
+
+        addIdentity(column, "ALWAYS");
+        assertEquals("a", columnIdentity(PUBLIC_SCHEMA, target(), column),
+                "the identity must be added to the quoted column");
+
+        dropIdentity(column, false);
+        assertEquals("", columnIdentity(PUBLIC_SCHEMA, target(), column),
+                "the identity must be dropped from the quoted column");
+        assertTrue(hasColumn(PUBLIC_SCHEMA, target(), column),
+                "dropping the identity must leave the column in place");
+    }
+
+    /**
      * Drops the identity, leaving the column and its data in place.
      */
     @Test
