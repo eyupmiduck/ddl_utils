@@ -216,6 +216,7 @@ class UsingIndexConstraintTest extends SingleTableTest {
 
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("c".repeat(64), "target_pk_idx"));
         assertSqlState("22023", () -> addPrimaryKeyUsingIndex("target_pk", "i".repeat(64)));
+        assertSqlState("22023", () -> addUniqueConstraintUsingIndex("c".repeat(64), "target_pk_idx"));
     }
 
     /**
