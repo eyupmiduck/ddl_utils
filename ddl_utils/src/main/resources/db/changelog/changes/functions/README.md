@@ -402,8 +402,11 @@ RETURNS void
 `lock_timeout` and the retry budget `i_statement_duration`, restoring the
 caller's `lock_timeout` on success. It is the only routine that executes
 dynamic SQL. The budget bounds lock acquisition only; once the statement has
-its locks it may run for as long as it needs. `i_context` prefixes the `55P03`
-error raised when the budget is exhausted.
+its locks it may run for as long as it needs. While it runs, it sets the
+session's `application_name` to `ddl_utils:<context>` (truncated to 63 bytes)
+so the operation is visible in `pg_stat_activity`, and restores the caller's
+value on success. `i_context` prefixes the `55P03` error, which also reports
+the attempt count and elapsed time as well as the retry budget.
 
 ### `ddl_utils_lib.has_unquoted_token(i_value, i_tokens, i_top_level_only)`
 
@@ -599,7 +602,7 @@ i_relation        regclass
 i_constraint_name ddl_utils.non_null_text
 i_contype         text
 RETURNS TABLE
-(constraint_oid oid, convalidated boolean)
+    (constraint_oid oid, convalidated boolean)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Returns the OID and `convalidated` flag of a named
