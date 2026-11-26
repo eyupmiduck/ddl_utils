@@ -332,6 +332,7 @@ same-named constraint of another kind, or an index already backing another
 constraint when creating, fails with `42710`.
 
 ###
+
 `ddl_utils.add_unique_constraint_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name)`
 
 Lock-aware wrapper over
@@ -597,7 +598,8 @@ otherwise silently drop a missing name and report a misleading mismatch. Used by
 i_relation        regclass
 i_constraint_name ddl_utils.non_null_text
 i_contype         text
-RETURNS TABLE (constraint_oid oid, convalidated boolean)
+RETURNS TABLE
+(constraint_oid oid, convalidated boolean)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Returns the OID and `convalidated` flag of a named

@@ -1,0 +1,4 @@
+-- This changeset exists for its rollback. 999-grant-privileges revokes the
+-- database-wide default PUBLIC privileges for routines and types, and its
+-- frozen rollback cannot restore those defaults. Rolling back this no-op first
+-- restores them before 999's rollback runs, so the net rollback is symmetric.
