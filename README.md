@@ -179,6 +179,23 @@ tables. See
 [`functions/README.md`](ddl_utils/src/main/resources/db/changelog/changes/functions/README.md)
 for every signature and purpose.
 
+## Lock-settings health
+
+- `ddl_utils.lock_settings_orphans` lists table/schema settings that no longer
+  point at an ordinary or partitioned table, with `schema_exists`,
+  `relation_exists` and `relation_kind`.
+- `ddl_utils.explain_lock_settings(schema, table)` returns the effective timings,
+  whether the table, schema or database supplied them, and health warnings for
+  the zero/overshoot combinations.
+- `ddl_utils.lock_settings_warnings(...)` returns those warnings directly.
+- `ddl_utils.prune_orphaned_lock_settings(dry_run => true, include_missing_schemas => false)`
+  reports candidates by default and deletes only when `dry_run => false`.
+  Missing-schema rows are kept unless `include_missing_schemas => true`.
+
+An absent relation is not proof of an orphan: the settings model allows
+provisioning a row before the table or schema exists. Always inspect the view or
+run the default dry-run prune first.
+
 ## Installing with the Liquibase CLI
 
 Installing ddl_utils means applying the bundled Liquibase changelog to your

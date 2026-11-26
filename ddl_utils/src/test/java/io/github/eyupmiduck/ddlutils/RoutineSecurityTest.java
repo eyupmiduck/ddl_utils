@@ -15,7 +15,8 @@ class RoutineSecurityTest extends RoutineSecurityContract {
 
     /**
      * The lock-settings writers are {@code SECURITY DEFINER} so a caller with
-     * only {@code SELECT} on the settings tables can maintain them.
+     * only {@code SELECT} on the settings tables can maintain them; the explicit
+     * orphan-prune function is a definer for the same reason.
      *
      * @return the allowed definers
      */
@@ -27,7 +28,8 @@ class RoutineSecurityTest extends RoutineSecurityContract {
                 "ddl_utils.set_table_lock_settings",
                 "ddl_utils.clear_schema_lock_settings",
                 "ddl_utils.clear_table_lock_settings",
-                "ddl_utils.move_table_lock_settings");
+                "ddl_utils.move_table_lock_settings",
+                "ddl_utils.prune_orphaned_lock_settings");
     }
 
     /**

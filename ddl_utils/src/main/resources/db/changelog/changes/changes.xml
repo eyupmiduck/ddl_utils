@@ -79,6 +79,17 @@
         </rollback>
     </changeSet>
 
+    <!-- The diagnostic view over lock-settings rows with no current table. It
+         depends only on the settings tables, so it is created before the
+         routine includes. -->
+    <changeSet id="007-create-lock-settings-orphans-view" author="lee.horner" dbms="postgresql">
+        <sqlFile path="sql_changes/007-create-lock-settings-orphans-view.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/007-create-lock-settings-orphans-view-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- Stored routines: one changeset each, one file per routine. -->
     <include file="functions.xml" relativeToChangelogFile="true"/>
     <include file="procedures.xml" relativeToChangelogFile="true"/>
@@ -153,6 +164,17 @@
         <sqlFile path="sql_changes/999-default-privileges-parity.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="rollback/999-default-privileges-parity-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Caller access for the lock-settings health view and helpers. -->
+    <changeSet id="999-grant-privileges-for-lock-settings-health" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <sqlFile path="sql_changes/999-grant-privileges-for-lock-settings-health.sql"
+                 relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/999-grant-privileges-for-lock-settings-health-rollback.sql"
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
