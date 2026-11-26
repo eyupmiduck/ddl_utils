@@ -98,6 +98,19 @@ class EnsureCheckConstraintProcedureTest extends SingleTableTest {
     }
 
     /**
+     * Over-long schema and table names are rejected with 22023 before any
+     * catalog lookup or DDL; the identifier-domain guard in the resolver is the
+     * backstop, but the procedure's own check names the argument.
+     */
+    @Test
+    void rejectsOverLongSchemaAndTableNames() {
+        assertSqlState("22023", () -> Routines.ensureCheckConstraint(
+                dsl.configuration(), "s".repeat(64), target(), "c", "value > 0"));
+        assertSqlState("22023", () -> Routines.ensureCheckConstraint(
+                dsl.configuration(), PUBLIC_SCHEMA, "t".repeat(64), "c", "value > 0"));
+    }
+
+    /**
      * A view is not a table; the relation-kind guard rejects it before any DDL.
      */
     @Test

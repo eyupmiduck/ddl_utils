@@ -226,6 +226,10 @@ Liquibase section.
 - Type routine arguments with the `ddl_utils` domains (for example
   `non_null_text`, `non_negative_integer`) so null or invalid inputs fail
   fast with a check-constraint violation.
+- Cast values that are resolved as identifiers to `ddl_utils.identifier` before
+  `to_regclass`/`format`; the domain rejects blank or over-63-byte names with
+  `23514`. Public entry points still call `assert_identifier_length` where a
+  `22023` message naming the argument is useful.
 - Use `SECURITY INVOKER` (the default). A routine must never require callers to
   hold privileges beyond what they would need to run its SQL directly: if a
   caller could run the statement itself, calling the routine must just work.

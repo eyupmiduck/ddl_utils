@@ -19,9 +19,13 @@ DECLARE
     l_matches             boolean;
 BEGIN
     l_relation := pg_catalog.to_regclass(
-            pg_catalog.format('%I.%I', i_schema_name, i_table_name));
+            pg_catalog.format('%I.%I',
+                              i_schema_name::ddl_utils.identifier,
+                              i_table_name::ddl_utils.identifier));
     l_referenced_relation := pg_catalog.to_regclass(
-            pg_catalog.format('%I.%I', i_referenced_schema_name, i_referenced_table_name));
+            pg_catalog.format('%I.%I',
+                              i_referenced_schema_name::ddl_utils.identifier,
+                              i_referenced_table_name::ddl_utils.identifier));
 
     IF l_relation IS NULL OR l_referenced_relation IS NULL THEN
         RETURN false;
@@ -78,4 +82,5 @@ $$;
 COMMENT ON FUNCTION ddl_utils_lib.foreign_key_definition_matches IS
     'Returns whether a foreign key matches the requested referenced relation and '
         'source -> referenced column mapping, with PostgreSQL''s default actions, '
-        'match type and deferrability.';
+        'match type and deferrability. Names longer than 63 bytes raise 23514 '
+        'through ddl_utils.identifier instead of being truncated.';

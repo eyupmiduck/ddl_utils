@@ -24,6 +24,18 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    -- The resolver also casts to ddl_utils.identifier, but check here first so
+    -- an over-long name names the offending argument instead of surfacing the
+    -- domain's generic 23514.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_schema_name,
+            i_context => 'ddl_utils.ensure_check_constraint',
+            i_argument => 'i_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_table_name,
+            i_context => 'ddl_utils.ensure_check_constraint',
+            i_argument => 'i_table_name');
+
     -- Read the lock settings once; they are reused across both steps.
     l_settings := ddl_utils_lib.table_lock_settings(
             i_schema_name => i_schema_name,

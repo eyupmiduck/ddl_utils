@@ -94,8 +94,11 @@ Liquibase loads two application schemas:
       with the table → schema → database fallback, and the `lock_settings`
       composite type the wrappers read it into;
     - lock-aware wrappers that read the settings for you (see the list below);
-    - the shared `non_null_text`, `sql_prefix`, `non_negative_integer`,
-      `non_null_boolean`, and array domains used to validate inputs.
+    - the shared `identifier`, `non_null_text`, `sql_prefix`,
+      `non_negative_integer`, `non_null_boolean`, and array domains used to
+      validate inputs. `identifier` adds the 63-byte limit to `non_null_text`;
+      the resolver paths cast to it before `to_regclass`, so an over-long name
+      raises `23514` instead of resolving a truncated relation.
 - **`ddl_utils_lib`** — generic helpers that take the settings explicitly (the
   same operations, plus `validate_constraint` and `has_top_level_comma`).
   `execute_with_lock_retry` is the internal runner they build on: it executes

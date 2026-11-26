@@ -70,6 +70,15 @@
         </rollback>
     </changeSet>
 
+    <!-- The identifier domain is used by the resolver paths to reject over-long
+         names before to_regclass; it must exist before the routine includes. -->
+    <changeSet id="006-create-identifier-domain" author="lee.horner" dbms="postgresql">
+        <sqlFile path="sql_changes/006-create-identifier-domain.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/006-create-identifier-domain-rollback.sql" relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
     <!-- Stored routines: one changeset each, one file per routine. -->
     <include file="functions.xml" relativeToChangelogFile="true"/>
     <include file="procedures.xml" relativeToChangelogFile="true"/>
@@ -109,6 +118,18 @@
         <sqlFile path="sql_changes/999-grant-privileges-for-fk-locking.sql" relativeToChangelogFile="true"/>
         <rollback>
             <sqlFile path="rollback/999-grant-privileges-for-fk-locking-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Caller usage for the identifier domain added before the routine
+         includes; the domain itself is created by 006. -->
+    <changeSet id="999-grant-privileges-for-identifier-domain" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <sqlFile path="sql_changes/999-grant-privileges-for-identifier-domain.sql"
+                 relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/999-grant-privileges-for-identifier-domain-rollback.sql"
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>

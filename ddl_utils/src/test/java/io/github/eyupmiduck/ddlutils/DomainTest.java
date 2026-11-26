@@ -110,6 +110,40 @@ class DomainTest extends PostgresTestBase {
     }
 
     /**
+     * The identifier domain accepts a non-null, non-blank name at the 63-byte
+     * limit.
+     */
+    @Test
+    void identifierAcceptsNameAtTheLimit() {
+        assertEquals("a".repeat(63),
+                evaluate("pg_catalog.repeat('a', 63)::ddl_utils.identifier", String.class));
+    }
+
+    /**
+     * The identifier domain rejects names longer than 63 bytes, including a
+     * multibyte name whose character count is below the limit.
+     */
+    @Test
+    void identifierRejectsOverLongNames() {
+        assertDomainViolation(() -> evaluate(
+                "pg_catalog.repeat('a', 64)::ddl_utils.identifier", String.class));
+        assertDomainViolation(() -> evaluate(
+                "pg_catalog.repeat('é', 32)::ddl_utils.identifier", String.class));
+    }
+
+    /**
+     * The identifier domain rejects null, empty and ASCII-whitespace-only names
+     * like the non-null text domain.
+     */
+    @Test
+    void identifierRejectsNullOrBlankNames() {
+        assertDomainViolation(() -> evaluate("NULL::ddl_utils.identifier", String.class));
+        assertDomainViolation(() -> evaluate("''::ddl_utils.identifier", String.class));
+        assertDomainViolation(() -> evaluate("'   '::ddl_utils.identifier", String.class));
+        assertDomainViolation(() -> evaluate("E'\\t\\n\\r'::ddl_utils.identifier", String.class));
+    }
+
+    /**
      * The boolean domain accepts true and false.
      */
     @Test
