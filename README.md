@@ -82,6 +82,11 @@ scan is intentional, and the routines deliberately do not set
 `statement_timeout`. Callers that need a hard execution cap set
 `statement_timeout` themselves.
 
+While a helper is running, the session's `application_name` is set to
+`ddl_utils:<context>` and is visible in `pg_stat_activity`; the caller's value is
+restored on success. A `55P03` reports the attempt count, elapsed time and retry
+budget.
+
 ## What is in the box
 
 Liquibase loads two application schemas:
