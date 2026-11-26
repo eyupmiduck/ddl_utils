@@ -11,11 +11,11 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.execute_with_lock_retry(
 AS
 $$
 DECLARE
-    l_started_at              timestamptz;
-    l_previous_lock_timeout   text;
+    l_started_at                timestamptz;
+    l_previous_lock_timeout     text;
     l_previous_application_name text;
-    l_attempts                integer := 0;
-    l_elapsed_ms              integer;
+    l_attempts                  integer := 0;
+    l_elapsed_ms                integer;
 BEGIN
     -- The only routine that executes dynamic SQL. alter_table builds the
     -- statement from a validated fragment, and lock_foreign_key_tables builds it

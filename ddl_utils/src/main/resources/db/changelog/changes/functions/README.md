@@ -602,7 +602,7 @@ i_relation        regclass
 i_constraint_name ddl_utils.non_null_text
 i_contype         text
 RETURNS TABLE
-(constraint_oid oid, convalidated boolean)
+    (constraint_oid oid, convalidated boolean)
 ```
 
 `STABLE`, `SECURITY INVOKER`. Returns the OID and `convalidated` flag of a named
