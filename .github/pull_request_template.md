@@ -22,6 +22,7 @@
   rollback SQL in `rollback/`
 - [ ] Existing released schema changesets are frozen; routine/trigger files are edited in place under `runOnChange`
 - [ ] Tests are added or updated, have Javadoc, and database tests extend `PostgresTestBase`
+- [ ] Every new SQL function/procedure has a direct test invoking that routine (not only through a wrapper)
 - [ ] Database access uses jOOQ's DSL; raw SQL is limited to DDL, catalog
   introspection, session settings, and SQL the DSL cannot express
 - [ ] No secrets, credentials, or generated build output are included

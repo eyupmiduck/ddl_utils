@@ -122,13 +122,17 @@ that table's own settings.
 The helpers cover:
 
 - **Columns**: `add_column(s)` (with an optional default), `drop_column(s)`,
-  `rename_column`, `set_column_default`, `drop_column_default`, `drop_not_null`,
+  `drop_column_if_exists`, `rename_column`, `set_column_default`,
+  `drop_column_default`, `drop_not_null`,
   `set_not_null`, `set_column_storage`, `set_column_compression`,
   `drop_expression`, `add_identity`, `drop_identity`.
 - **Constraints**: `add_check_constraint` and `add_foreign_key` (both emitted as
-  `NOT VALID`, so no scan), `drop_constraint`, `rename_constraint`,
+  `NOT VALID`, so no scan), `drop_constraint`, `drop_constraint_if_exists`,
+  `rename_constraint`,
   `add_primary_key_using_index`, `add_unique_constraint_using_index` (attach an
-  index built with `CREATE UNIQUE INDEX CONCURRENTLY`). `add_foreign_key` takes
+  index built with `CREATE UNIQUE INDEX CONCURRENTLY`), plus the idempotent
+  `add_primary_key_using_index_if_absent` and
+  `add_unique_constraint_using_index_if_absent`. `add_foreign_key` takes
   `SHARE ROW EXCLUSIVE` on both the referencing and referenced tables, so it
   resolves and honours both tables' settings and pre-locks both in a
   deterministic order. The scan step is `ddl_utils_lib.validate_constraint`

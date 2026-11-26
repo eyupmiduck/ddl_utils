@@ -9,11 +9,16 @@ One function per `.sql` file, grouped by the schema that owns it:
   statement it runs. Prefer the structured helpers, which assemble the fragment
   from validated identifiers. A helper whose statement takes only `SHARE UPDATE
   EXCLUSIVE` and therefore never blocks DML lives here only (`validate_constraint` and `has_top_level_comma`).
+  Single-step idempotent operations (`drop_column_if_exists`,
+  `drop_constraint_if_exists`, `add_*_using_index_if_absent`) are functions;
+  procedures are reserved for multi-step commit-separated sequences.
 
 `changes/functions.xml` loads them one `createProcedure` per changeset; the
 matching drop lives in `changes/functions-rollback/`. Every
 routine is `SECURITY INVOKER` except the setters/clearers, which are
-`SECURITY DEFINER` (callers only have `SELECT` on the settings tables).
+`SECURITY DEFINER` (callers only have `SELECT` on the settings tables). Every
+function has a direct test that invokes it; a wrapper call does not count as a
+direct test for the corresponding `ddl_utils_lib` function.
 
 The changelog is deployed. Schema changesets are frozen, but routine files are
 edited in place: `runOnChange` re-applies the changed body on upgrade. Keep the
@@ -213,6 +218,11 @@ RETURNS void
 `SECURITY INVOKER`. Lock-aware wrapper; resolves the table's settings via
 `get_lock_settings` and delegates to `ddl_utils_lib.drop_columns`.
 
+### `ddl_utils.drop_column_if_exists(i_schema_name, i_table_name, i_column_name)`
+
+Lock-aware wrapper over `ddl_utils_lib.drop_column_if_exists`; drops the column
+when it exists and is a no-op otherwise. No `CASCADE`.
+
 ### `ddl_utils.rename_column(i_schema_name, i_table_name, i_column_name, i_new_column_name)`
 
 ```sql
@@ -293,6 +303,12 @@ deterministic order.
 
 Lock-aware wrapper over `ddl_utils_lib.drop_constraint`.
 
+### `ddl_utils.drop_constraint_if_exists(i_schema_name, i_table_name, i_constraint_name)`
+
+Lock-aware wrapper over `ddl_utils_lib.drop_constraint_if_exists`; drops a
+same-named constraint of any kind when it exists and is a no-op otherwise. No
+`CASCADE`; a dependent foreign key still fails.
+
 ### `ddl_utils.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name)`
 
 Lock-aware wrapper over `ddl_utils_lib.rename_constraint`.
@@ -306,6 +322,21 @@ pre-built unique index.
 
 Lock-aware wrapper over `ddl_utils_lib.add_unique_constraint_using_index`;
 attaches a pre-built unique index.
+
+### `ddl_utils.add_primary_key_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name)`
+
+Lock-aware wrapper over `ddl_utils_lib.add_primary_key_using_index_if_absent`;
+attaches the primary key when absent and no-ops when a same-named primary key
+already exists (the first attach renames the index to the constraint name). A
+same-named constraint of another kind, or an index already backing another
+constraint when creating, fails with `42710`.
+
+###
+`ddl_utils.add_unique_constraint_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name)`
+
+Lock-aware wrapper over
+`ddl_utils_lib.add_unique_constraint_using_index_if_absent`; the unique
+constraint equivalent of the primary-key convergence helper.
 
 ### `ddl_utils.rename_table(i_schema_name, i_table_name, i_new_table_name)`
 
@@ -532,6 +563,18 @@ RETURNS boolean
 column and raises `42703` when it does not exist, so a renamed or dropped column
 can never read as `NULL`. Used at every `ensure_not_null` step.
 
+### `ddl_utils_lib.column_exists(i_relation, i_column_name)`
+
+```sql
+i_relation    regclass
+i_column_name ddl_utils.non_null_text
+RETURNS boolean
+```
+
+`STABLE`, `SECURITY INVOKER`. True when the relation has a live, non-dropped
+column with this name; a missing column returns false rather than raising. Used
+by `drop_column_if_exists` to skip the ALTER when the column is already gone.
+
 ### `ddl_utils_lib.assert_columns_exist(i_relation, i_schema_name, i_table_name, i_column_names, i_context)`
 
 ```sql
@@ -692,6 +735,23 @@ RETURNS void
 `SECURITY INVOKER`. Builds one `DROP COLUMN` clause per element and applies them
 in a single `ALTER TABLE` (all-or-nothing) via `ddl_utils_lib.alter_table`. Each
 name is quoted with `%I`; a blank element is rejected with `22023`.
+
+###
+
+`ddl_utils_lib.drop_column_if_exists(i_schema_name, i_table_name, i_column_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_column_name        ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Drops the column when it exists and is a no-op otherwise.
+The absent case returns before taking the `ACCESS EXCLUSIVE` lock; the ALTER uses
+`DROP COLUMN IF EXISTS`, so a concurrent external drop is also a no-op. No
+`CASCADE`: dependent objects still fail the ALTER.
 
 ###
 
@@ -970,6 +1030,24 @@ primary key or unique constraint that a foreign key references fails with
 
 ###
 
+`ddl_utils_lib.drop_constraint_if_exists(i_schema_name, i_table_name, i_constraint_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Drops a same-named constraint of any kind when it exists
+and is a no-op otherwise. The absent case returns before taking the
+`ACCESS EXCLUSIVE` lock; the ALTER uses `DROP CONSTRAINT IF EXISTS`, so a
+concurrent external drop is also a no-op. It keeps `RESTRICT` semantics: a
+dependent foreign key still fails with `2BP01`.
+
+###
+
 `ddl_utils_lib.rename_constraint(i_schema_name, i_table_name, i_constraint_name, i_new_constraint_name, settings...)`
 
 ```sql
@@ -1043,6 +1121,45 @@ metadata-only when the index is valid. Validates the index via
 `validate_unique_index_for_attach`; otherwise raises
 `42P01`/`42704`/`0A000`/`42809` before the ALTER. `i_index_name` must be an
 unquoted, unqualified identifier, and both names must be at most 63 bytes.
+
+###
+
+`ddl_utils_lib.add_primary_key_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+i_index_name         ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. Attaches the primary key when absent and no-ops when a
+same-named primary key already exists; `USING INDEX` renames the index to the
+constraint name, so the index argument is only used when creating. An advisory
+lock keyed on the table and index serializes the check-and-attach. A same-named
+constraint of another kind, or an index that already backs another constraint
+when creating, raises `42710`; an invalid/partial index fails through
+`validate_unique_index_for_attach`.
+
+###
+
+`ddl_utils_lib.add_unique_constraint_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name, settings...)`
+
+```sql
+i_schema_name        ddl_utils.non_null_text
+i_table_name         ddl_utils.non_null_text
+i_constraint_name    ddl_utils.non_null_text
+i_index_name         ddl_utils.non_null_text
+settings             (see above)
+RETURNS void
+```
+
+`SECURITY INVOKER`. The unique-constraint equivalent of
+`add_primary_key_using_index_if_absent`; no-ops when a same-named unique
+constraint already exists and raises `42710` for a different kind or an index
+already backing another constraint when creating.
 
 ### `ddl_utils_lib.rename_table(i_schema_name, i_table_name, i_new_table_name, settings...)`
 
