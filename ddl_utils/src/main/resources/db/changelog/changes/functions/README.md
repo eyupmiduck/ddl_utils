@@ -353,6 +353,7 @@ guard; the caller already holds the privileges the fragment uses). Prefer the
 structured helpers, which build the fragment from validated identifiers/values.
 
 ###
+
 `ddl_utils_lib.execute_with_lock_retry(i_statement, i_context, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -509,9 +510,11 @@ RETURNS regclass
 ```
 
 `STABLE`, `SECURITY INVOKER`. Resolves `schema.table` without a `::regclass`
-cast and requires `relkind` `r`/`p`. Raises `42P01` for a missing relation and
-`42809` for a view, sequence, index or other non-table; `i_context` prefixes the
-message and `i_relation_label` names the role (for example `table` or
+cast and requires `relkind` `r`/`p`. The schema and table are cast to
+`ddl_utils.identifier` before `to_regclass`, so a blank or over-63-byte name
+raises `23514` instead of being truncated. Raises `42P01` for a missing relation
+and `42809` for a view, sequence, index or other non-table; `i_context` prefixes
+the message and `i_relation_label` names the role (for example `table` or
 `referenced table`). Used by the committed procedures and
 `validate_unique_index_for_attach`.
 
@@ -881,6 +884,7 @@ same settings (this helper has one settings set; use
 length; blank names are rejected with `22023`.
 
 ###
+
 `ddl_utils_lib.lock_foreign_key_tables(i_schema_name, i_table_name, i_lock_mode, settings..., i_referenced_schema_name, i_referenced_table_name, i_referenced_lock_mode, referenced settings...)`
 
 ```sql
@@ -927,6 +931,8 @@ RETURNS boolean
 `STABLE`, `SECURITY INVOKER`. Returns whether the named foreign key on the source
 table matches the referenced relation and the source -> referenced column
 mapping, with PostgreSQL's default actions, match type and deferrability. The
+schema and table names are cast to `ddl_utils.identifier` before `to_regclass`,
+so a blank or over-63-byte name raises `23514` instead of being truncated. The
 mapping is compared as a multiset. Used by the `ensure_foreign_key` procedure to
 compare a same-named constraint and to re-verify it after the inter-step
 `COMMIT`.

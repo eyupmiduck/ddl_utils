@@ -432,6 +432,33 @@ class EnsureForeignKeyProcedureTest extends PostgresTestBase {
     }
 
     /**
+     * Over-long schema, table and column names are rejected with 22023 before
+     * any catalog lookup or DDL, naming the offending argument.
+     */
+    @Test
+    void rejectsOverLongSchemaTableAndColumnNames() {
+        String tooLong = "c".repeat(64);
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                tooLong, TARGET, "fk", new String[]{"parent_id"},
+                PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                PUBLIC_SCHEMA, tooLong, "fk", new String[]{"parent_id"},
+                PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                PUBLIC_SCHEMA, TARGET, "fk", new String[]{"parent_id"},
+                tooLong, REFERENCED, new String[]{"id"}));
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                PUBLIC_SCHEMA, TARGET, "fk", new String[]{"parent_id"},
+                PUBLIC_SCHEMA, tooLong, new String[]{"id"}));
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                PUBLIC_SCHEMA, TARGET, "fk", new String[]{tooLong},
+                PUBLIC_SCHEMA, REFERENCED, new String[]{"id"}));
+        assertSqlState("22023", () -> Routines.ensureForeignKey(dsl.configuration(),
+                PUBLIC_SCHEMA, TARGET, "fk", new String[]{"parent_id"},
+                PUBLIC_SCHEMA, REFERENCED, new String[]{tooLong}));
+    }
+
+    /**
      * The source and referenced relations must be tables; a view is rejected
      * with 42809 before any DDL.
      */

@@ -32,6 +32,7 @@ class PrivilegeTest extends PrivilegeContract {
         return List.of(
                 new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "non_negative_integer"),
                 new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "non_null_text"),
+                new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "identifier"),
                 new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "sql_prefix"),
                 new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "non_null_boolean"),
                 new TypeRef(PostgresTestBase.DDL_UTILS_SCHEMA, "non_empty_text_array"),

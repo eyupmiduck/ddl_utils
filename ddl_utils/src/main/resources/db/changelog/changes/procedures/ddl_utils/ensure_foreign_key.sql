@@ -18,6 +18,7 @@ DECLARE
     l_referenced_relation regclass;
     l_constraint_oid      oid;
     l_existing_definition text;
+    l_column_name         text;
 BEGIN
     -- PostgreSQL truncates an identifier to NAMEDATALEN - 1 bytes with only a
     -- NOTICE. The catalog guards below compare conname with the untruncated
@@ -28,6 +29,41 @@ BEGIN
             'ddl_utils.ensure_foreign_key: the constraint name must be at most 63 bytes'
             USING ERRCODE = '22023';
     END IF;
+
+    -- The resolver also casts to ddl_utils.identifier, but check here first so
+    -- an over-long name names the offending argument instead of surfacing the
+    -- domain's generic 23514.
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_schema_name,
+            i_context => 'ddl_utils.ensure_foreign_key',
+            i_argument => 'i_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_table_name,
+            i_context => 'ddl_utils.ensure_foreign_key',
+            i_argument => 'i_table_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_referenced_schema_name,
+            i_context => 'ddl_utils.ensure_foreign_key',
+            i_argument => 'i_referenced_schema_name');
+    PERFORM ddl_utils_lib.assert_identifier_length(
+            i_value => i_referenced_table_name,
+            i_context => 'ddl_utils.ensure_foreign_key',
+            i_argument => 'i_referenced_table_name');
+
+    FOREACH l_column_name IN ARRAY i_column_names::text[]
+        LOOP
+            PERFORM ddl_utils_lib.assert_identifier_length(
+                    i_value => l_column_name,
+                    i_context => 'ddl_utils.ensure_foreign_key',
+                    i_argument => 'i_column_names');
+        END LOOP;
+    FOREACH l_column_name IN ARRAY i_referenced_column_names::text[]
+        LOOP
+            PERFORM ddl_utils_lib.assert_identifier_length(
+                    i_value => l_column_name,
+                    i_context => 'ddl_utils.ensure_foreign_key',
+                    i_argument => 'i_referenced_column_names');
+        END LOOP;
 
     -- Read both tables' lock settings once; they are reused across both steps.
     l_settings := ddl_utils_lib.table_lock_settings(
