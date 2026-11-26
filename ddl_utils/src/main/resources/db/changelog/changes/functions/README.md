@@ -16,7 +16,9 @@ One function per `.sql` file, grouped by the schema that owns it:
 `changes/functions.xml` loads them one `createProcedure` per changeset; the
 matching drop lives in `changes/functions-rollback/`. Every
 routine is `SECURITY INVOKER` except the setters/clearers, which are
-`SECURITY DEFINER` (callers only have `SELECT` on the settings tables).
+`SECURITY DEFINER` (callers only have `SELECT` on the settings tables). Every
+function has a direct test that invokes it; a wrapper call does not count as a
+direct test for the corresponding `ddl_utils_lib` function.
 
 The changelog is deployed. Schema changesets are frozen, but routine files are
 edited in place: `runOnChange` re-applies the changed body on upgrade. Keep the

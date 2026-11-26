@@ -140,6 +140,10 @@ Rules:
   contracts are live Testcontainers tests and run in `verify`.
 - Every test class and test method needs Javadoc describing the behavior it
   verifies.
+- Every SQL function and procedure needs a direct test that invokes that
+  routine. A call through a wrapper or another helper does not count as a direct
+  test for the callee; the `ddl_utils` wrapper and the `ddl_utils_lib` function
+  each need their own direct call.
 - Add a regression test when fixing a bug.
 
 ## Branches and commits

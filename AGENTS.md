@@ -368,6 +368,11 @@ Liquibase section.
   file in a directory) instead of re-implementing the stream handling.
 - Every test class and test method must have Javadoc describing the behavior
   it verifies.
+- **Every SQL function and procedure has a direct test.** Invoke the routine
+  itself — its exact `ddl_utils` wrapper or `ddl_utils_lib` signature — in at
+  least one test. A call through a wrapper or another helper is not a direct
+  test for the callee: the wrapper and the lib function each need their own
+  direct call.
 - Prefer testing observable behavior rather than implementation details.
 - Add regression tests when fixing bugs.
 - The routines are statically analysed with the `plpgsql_check` extension (`PlpgsqlCheckTest`). It is compiled into the
