@@ -1,8 +1,8 @@
 CREATE DOMAIN ddl_utils.identifier AS text
     CONSTRAINT identifier_check CHECK (
         value IS NOT NULL
-        AND pg_catalog.btrim(value, E' \t\n\r\f\013') <> ''
-        AND pg_catalog.octet_length(value) <= 63
+            AND pg_catalog.btrim(value, E' \t\n\r\f\013') <> ''
+            AND pg_catalog.octet_length(value) <= 63
         );
 
 COMMENT ON DOMAIN ddl_utils.identifier IS

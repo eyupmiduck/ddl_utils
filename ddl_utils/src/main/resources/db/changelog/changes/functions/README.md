@@ -353,6 +353,7 @@ guard; the caller already holds the privileges the fragment uses). Prefer the
 structured helpers, which build the fragment from validated identifiers/values.
 
 ###
+
 `ddl_utils_lib.execute_with_lock_retry(i_statement, i_context, i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
 
 ```sql
@@ -883,6 +884,7 @@ same settings (this helper has one settings set; use
 length; blank names are rejected with `22023`.
 
 ###
+
 `ddl_utils_lib.lock_foreign_key_tables(i_schema_name, i_table_name, i_lock_mode, settings..., i_referenced_schema_name, i_referenced_table_name, i_referenced_lock_mode, referenced settings...)`
 
 ```sql
