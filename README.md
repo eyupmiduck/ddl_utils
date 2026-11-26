@@ -261,7 +261,10 @@ SELECT ddl_utils.get_lock_settings('public', 'orders');
 Every changeset ships a rollback. Pass the same connection flags as above and
 replace `update` with `rollback-count --count=<n>` to undo the last `n`
 changesets (the routines and schemas are dropped; the roles from step 1 are left
-in place):
+in place). The rollback also restores the database-wide default `PUBLIC`
+privileges for routines and types that `999-grant-privileges` revoked.
+
+For example:
 
 ```sh
 liquibase \

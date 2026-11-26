@@ -145,4 +145,15 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <!-- No-op forward; its rollback restores the database-wide default PUBLIC
+         privileges that 999-grant-privileges revoked. It is after 999 so the
+         rollback runs first, before 999's rollback. -->
+    <changeSet id="999-default-privileges-parity" author="lee.horner" dbms="postgresql">
+        <sqlFile path="sql_changes/999-default-privileges-parity.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/999-default-privileges-parity-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
