@@ -153,6 +153,57 @@ RETURNS TABLE
 `STABLE`, `SECURITY INVOKER`. Resolves the effective settings for a table,
 falling back table → schema → database. Raises `P0002` when nothing matches.
 
+The `ddl_utils.lock_settings_orphans` view lists settings rows that do not
+currently point at an ordinary/partitioned table, with `schema_exists`,
+`relation_exists` and `relation_kind`. Absence may be intentional
+pre-provisioning; use the view or a dry-run prune before deleting anything.
+
+### `ddl_utils.lock_settings_warnings(i_ddl_lock_timeout, i_sleep_time, i_statement_duration)`
+
+```sql
+i_ddl_lock_timeout   ddl_utils.non_negative_integer
+i_sleep_time         ddl_utils.non_negative_integer
+i_statement_duration ddl_utils.non_negative_integer
+RETURNS text[]
+```
+
+`IMMUTABLE`, `SECURITY INVOKER`. Returns human-readable warnings for zero or
+overshooting timings (disabled lock timeout, busy-wait, no retry, timeout larger
+than the retry budget). Zero values remain valid; the function never rejects
+them.
+
+### `ddl_utils.explain_lock_settings(i_schema_name, i_table_name)`
+
+```sql
+i_schema_name ddl_utils.non_null_text
+i_table_name  ddl_utils.non_null_text
+RETURNS TABLE
+(ddl_lock_timeout integer, sleep_time integer, statement_duration integer,
+ source text, warnings text[])
+```
+
+`STABLE`, `SECURITY INVOKER`. Returns the effective settings, the level that
+supplied them (`table`, `schema` or `database`), and
+`lock_settings_warnings` for those values. Raises `P0002` when no database
+default exists.
+
+### `ddl_utils.prune_orphaned_lock_settings(i_dry_run, i_include_missing_schemas)`
+
+```sql
+i_dry_run                ddl_utils.non_null_boolean DEFAULT true
+i_include_missing_schemas ddl_utils.non_null_boolean DEFAULT false
+RETURNS TABLE (level text, schema_name text, table_name text,
+               ddl_lock_timeout integer, sleep_time integer,
+               statement_duration integer, action text)
+```
+
+`SECURITY DEFINER`, with a pinned `search_path`. Reports orphan candidates by
+default (`action = 'would_delete'`) and deletes only when `i_dry_run => false`
+(`action = 'deleted'`). Table settings in an existing schema are candidates;
+missing-schema table and schema rows are kept unless
+`i_include_missing_schemas => true`. An absent relation may be intentional
+pre-provisioning, so use the dry run first.
+
 ### `ddl_utils.set_updated_at()`
 
 ```sql
