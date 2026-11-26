@@ -331,7 +331,8 @@ already exists (the first attach renames the index to the constraint name). A
 same-named constraint of another kind, or an index already backing another
 constraint when creating, fails with `42710`.
 
-### `ddl_utils.add_unique_constraint_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name)`
+###
+`ddl_utils.add_unique_constraint_using_index_if_absent(i_schema_name, i_table_name, i_constraint_name, i_index_name)`
 
 Lock-aware wrapper over
 `ddl_utils_lib.add_unique_constraint_using_index_if_absent`; the unique

@@ -8,14 +8,12 @@ CREATE OR REPLACE FUNCTION ddl_utils_lib.column_exists(
     SECURITY INVOKER
 AS
 $$
-    SELECT EXISTS (
-        SELECT 1
-        FROM pg_catalog.pg_attribute AS a
-        WHERE a.attrelid = i_relation
-          AND a.attname = i_column_name
-          AND a.attnum > 0
-          AND NOT a.attisdropped
-        );
+SELECT EXISTS (SELECT 1
+               FROM pg_catalog.pg_attribute AS a
+               WHERE a.attrelid = i_relation
+                 AND a.attname = i_column_name
+                 AND a.attnum > 0
+                 AND NOT a.attisdropped);
 $$;
 
 COMMENT ON FUNCTION ddl_utils_lib.column_exists(regclass, ddl_utils.non_null_text) IS

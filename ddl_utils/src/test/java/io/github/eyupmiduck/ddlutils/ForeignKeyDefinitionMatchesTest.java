@@ -61,9 +61,9 @@ class ForeignKeyDefinitionMatchesTest extends PostgresTestBase {
     private boolean matches(String constraint, String referencedTable,
                             String sourceColumn, String referencedColumn) {
         return evaluate("ddl_utils_lib.foreign_key_definition_matches('" + PUBLIC_SCHEMA + "', '"
-                + TARGET + "', '" + constraint + "', '" + PUBLIC_SCHEMA + "', '" + referencedTable
-                + "', ARRAY['" + sourceColumn + "']::ddl_utils.non_empty_non_null_text_array, "
-                + "ARRAY['" + referencedColumn + "']::ddl_utils.non_empty_non_null_text_array)",
+                        + TARGET + "', '" + constraint + "', '" + PUBLIC_SCHEMA + "', '" + referencedTable
+                        + "', ARRAY['" + sourceColumn + "']::ddl_utils.non_empty_non_null_text_array, "
+                        + "ARRAY['" + referencedColumn + "']::ddl_utils.non_empty_non_null_text_array)",
                 Boolean.class);
     }
 }

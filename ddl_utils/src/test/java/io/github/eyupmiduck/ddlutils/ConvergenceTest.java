@@ -10,18 +10,9 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies the idempotent convergence functions: destructive drops are no-ops
@@ -34,6 +25,30 @@ class ConvergenceTest extends PostgresTestBase {
     private static final String TARGET = "convergence_target";
     private static final String REFERENCED = "convergence_referenced";
     private static final String WORKER_STATEMENT_TIMEOUT = "15s";
+
+    private static void runConcurrently(List<Callable<Void>> tasks) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(tasks.size());
+        List<Future<Void>> futures = new ArrayList<>();
+        try {
+            for (Callable<Void> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    for (Future<Void> pending : futures) {
+                        pending.cancel(true);
+                    }
+                    fail("a concurrent convergence call did not finish within 30 s", e);
+                } catch (ExecutionException e) {
+                    fail("a concurrent convergence call failed: " + e.getCause(), e.getCause());
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+    }
 
     @BeforeEach
     void createTables() {
@@ -242,30 +257,6 @@ class ConvergenceTest extends PostgresTestBase {
                     PUBLIC_SCHEMA, TARGET, "note_uq", "target_note_idx");
         }
         return null;
-    }
-
-    private static void runConcurrently(List<Callable<Void>> tasks) throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(tasks.size());
-        List<Future<Void>> futures = new ArrayList<>();
-        try {
-            for (Callable<Void> task : tasks) {
-                futures.add(pool.submit(task));
-            }
-            for (Future<Void> future : futures) {
-                try {
-                    future.get(30, TimeUnit.SECONDS);
-                } catch (TimeoutException e) {
-                    for (Future<Void> pending : futures) {
-                        pending.cancel(true);
-                    }
-                    fail("a concurrent convergence call did not finish within 30 s", e);
-                } catch (ExecutionException e) {
-                    fail("a concurrent convergence call failed: " + e.getCause(), e.getCause());
-                }
-            }
-        } finally {
-            pool.shutdownNow();
-        }
     }
 
     private void assertFalseColumn(String column) {
