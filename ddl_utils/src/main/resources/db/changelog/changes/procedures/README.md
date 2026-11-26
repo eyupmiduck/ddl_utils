@@ -37,6 +37,10 @@ A procedure **orchestrates**; it does not implement DDL or locking.
   operations.
 - The only things a procedure owns are the `COMMIT` boundaries and the
   idempotency checks that decide whether each step still needs to run.
+- **A single-step operation is a function, not a procedure.** A catalog check
+  followed by one `ALTER TABLE` does not need a procedure, even when it is
+  idempotent; use a function so callers do not pay the autocommit/`CALL` cost.
+  Only multiple `ALTER TABLE` calls with `COMMIT`s justify a procedure.
 
 ## Pattern (verified against PostgreSQL 17)
 

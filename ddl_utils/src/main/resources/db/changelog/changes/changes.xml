@@ -133,4 +133,16 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <!-- Caller grants for the idempotent convergence helpers added after the
+         frozen 999 changeset. -->
+    <changeSet id="999-grant-privileges-for-convergence" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <sqlFile path="sql_changes/999-grant-privileges-for-convergence.sql"
+                 relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="rollback/999-grant-privileges-for-convergence-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

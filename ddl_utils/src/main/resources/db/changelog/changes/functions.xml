@@ -658,4 +658,91 @@
                      relativeToChangelogFile="true"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.column_exists" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/column_exists.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/column_exists-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.drop_column_if_exists" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/drop_column_if_exists.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/drop_column_if_exists-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils.drop_column_if_exists" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils/drop_column_if_exists.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/drop_column_if_exists-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.drop_constraint_if_exists" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/drop_constraint_if_exists.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/drop_constraint_if_exists-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils.drop_constraint_if_exists" author="lee.horner" dbms="postgresql"
+               runOnChange="true">
+        <createProcedure path="functions/ddl_utils/drop_constraint_if_exists.sql" relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/drop_constraint_if_exists-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.add_primary_key_using_index_if_absent" author="lee.horner"
+               dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/add_primary_key_using_index_if_absent.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/add_primary_key_using_index_if_absent-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils.add_primary_key_using_index_if_absent" author="lee.horner"
+               dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/add_primary_key_using_index_if_absent.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/add_primary_key_using_index_if_absent-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils_lib.add_unique_constraint_using_index_if_absent" author="lee.horner"
+               dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils_lib/add_unique_constraint_using_index_if_absent.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils_lib/add_unique_constraint_using_index_if_absent-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="function-ddl_utils.add_unique_constraint_using_index_if_absent" author="lee.horner"
+               dbms="postgresql" runOnChange="true">
+        <createProcedure path="functions/ddl_utils/add_unique_constraint_using_index_if_absent.sql"
+                         relativeToChangelogFile="true"/>
+        <rollback>
+            <sqlFile path="functions-rollback/ddl_utils/add_unique_constraint_using_index_if_absent-rollback.sql"
+                     relativeToChangelogFile="true"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

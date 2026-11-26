@@ -165,7 +165,11 @@ Liquibase section.
   only when an operation genuinely needs several `ALTER TABLE` calls with a
   `COMMIT` between them to release each lock (for example making a column
   `NOT NULL` without holding `ACCESS EXCLUSIVE` across the scan); keep such
-  routines in `ddl_utils`.
+  routines in `ddl_utils`. A single-step operation is a function even when it is
+  idempotent: a catalog check followed by one `ALTER TABLE` (for example
+  `drop_column_if_exists` or `add_unique_constraint_using_index_if_absent`)
+  does not justify a procedure, and callers should not pay the autocommit/`CALL`
+  cost for one statement.
 - **A procedure orchestrates; it does not implement DDL or locking.** Each step
   calls a purpose-named single-call function (preferably the matching
   `ddl_utils_lib` helper); a procedure never calls `ddl_utils_lib.alter_table`
